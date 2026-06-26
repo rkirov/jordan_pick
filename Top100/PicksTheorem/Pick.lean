@@ -9254,3 +9254,100 @@ lemma vert_succ_j_inside (P : LatticePolygon) (hP : P.IsSimple)
     exact arc_hrunall_of_chordDisjoint P y i d m (toReal (P.vert (j + 1))) hchord_B hpts_B
   rw [← hlegB_eq, ← hlegA_eq]
   exact hloopne
+
+/-- **The arc corners are bounded above in height.** There is a real `M` strictly above
+every arc corner's `y`-coordinate. The upper-infinity boundary datum dual to
+`arcCorners_bddRight`; used to push a query straight up past the whole arc where
+`loopWind_zero_above` forces `loopWind = 0`. -/
+lemma arcCorners_bddAbove (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ) :
+    ∃ M : ℝ, ∀ p ∈ arcCorners P y i d, p.2 < M := by
+  have key : ∀ (L : List (ℝ × ℝ)), ∃ M : ℝ, ∀ p ∈ L, p.2 < M := by
+    intro L
+    induction L with
+    | nil => exact ⟨0, by simp⟩
+    | cons a t ih => obtain ⟨M, hM⟩ := ih; exact ⟨max M (a.2 + 1), fun p hp => by
+        rcases List.mem_cons.1 hp with rfl | hp
+        · exact lt_of_lt_of_le (by linarith) (le_max_right _ _)
+        · exact lt_of_lt_of_le (hM p hp) (le_max_left _ _)⟩
+  exact key _
+
+/-- **Upward-transport-to-zero.** If a query `q` lies weakly above `y`, and the straight
+upward segment from `q` to the point `(q.1, H)` (with `H` strictly above every arc corner,
+hence `H > q.2`) is chord-disjoint, corner-off, and run-hull-disjoint from the arc — exactly
+the inputs of `loopWind_eq_of_monotone_above_free` — then `loopWind P y i d q = 0`. Transport
+`q` up to `(q.1, H)`, where `loopWind_zero_above` applies because every corner sits weakly
+below `H`. This is the upper-infinity boundary leg of the ray-cast non-nesting contradiction. -/
+lemma loopWind_zero_of_above_transport (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ)
+    (q : ℝ × ℝ) (hq : y ≤ q.2) (H : ℝ) (hH : ∀ p ∈ arcCorners P y i d, p.2 < H)
+    (hqH : q.2 < H)
+    (hchord : chainChordDisjoint q (q.1, H) (arcCorners P y i d))
+    (hoff : ∀ v ∈ arcCorners P y i d, q.2 ≠ v.2 ∧ (q.1, H).2 ≠ v.2)
+    (hrunall : ∀ (b₀ : ℝ × ℝ) (rn : List (ℝ × ℝ)), b₀ :: rn <:+: arcCorners P y i d →
+      (∀ v ∈ b₀ :: rn, v.2 = b₀.2) →
+      Disjoint (segment ℝ q (q.1, H)) (segment ℝ b₀ ((b₀ :: rn).getLast (by simp)))) :
+    loopWind P y i d q = 0 := by
+  have hyH : y ≤ (q.1, H).2 := le_of_lt (lt_of_le_of_lt hq hqH)
+  have htrans : loopWind P y i d q = loopWind P y i d (q.1, H) := by
+    apply loopWind_eq_of_monotone_above_free P y i d q (q.1, H) hq hyH
+      (ne_of_lt hqH) hchord hoff hrunall
+  rw [htrans]
+  exact loopWind_zero_above P y i d (q.1, H) hyH (fun p hp => le_of_lt (hH p hp))
+
+/-- **Non-nesting contradiction for a threshold-interposed spanning edge (winding leg).**
+The hypotheses describe the crossing-arc `i → i+d` (up-edge `i`, down-edge `i+d`, interior
+vertices strictly above `y`), and an up-spanning edge `j` whose threshold column lies strictly
+between the two arc thresholds (`hcl`, `hcr`) and which is non-adjacent to every arc edge
+(`hsep`). The bundled `hinside`-data (`ε`, `s₀`, …) is exactly what `vert_succ_j_inside`
+consumes to prove `v_{j+1}` is enclosed: `loopWind P y i d (toReal (P.vert (j+1))) ≠ 0`.
+
+If, in addition, `v_{j+1}` admits a straight upward escape to height `H` (above all arc
+corners) that is chord, corner and run disjoint from the arc — the `loopWind_zero_of_above_transport`
+inputs `hH`, `hqH`, `hchord_up`, `hoff_up`, `hrunall_up` — then `loopWind P y i d (v_{j+1}) = 0`,
+contradicting the enclosure. So no such interposed up-spanning `j` with a clean upward escape can
+exist: this is the geometric heart of threshold-order non-nesting, packaged so the only remaining
+inputs are the two transports. Over all threshold-adjacent spanning pairs the impossibility of a
+same-type interposed crossing forces the `Alternates` sign list consumed by
+`winding_bdd_of_xsorted_alternates` (input **C** of `winding_bdd_of_alternation_and_pos`). -/
+lemma spanning_threshold_adjacent_opposite (P : LatticePolygon) (hP : P.IsSimple)
+    (y : ℝ) (i : ZMod P.n) (d : ℕ) (hd : 1 ≤ d) (j : ZMod P.n)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hvert : ∀ k : ℕ, 1 ≤ k → k ≤ d → y < (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    (hsep : ∀ k : ℕ, k ≤ d → j ≠ i + (k : ZMod P.n) ∧
+      j + 1 ≠ i + (k : ZMod P.n) ∧ (i + (k : ZMod P.n)) + 1 ≠ j)
+    (hupj : (toReal (P.vert j)).2 < y ∧ y < (toReal (P.vert (j + 1))).2)
+    (hcl : P.edgeThr y i < P.edgeThr y j) (hcr : P.edgeThr y j < P.edgeThr y (i + (d : ZMod P.n)))
+    (hgen : ∀ k : ℕ, k ≤ d →
+      (toReal (P.vert (j + 1))).2 ≠ (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    -- the "just above the threshold" enclosure witness consumed by `vert_succ_j_inside`
+    (ε : ℝ) (hεpos : 0 < ε)
+    (hloopne : loopWind P y i d (P.edgeThr y j, y + ε) ≠ 0)
+    (hcornerε : ∀ v ∈ arcCorners P y i d, v.2 ≠ y + ε)
+    (s₀ : ℝ) (hs₀0 : 0 < s₀) (hs₀1 : s₀ < 1)
+    (hm2 : ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))).2 = y + ε)
+    (hlegA : ∀ k : ℕ, k ≤ d → Disjoint
+      (segment ℝ ((P.edgeThr y j, y + ε) : ℝ × ℝ)
+        ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))))
+      (P.edgeSeg (i + (k : ZMod P.n))))
+    -- the straight-up escape from `v_{j+1}` consumed by `loopWind_zero_of_above_transport`
+    (H : ℝ) (hH : ∀ p ∈ arcCorners P y i d, p.2 < H)
+    (hqH : (toReal (P.vert (j + 1))).2 < H)
+    (hchord_up : chainChordDisjoint (toReal (P.vert (j + 1)))
+      ((toReal (P.vert (j + 1))).1, H) (arcCorners P y i d))
+    (hoff_up : ∀ v ∈ arcCorners P y i d,
+      (toReal (P.vert (j + 1))).2 ≠ v.2 ∧ ((toReal (P.vert (j + 1))).1, H).2 ≠ v.2)
+    (hrunall_up : ∀ (b₀ : ℝ × ℝ) (rn : List (ℝ × ℝ)),
+      b₀ :: rn <:+: arcCorners P y i d → (∀ v ∈ b₀ :: rn, v.2 = b₀.2) →
+      Disjoint (segment ℝ (toReal (P.vert (j + 1))) ((toReal (P.vert (j + 1))).1, H))
+        (segment ℝ b₀ ((b₀ :: rn).getLast (by simp)))) :
+    False := by
+  -- enclosure: `v_{j+1}` is wound nonzero by the crossing arc
+  have hne : loopWind P y i d (toReal (P.vert (j + 1))) ≠ 0 :=
+    vert_succ_j_inside P hP y i d hd j hspi hspj hvert hsep hupj hcl hcr hgen
+      ε hεpos hloopne hcornerε s₀ hs₀0 hs₀1 hm2 hlegA
+  -- escape: pushing `v_{j+1}` straight up off the arc forces winding `0`
+  have hzero : loopWind P y i d (toReal (P.vert (j + 1))) = 0 :=
+    loopWind_zero_of_above_transport P y i d (toReal (P.vert (j + 1))) (le_of_lt hupj.2)
+      H hH hqH hchord_up hoff_up hrunall_up
+  exact hne hzero
