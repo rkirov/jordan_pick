@@ -7089,6 +7089,43 @@ lemma chainChordDisjoint_tail (q q' a : ℝ × ℝ) (L : List (ℝ × ℝ))
   | nil => trivial
   | cons b rest => exact ((chainChordDisjoint_cons₂ q q' a b rest).mp h).2
 
+/-- Dropping a prefix preserves `chainChordDisjoint`. -/
+lemma chainChordDisjoint_drop_prefix (q q' : ℝ × ℝ) :
+    ∀ (pre L : List (ℝ × ℝ)),
+      chainChordDisjoint q q' (pre ++ L) → chainChordDisjoint q q' L := by
+  intro pre
+  induction pre with
+  | nil => intro L h; simpa using h
+  | cons x xs ih =>
+    intro L h
+    exact ih L (chainChordDisjoint_tail q q' x (xs ++ L) (by simpa using h))
+
+/-- Dropping a suffix preserves `chainChordDisjoint`. -/
+lemma chainChordDisjoint_drop_suffix (q q' : ℝ × ℝ) :
+    ∀ (L suf : List (ℝ × ℝ)),
+      chainChordDisjoint q q' (L ++ suf) → chainChordDisjoint q q' L := by
+  intro L
+  induction L with
+  | nil => intro suf _; trivial
+  | cons a rest ih =>
+    cases rest with
+    | nil => intro suf _; trivial
+    | cons b rest' =>
+      intro suf h
+      rw [List.cons_append, List.cons_append, chainChordDisjoint_cons₂] at h
+      rw [chainChordDisjoint_cons₂]
+      exact ⟨h.1, ih suf (by simpa using h.2)⟩
+
+/-- `chainChordDisjoint` is inherited by every infix sublist. -/
+lemma chainChordDisjoint_infix {q q' : ℝ × ℝ} {L full : List (ℝ × ℝ)}
+    (hinf : L <:+: full) (h : chainChordDisjoint q q' full) :
+    chainChordDisjoint q q' L := by
+  obtain ⟨pre, suf, hpsf⟩ := hinf
+  have h1 : chainChordDisjoint q q' (pre ++ (L ++ suf)) := by
+    rw [← List.append_assoc, hpsf]; exact h
+  exact chainChordDisjoint_drop_suffix q q' L suf
+    (chainChordDisjoint_drop_prefix q q' pre (L ++ suf) h1)
+
 /-- A predicate stating that no two *consecutive* vertices of the polyline `pts` both sit at the
 height `h`. Equivalently, the `h`-vertices are isolated, so each is flanked by off-`h` corners and
 the single-height transport can pair its two incident chords for cancellation. -/
@@ -9064,3 +9101,26 @@ lemma arc_chainSegDisjoint_of_horizontal (P : LatticePolygon) (y : ℝ) (i : ZMo
       · rw [hpth p hp]; exact (hall a (by simp)).symm
       · rw [hpth p hp]; exact (hall b (by simp)).symm
       · exact Set.disjoint_left.mp (hedge k hkd) hp (hsub hpab)
+
+/-- **`hrunall` discharge for the climbing leg from chord-disjointness plus corners-off-segment.**
+If a query segment `q—q'` is `chainChordDisjoint` from `arcCorners P y i d` and no arc corner lies on
+`q—q'` (`hpts`), then for every horizontal run `b₀ :: rn` infix in `arcCorners` (all corners at one
+height) the query is disjoint from that run's whole horizontal hull. This is exactly the `hrunall`
+hypothesis of `loopWind_eq_of_monotone_above_free`, obtained from
+`run_hull_disjoint_of_chainChordDisjoint` after restricting the global chord-disjointness and the
+corners-off facts to the infix run via `chainChordDisjoint`'s infix-closure. For the climbing leg up
+edge `j`, `hpts` holds because every arc corner lies on some `edgeSeg (i+k)` disjoint from `edgeSeg j`
+(which contains the query). -/
+lemma arc_hrunall_of_chordDisjoint (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ)
+    (q q' : ℝ × ℝ)
+    (hchord : chainChordDisjoint q q' (arcCorners P y i d))
+    (hpts : ∀ v ∈ arcCorners P y i d, v ∉ segment ℝ q q') :
+    ∀ (b₀ : ℝ × ℝ) (rn : List (ℝ × ℝ)), b₀ :: rn <:+: arcCorners P y i d →
+      (∀ v ∈ b₀ :: rn, v.2 = b₀.2) →
+      Disjoint (segment ℝ q q') (segment ℝ b₀ ((b₀ :: rn).getLast (by simp))) := by
+  intro b₀ rn hinf hallb
+  have hcd : chainChordDisjoint q q' (b₀ :: rn) :=
+    chainChordDisjoint_infix hinf hchord
+  have hpts' : ∀ v ∈ b₀ :: rn, v ∉ segment ℝ q q' :=
+    fun v hv => hpts v ((List.IsInfix.subset hinf) hv)
+  exact run_hull_disjoint_of_chainChordDisjoint q q' b₀.2 b₀ rn hallb hpts' hcd
