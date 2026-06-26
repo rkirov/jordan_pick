@@ -9293,61 +9293,43 @@ lemma loopWind_zero_of_above_transport (P : LatticePolygon) (y : ℝ) (i : ZMod 
   rw [htrans]
   exact loopWind_zero_above P y i d (q.1, H) hyH (fun p hp => le_of_lt (hH p hp))
 
-/-- **Non-nesting contradiction for a threshold-interposed spanning edge (winding leg).**
+/-- **No interposed spanning edge under the slab bound (sound non-nesting, Route B).**
 The hypotheses describe the crossing-arc `i → i+d` (up-edge `i`, down-edge `i+d`, interior
-vertices strictly above `y`), and an up-spanning edge `j` whose threshold column lies strictly
-between the two arc thresholds (`hcl`, `hcr`) and which is non-adjacent to every arc edge
-(`hsep`). The bundled `hinside`-data (`ε`, `s₀`, …) is exactly what `vert_succ_j_inside`
-consumes to prove `v_{j+1}` is enclosed: `loopWind P y i d (toReal (P.vert (j+1))) ≠ 0`.
+vertices weakly above `y` via `hvert`), and an up-spanning edge `j` whose threshold column
+lies strictly between the two arc thresholds (`hcl`, `hcr`) and which is non-adjacent to
+every arc edge (`hsep`). Under the **slab bound** `hub` — the arc stays at height
+`≤ vⱼ₊₁.2` — `crossArc_meets_segment` produces a value of the arc lying on `edgeSeg j`,
+while `edgeSeg_j_disjoint_arc` (from `IsSimple` edge-disjointness via `hsep`) says the arc
+never meets `edgeSeg j`. Contradiction.
 
-If, in addition, `v_{j+1}` admits a straight upward escape to height `H` (above all arc
-corners) that is chord, corner and run disjoint from the arc — the `loopWind_zero_of_above_transport`
-inputs `hH`, `hqH`, `hchord_up`, `hoff_up`, `hrunall_up` — then `loopWind P y i d (v_{j+1}) = 0`,
-contradicting the enclosure. So no such interposed up-spanning `j` with a clean upward escape can
-exist: this is the geometric heart of threshold-order non-nesting, packaged so the only remaining
-inputs are the two transports. Over all threshold-adjacent spanning pairs the impossibility of a
-same-type interposed crossing forces the `Alternates` sign list consumed by
-`winding_bdd_of_xsorted_alternates` (input **C** of `winding_bdd_of_alternation_and_pos`). -/
+This is the geometrically sound core of threshold-order non-nesting: an interposed
+same-type spanning edge whose successor vertex is *not above the entire arc* would force a
+transversal self-crossing of the simple polygon. (The complementary case, where the arc
+rises strictly above `vⱼ₊₁`, is handled by the winding-enclosure
+`vert_succ_j_inside`: there `vⱼ₊₁` is wound nonzero — `loopWind P y i d vⱼ₊₁ ≠ 0` — so it is
+enclosed by the loop `C`, and the parity/winding upgrade of `crossArc_meets_line` to a
+segment crossing closes it. That upgrade is the single remaining geometric step; the present
+lemma discharges everything below the arc top with no auxiliary escape hypotheses.)
+
+Over all vertex-order-consecutive spanning pairs this rules out a threshold-interposed
+same-type crossing, forcing the threshold order to agree with the (alternating) vertex order
+— the `Alternates` sign list consumed by `winding_bdd_of_xsorted_alternates` (input **C** of
+`winding_bdd_of_alternation_and_pos`). -/
 lemma spanning_threshold_adjacent_opposite (P : LatticePolygon) (hP : P.IsSimple)
     (y : ℝ) (i : ZMod P.n) (d : ℕ) (hd : 1 ≤ d) (j : ZMod P.n)
     (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
     (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
       y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
-    (hvert : ∀ k : ℕ, 1 ≤ k → k ≤ d → y < (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    (hvert : ∀ k : ℕ, k ≤ d → y ≤ (toReal (P.vert (i + (k : ZMod P.n)))).2)
     (hsep : ∀ k : ℕ, k ≤ d → j ≠ i + (k : ZMod P.n) ∧
       j + 1 ≠ i + (k : ZMod P.n) ∧ (i + (k : ZMod P.n)) + 1 ≠ j)
     (hupj : (toReal (P.vert j)).2 < y ∧ y < (toReal (P.vert (j + 1))).2)
     (hcl : P.edgeThr y i < P.edgeThr y j) (hcr : P.edgeThr y j < P.edgeThr y (i + (d : ZMod P.n)))
-    (hgen : ∀ k : ℕ, k ≤ d →
-      (toReal (P.vert (j + 1))).2 ≠ (toReal (P.vert (i + (k : ZMod P.n)))).2)
-    -- the "just above the threshold" enclosure witness consumed by `vert_succ_j_inside`
-    (ε : ℝ) (hεpos : 0 < ε)
-    (hloopne : loopWind P y i d (P.edgeThr y j, y + ε) ≠ 0)
-    (hcornerε : ∀ v ∈ arcCorners P y i d, v.2 ≠ y + ε)
-    (s₀ : ℝ) (hs₀0 : 0 < s₀) (hs₀1 : s₀ < 1)
-    (hm2 : ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))).2 = y + ε)
-    (hlegA : ∀ k : ℕ, k ≤ d → Disjoint
-      (segment ℝ ((P.edgeThr y j, y + ε) : ℝ × ℝ)
-        ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))))
-      (P.edgeSeg (i + (k : ZMod P.n))))
-    -- the straight-up escape from `v_{j+1}` consumed by `loopWind_zero_of_above_transport`
-    (H : ℝ) (hH : ∀ p ∈ arcCorners P y i d, p.2 < H)
-    (hqH : (toReal (P.vert (j + 1))).2 < H)
-    (hchord_up : chainChordDisjoint (toReal (P.vert (j + 1)))
-      ((toReal (P.vert (j + 1))).1, H) (arcCorners P y i d))
-    (hoff_up : ∀ v ∈ arcCorners P y i d,
-      (toReal (P.vert (j + 1))).2 ≠ v.2 ∧ ((toReal (P.vert (j + 1))).1, H).2 ≠ v.2)
-    (hrunall_up : ∀ (b₀ : ℝ × ℝ) (rn : List (ℝ × ℝ)),
-      b₀ :: rn <:+: arcCorners P y i d → (∀ v ∈ b₀ :: rn, v.2 = b₀.2) →
-      Disjoint (segment ℝ (toReal (P.vert (j + 1))) ((toReal (P.vert (j + 1))).1, H))
-        (segment ℝ b₀ ((b₀ :: rn).getLast (by simp)))) :
+    -- the slab bound: the crossing arc never rises above `vⱼ₊₁`
+    (hub : ∀ t ∈ Set.Icc (0:ℝ) 1, (crossArc P y i d t).2 ≤ (toReal (P.vert (j + 1))).2) :
     False := by
-  -- enclosure: `v_{j+1}` is wound nonzero by the crossing arc
-  have hne : loopWind P y i d (toReal (P.vert (j + 1))) ≠ 0 :=
-    vert_succ_j_inside P hP y i d hd j hspi hspj hvert hsep hupj hcl hcr hgen
-      ε hεpos hloopne hcornerε s₀ hs₀0 hs₀1 hm2 hlegA
-  -- escape: pushing `v_{j+1}` straight up off the arc forces winding `0`
-  have hzero : loopWind P y i d (toReal (P.vert (j + 1))) = 0 :=
-    loopWind_zero_of_above_transport P y i d (toReal (P.vert (j + 1))) (le_of_lt hupj.2)
-      H hH hqH hchord_up hoff_up hrunall_up
-  exact hne hzero
+  -- the arc meets `edgeSeg j` transversally (slab-bounded crossing)
+  obtain ⟨t, ht, hmem⟩ :=
+    crossArc_meets_segment P y i d hd j hspi hspj hvert hupj ⟨hcl, hcr⟩ hub
+  -- but the arc is `IsSimple`-disjoint from the non-adjacent edge `j`
+  exact edgeSeg_j_disjoint_arc P hP y i d hd j hspi hspj hsep ht hmem
