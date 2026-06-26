@@ -8813,3 +8813,24 @@ lemma run_hull_disjoint_of_chainChordDisjoint (q q' : ℝ × ℝ) (c : ℝ) :
         rw [mem_segment_iff_uIcc_of_eq_snd b₁ last p (by rw [hb₁, hlastc])]
         exact ⟨by rw [hp2, hb₀, hb₁], h1l⟩
       exact Set.disjoint_left.mp hrec hp this
+
+/-- **A small offset avoiding finitely many forbidden heights.** Given any positive bound `δ`
+and a finite set `S` of forbidden real values, there is `ε` with `0 < ε ≤ δ` such that the
+shifted height `y + ε` avoids every value in `S`. The open interval `Ioo 0 δ` is infinite,
+while the preimage `{ε | y + ε ∈ S}` is finite (injective shift of a finite set), so some
+`ε ∈ Ioo 0 δ` escapes it. This is the genericity selector for the climbing-leg argument: it
+lets us pick the slab height `y + ε` small enough for `loopWind_just_above_segment` while
+keeping `y + ε` and the partial-edge endpoints off all finitely many arc-vertex heights. -/
+lemma exists_eps_avoiding_finset (y δ : ℝ) (hδ : 0 < δ) (S : Finset ℝ) :
+    ∃ ε : ℝ, 0 < ε ∧ ε ≤ δ ∧ y + ε ∉ S := by
+  by_contra h
+  push_neg at h
+  -- every ε in (0, δ] gives y + ε ∈ S
+  have hsub : Set.Ioc (0:ℝ) δ ⊆ (fun ε => y + ε) ⁻¹' (S : Set ℝ) := by
+    intro ε hε
+    exact h ε hε.1 hε.2
+  have hfin : ((fun ε => y + ε) ⁻¹' (S : Set ℝ)).Finite := by
+    apply Set.Finite.preimage _ S.finite_toSet
+    intro a _ b _ hab; simpa using hab
+  have hIoc : (Set.Ioc (0:ℝ) δ).Finite := hfin.subset hsub
+  exact (Set.Ioc_infinite hδ) hIoc

@@ -1,0 +1,17 @@
+name = "top100"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["Top100"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+relaxedAutoImplicit = false
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.31.0"
+
+[[lean_lib]]
+name = "Top100"
