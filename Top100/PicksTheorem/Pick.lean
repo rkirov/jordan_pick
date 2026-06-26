@@ -4599,6 +4599,56 @@ lemma crossArc_meets_line (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ
     (lt_trans hbetween.1 hbetween.2)
     (P.edgeThr y j) hbetween.1 hbetween.2 hcmem
 
+/-- **Line-crossing point of the arc is a boundary point weakly above `y`.** Packaging
+`crossArc_meets_line` (the arc meets the full line through edge `j`) with `crossArc_above`
+(the arc never dips below `y`) and `crossArc_mem` (every arc point lies on one of the arc's
+own polygon edges `i, …, i+d`). The resulting point `w = crossArc t` simultaneously
+(a) lies on the line through `vⱼ, vⱼ₊₁` (`cross … = 0`), (b) has height `≥ y`, and
+(c) lies on `edgeSeg (i+k)` for some `k ≤ d`. This is the exact starting datum for the
+parity/winding upgrade to a *segment* crossing: `w` is on the line through edge `j` with
+`v_j.2 < y ≤ w.2`; if additionally `w.2 ≤ vⱼ₊₁.2` then `w ∈ edgeSeg j` and the
+`IsSimple`-disjointness of the non-adjacent edges `j` and `i+k` is contradicted. The
+remaining slab-free content is precisely ruling out `w.2 > vⱼ₊₁.2` (`w` on the line
+*beyond* `vⱼ₊₁`), which is the winding-enclosure obstruction handled by
+`vert_succ_j_inside`. -/
+lemma crossArc_meets_line_above_on_edge (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ)
+    (hd : 1 ≤ d) (j : ZMod P.n)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hvert : ∀ k : ℕ, k ≤ d → y ≤ (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    (hupj : (toReal (P.vert j)).2 < y ∧ y < (toReal (P.vert (j + 1))).2)
+    (hbetween : P.edgeThr y i < P.edgeThr y j ∧
+      P.edgeThr y j < P.edgeThr y (i + (d : ZMod P.n))) :
+    ∃ t ∈ Set.Icc (0:ℝ) 1,
+      cross (toReal (P.vert (j+1)) - toReal (P.vert j))
+        (crossArc P y i d t - toReal (P.vert j)) = 0 ∧
+      y ≤ (crossArc P y i d t).2 ∧
+      ∃ k : ℕ, k ≤ d ∧ crossArc P y i d t ∈ P.edgeSeg (i + (k : ZMod P.n)) := by
+  obtain ⟨t, ht, hcross⟩ := crossArc_meets_line P y i d hd j hspi hspj hupj hbetween
+  exact ⟨t, ht, hcross, crossArc_above P y i d hd hspi hspj hvert ht,
+    crossArc_mem P y i d hd hspi hspj ht⟩
+
+/-- **Segment-membership upgrade of `crossArc_meets_line` under the upper height bound.**
+If the line-crossing point of the arc (from `crossArc_meets_line_above_on_edge`) lies weakly
+below `vⱼ₊₁`, then it lies on the closed segment `edgeSeg j`. The point is on the line through
+`vⱼ, vⱼ₊₁` (`cross = 0`) with `y ≤ w.2 ≤ vⱼ₊₁.2`; since `vⱼ.2 < y < vⱼ₊₁.2`, `mem_segment_of_cross_zero`
+places it between the endpoints. This isolates the *only* remaining geometric content of the
+slab-free non-nesting as the single inequality `w.2 ≤ vⱼ₊₁.2`. -/
+lemma crossArc_on_edge_j_of_height_le (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ)
+    (j : ZMod P.n)
+    (hupj : (toReal (P.vert j)).2 < y ∧ y < (toReal (P.vert (j + 1))).2)
+    {t : ℝ}
+    (hcross : cross (toReal (P.vert (j+1)) - toReal (P.vert j))
+        (crossArc P y i d t - toReal (P.vert j)) = 0)
+    (hlo : y ≤ (crossArc P y i d t).2)
+    (hhi : (crossArc P y i d t).2 ≤ (toReal (P.vert (j + 1))).2) :
+    crossArc P y i d t ∈ P.edgeSeg j := by
+  rw [LatticePolygon.edgeSeg]
+  refine mem_segment_of_cross_zero (toReal (P.vert j)) (toReal (P.vert (j+1)))
+    (crossArc P y i d t) (lt_trans hupj.1 hupj.2) hcross ?_ hhi
+  exact le_trans (le_of_lt hupj.1) hlo
+
 /-! ### STEP D — loop-winding separation to discharge the upper-slab bound `hub`
 
 We form the closed curve `C` = (crossing arc `i → i+d`) followed by the horizontal
