@@ -9124,3 +9124,133 @@ lemma arc_hrunall_of_chordDisjoint (P : LatticePolygon) (y : ℝ) (i : ZMod P.n)
   have hpts' : ∀ v ∈ b₀ :: rn, v ∉ segment ℝ q q' :=
     fun v hv => hpts v ((List.IsInfix.subset hinf) hv)
   exact run_hull_disjoint_of_chainChordDisjoint q q' b₀.2 b₀ rn hallb hpts' hcd
+
+/-- **Every arc corner is off a query segment lying on a non-adjacent edge `j`.** If `q—q' ⊆ edgeSeg j`
+and `j` is non-adjacent to all arc edges (`hsep`), then no arc corner of `arcCorners P y i d` lies on
+`q—q'`. Each arc corner lies on some `edgeSeg (i+k)` (the threshold corners by `edgeThr_mem_edgeSeg`,
+the interior vertices as edge endpoints), which is disjoint from `edgeSeg j` by `IsSimple`; a corner
+on `q—q' ⊆ edgeSeg j` would lie in both. The `hpts` input for `arc_hrunall_of_chordDisjoint`. -/
+lemma arc_corners_off_edge (P : LatticePolygon) (hP : P.IsSimple)
+    (y : ℝ) (i : ZMod P.n) (d : ℕ) (j : ZMod P.n) (q q' : ℝ × ℝ)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hsep : ∀ k : ℕ, k ≤ d → j ≠ i + (k : ZMod P.n) ∧
+      j + 1 ≠ i + (k : ZMod P.n) ∧ (i + (k : ZMod P.n)) + 1 ≠ j)
+    (hqj : segment ℝ q q' ⊆ P.edgeSeg j) :
+    ∀ v ∈ arcCorners P y i d, v ∉ segment ℝ q q' := by
+  intro v hv hvseg
+  -- v lies on some edgeSeg (i+k)
+  have hvedge : ∃ k : ℕ, k ≤ d ∧ v ∈ P.edgeSeg (i + (k : ZMod P.n)) := by
+    unfold arcCorners at hv
+    simp only [List.mem_cons, List.mem_append, List.mem_map, List.mem_range,
+      List.mem_singleton] at hv
+    rcases hv with rfl | ⟨k, hk, rfl⟩ | rfl | hv
+    · exact ⟨0, by omega, by simpa using edgeThr_mem_edgeSeg P y i (Or.inl hspi)⟩
+    · refine ⟨k + 1, by omega, ?_⟩
+      rw [LatticePolygon.edgeSeg]
+      have : i + ((k + 1 : ℕ) : ZMod P.n) = i + ((k : ℕ) + 1 : ℕ) := by push_cast; ring
+      rw [this]; exact left_mem_segment ℝ _ _
+    · exact ⟨d, le_rfl, edgeThr_mem_edgeSeg P y (i + (d : ZMod P.n)) (Or.inr hspj)⟩
+    · exact absurd hv (List.not_mem_nil)
+  obtain ⟨k, hkd, hvk⟩ := hvedge
+  have hvj : v ∈ P.edgeSeg j := hqj hvseg
+  obtain ⟨hne, hne1, hne2⟩ := hsep k hkd
+  exact (Set.disjoint_left.mp (hP.2.1 j (i + (k:ZMod P.n)) hne hne1 hne2) hvj) hvk
+
+/-- **The successor vertex of an interposed spanning edge is inside the loop.** For the crossing arc
+`i → i+d` (up-edge `i`, down-edge `i+d` spanning at height `y`, interior vertices strictly above `y`),
+and an up-spanning edge `j` whose threshold column `edgeThr y j` lies strictly between the two arc
+thresholds, non-adjacent to all arc edges, the winding `loopWind` of the closed curve `C` around the
+above-vertex `v_{j+1}` is nonzero. Assembled from the engine:
+
+* `loopWind_just_above_segment` gives a height `y+ε` with `loopWind (edgeThr y j, y+ε) ≠ 0`;
+* the **horizontal leg** `(edgeThr y j, y+ε) → m` (with `m` the point of edge `j` at height `y+ε`) is
+  transported by `loopWind_eq_of_seg_disjoint_above`, its `chainSegDisjoint` built by
+  `arc_chainSegDisjoint_of_horizontal` from the corner-off-`(y+ε)` fact and the per-edge horizontal
+  disjointness `hlegA`;
+* the **climbing leg** `m → v_{j+1}` up edge `j` is transported by
+  `loopWind_eq_of_monotone_above_free`, its `chainChordDisjoint` from
+  `arc_chainChordDisjoint_of_on_edge`, its `hrunall` from `arc_hrunall_of_chordDisjoint`
+  (`arc_corners_off_edge`), and its `hoff` from the corner-off facts.
+
+Hence `loopWind (v_{j+1}) = loopWind (edgeThr y j, y+ε) ≠ 0`. -/
+lemma vert_succ_j_inside (P : LatticePolygon) (hP : P.IsSimple)
+    (y : ℝ) (i : ZMod P.n) (d : ℕ) (hd : 1 ≤ d) (j : ZMod P.n)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hvert : ∀ k : ℕ, 1 ≤ k → k ≤ d → y < (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    (hsep : ∀ k : ℕ, k ≤ d → j ≠ i + (k : ZMod P.n) ∧
+      j + 1 ≠ i + (k : ZMod P.n) ∧ (i + (k : ZMod P.n)) + 1 ≠ j)
+    (hupj : (toReal (P.vert j)).2 < y ∧ y < (toReal (P.vert (j + 1))).2)
+    (hcl : P.edgeThr y i < P.edgeThr y j) (hcr : P.edgeThr y j < P.edgeThr y (i + (d : ZMod P.n)))
+    (hgen : ∀ k : ℕ, k ≤ d →
+      (toReal (P.vert (j + 1))).2 ≠ (toReal (P.vert (i + (k : ZMod P.n)))).2)
+    -- the just-above slab data and the (geometric) horizontal-leg disjointness
+    (ε : ℝ) (hεpos : 0 < ε)
+    (hloopne : loopWind P y i d (P.edgeThr y j, y + ε) ≠ 0)
+    (hcornerε : ∀ v ∈ arcCorners P y i d, v.2 ≠ y + ε)
+    (s₀ : ℝ) (hs₀0 : 0 < s₀) (hs₀1 : s₀ < 1)
+    (hm2 : ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))).2 = y + ε)
+    (hlegA : ∀ k : ℕ, k ≤ d → Disjoint
+      (segment ℝ ((P.edgeThr y j, y + ε) : ℝ × ℝ)
+        ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))))
+      (P.edgeSeg (i + (k : ZMod P.n)))) :
+    loopWind P y i d (toReal (P.vert (j + 1))) ≠ 0 := by
+  set c : ℝ := P.edgeThr y j with hc
+  set m : ℝ × ℝ := (1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1))) with hmdef
+  set q0 : ℝ × ℝ := (c, y + ε) with hq0
+  -- m lies on edge j's upper part
+  have hm_edge : m ∈ P.edgeSeg j :=
+    edge_j_upper_mem_edgeSeg P y j hupj (le_of_lt hs₀0) (le_of_lt hs₀1)
+  -- v_{j+1} lies on edge j (endpoint)
+  have hvj1_edge : toReal (P.vert (j + 1)) ∈ P.edgeSeg j := by
+    rw [LatticePolygon.edgeSeg]; exact right_mem_segment ℝ _ _
+  -- LEG A: horizontal q0 → m, transported by loopWind_eq_of_seg_disjoint_above
+  have hq0h : q0.2 = y + ε := by rw [hq0]
+  have hlegA_eq : loopWind P y i d q0 = loopWind P y i d m := by
+    apply loopWind_eq_of_seg_disjoint_above P y i d q0 m (by rw [hq0h]; linarith)
+      (by rw [hm2]; linarith)
+    exact arc_chainSegDisjoint_of_horizontal P y i d hd q0 m (y + ε)
+      hq0h hm2 hspi hspj hcornerε hlegA
+  -- LEG B: climbing m → v_{j+1} on edge j, transported by loopWind_eq_of_monotone_above_free
+  have hseg_mj : segment ℝ m (toReal (P.vert (j + 1))) ⊆ P.edgeSeg j := by
+    rw [LatticePolygon.edgeSeg]
+    rw [LatticePolygon.edgeSeg] at hm_edge hvj1_edge
+    exact (convex_segment _ _).segment_subset hm_edge hvj1_edge
+  have hchord_B : chainChordDisjoint m (toReal (P.vert (j + 1))) (arcCorners P y i d) :=
+    arc_chainChordDisjoint_of_on_edge P hP y i d hd j m (toReal (P.vert (j + 1)))
+      hspi hspj hsep hseg_mj
+  have hpts_B : ∀ v ∈ arcCorners P y i d, v ∉ segment ℝ m (toReal (P.vert (j + 1))) :=
+    arc_corners_off_edge P hP y i d j m (toReal (P.vert (j + 1))) hspi hspj hsep hseg_mj
+  -- corner-off-heights for the two endpoints m (height y+ε) and v_{j+1}
+  have hoff_B : ∀ v ∈ arcCorners P y i d,
+      m.2 ≠ v.2 ∧ (toReal (P.vert (j + 1))).2 ≠ v.2 := by
+    intro v hv
+    refine ⟨?_, ?_⟩
+    · rw [hmdef, hm2]; exact (hcornerε v hv).symm
+    · -- v_{j+1} off every arc corner height: thresholds at y < v_{j+1}.2, vertices via hgen
+      unfold arcCorners at hv
+      simp only [List.mem_cons, List.mem_append, List.mem_map, List.mem_range,
+        List.mem_singleton] at hv
+      rcases hv with rfl | ⟨k, hk, rfl⟩ | rfl | hv
+      · exact ne_of_gt hupj.2
+      · exact hgen (k + 1) (by omega)
+      · exact ne_of_gt hupj.2
+      · exact absurd hv (List.not_mem_nil)
+  have hmlt : y + ε < (toReal (P.vert (j + 1))).2 := by
+    have hheight : ((1 - s₀) • (P.edgeThr y j, y) + s₀ • (toReal (P.vert (j + 1)))).2
+        = (1 - s₀) * y + s₀ * (toReal (P.vert (j + 1))).2 := by
+      simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul]
+    rw [hheight] at hm2
+    have hv : y < (toReal (P.vert (j + 1))).2 := hupj.2
+    nlinarith [mul_pos (by linarith : (0:ℝ) < 1 - s₀) (by linarith : (0:ℝ) < (toReal (P.vert (j + 1))).2 - y)]
+  have hmne : m.2 ≠ (toReal (P.vert (j + 1))).2 := by
+    rw [hmdef, hm2]; exact ne_of_lt hmlt
+  have hlegB_eq : loopWind P y i d m = loopWind P y i d (toReal (P.vert (j + 1))) := by
+    apply loopWind_eq_of_monotone_above_free P y i d m (toReal (P.vert (j + 1)))
+      (by rw [hmdef, hm2]; linarith) (le_of_lt hupj.2) hmne hchord_B hoff_B
+    exact arc_hrunall_of_chordDisjoint P y i d m (toReal (P.vert (j + 1))) hchord_B hpts_B
+  rw [← hlegB_eq, ← hlegA_eq]
+  exact hloopne
