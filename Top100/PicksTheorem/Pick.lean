@@ -8993,3 +8993,74 @@ lemma arcChord_subset_edgeSeg (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d :
     refine List.IsChain.imp ?_ hrun
     rintro a b ⟨k, _, hkd, hsub⟩
     exact ⟨k, hkd, hsub⟩
+
+/-- **A query segment lying on a non-adjacent edge `j` is chord-disjoint from the whole arc.**
+If the segment `q—q'` lies inside `edgeSeg j` and `j` is non-adjacent to every arc edge `i+k`
+(`hsep`, the three `IsSimple` conditions), then `q—q'` is `chainChordDisjoint` from `arcCorners`.
+Each arc chord is a subsegment of some `edgeSeg (i+k)` (`arcChord_subset_edgeSeg`), and `edgeSeg j`
+is disjoint from `edgeSeg (i+k)` by `IsSimple` (`hP.2.1`), so `q—q'` meets no arc chord. This is
+the per-chord disjointness input feeding `loopWind_eq_of_monotone_above_free` for the climbing leg
+up edge `j`. -/
+lemma arc_chainChordDisjoint_of_on_edge (P : LatticePolygon) (hP : P.IsSimple)
+    (y : ℝ) (i : ZMod P.n) (d : ℕ) (hd : 1 ≤ d) (j : ZMod P.n) (q q' : ℝ × ℝ)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hsep : ∀ k : ℕ, k ≤ d → j ≠ i + (k : ZMod P.n) ∧
+      j + 1 ≠ i + (k : ZMod P.n) ∧ (i + (k : ZMod P.n)) + 1 ≠ j)
+    (hqj : segment ℝ q q' ⊆ P.edgeSeg j) :
+    chainChordDisjoint q q' (arcCorners P y i d) := by
+  apply chainChordDisjoint_of_isChain
+  refine List.IsChain.imp ?_ (arcChord_subset_edgeSeg P y i d hd hspi hspj)
+  rintro a b ⟨k, hkd, hsub⟩ p hp hpab
+  have hpj : p ∈ P.edgeSeg j := hqj hp
+  have hpk : p ∈ P.edgeSeg (i + (k:ZMod P.n)) := hsub hpab
+  obtain ⟨hne, hne1, hne2⟩ := hsep k hkd
+  exact (Set.disjoint_left.mp (hP.2.1 j (i + (k:ZMod P.n)) hne hne1 hne2) hpj) hpk
+
+/-- **A horizontal query segment disjoint from every arc edge is `chainSegDisjoint` from the arc.**
+If the segment `q—q'` is horizontal at a height `h` (`q.2 = q'.2 = h`), every arc corner has height
+`≠ h` (`hcorner`), and `q—q'` is disjoint from every arc edge `edgeSeg (i+k)` (`hedge`), then
+`chainSegDisjoint q q' (arcCorners P y i d)` holds. Each arc chord is a subsegment of some
+`edgeSeg (i+k)` (`arcChord_subset_edgeSeg`), hence disjoint from `q—q'`; and both arc-corner
+endpoint heights of every chord differ from `h = q.2 = q'.2`, so the whole horizontal segment avoids
+them. This is the segment-disjointness input feeding `loopWind_eq_of_seg_disjoint_above` for the
+horizontal hop to the spanning column. -/
+lemma arc_chainSegDisjoint_of_horizontal (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ)
+    (hd : 1 ≤ d) (q q' : ℝ × ℝ) (h : ℝ) (hqh : q.2 = h) (hq'h : q'.2 = h)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2)
+    (hcorner : ∀ v ∈ arcCorners P y i d, v.2 ≠ h)
+    (hedge : ∀ k : ℕ, k ≤ d → Disjoint (segment ℝ q q') (P.edgeSeg (i + (k : ZMod P.n)))) :
+    chainSegDisjoint q q' (arcCorners P y i d) := by
+  -- height of any point of the horizontal segment equals h
+  have hpth : ∀ p ∈ segment ℝ q q', p.2 = h := by
+    intro p hp
+    obtain ⟨s, t, hs, ht, hst, rfl⟩ := hp
+    simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul]
+    rw [hqh, hq'h]; rw [← add_mul, hst, one_mul]
+  -- the per-pair chainSegDisjoint relation, proved by induction carrying corner-height avoidance
+  have hbase := arcChord_subset_edgeSeg P y i d hd hspi hspj
+  -- generalize over the list, carrying the "all corners off height h" and the edge data
+  suffices H : ∀ (L : List (ℝ × ℝ)),
+      L.IsChain (fun a b => ∃ k : ℕ, k ≤ d ∧ segment ℝ a b ⊆ P.edgeSeg (i + (k:ZMod P.n))) →
+      (∀ v ∈ L, v.2 ≠ h) → chainSegDisjoint q q' L by
+    exact H (arcCorners P y i d) hbase hcorner
+  clear hbase hcorner
+  intro L
+  induction L with
+  | nil => intro _ _; trivial
+  | cons a rest ih =>
+    cases rest with
+    | nil => intro _ _; trivial
+    | cons b rest' =>
+      intro hch hall
+      rw [List.isChain_cons_cons] at hch
+      obtain ⟨k, hkd, hsub⟩ := hch.1
+      rw [chainSegDisjoint_cons₂]
+      refine ⟨⟨fun p hp => ?_, fun p hp => ?_, fun p hp hpab => ?_⟩,
+        ih hch.2 (fun v hv => hall v (by simp [hv]))⟩
+      · rw [hpth p hp]; exact (hall a (by simp)).symm
+      · rw [hpth p hp]; exact (hall b (by simp)).symm
+      · exact Set.disjoint_left.mp (hedge k hkd) hp (hsub hpab)
