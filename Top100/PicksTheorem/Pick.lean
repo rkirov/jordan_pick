@@ -8834,3 +8834,38 @@ lemma exists_eps_avoiding_finset (y δ : ℝ) (hδ : 0 < δ) (S : Finset ℝ) :
     intro a _ b _ hab; simpa using hab
   have hIoc : (Set.Ioc (0:ℝ) δ).Finite := hfin.subset hsub
   exact (Set.Ioc_infinite hδ) hIoc
+
+/-- **`chainChordDisjoint` from a consecutive-pair chain.** If every consecutive pair `(a, b)`
+of the polyline `L` has its chord `segment ℝ a b` avoided by the whole query segment `q—q'`
+(packaged as `List.IsChain` of the chord-avoidance relation), then `chainChordDisjoint q q' L`
+holds. This is the constructor that builds the per-chord disjointness hypothesis consumed by the
+monotone-above `loopWind` transport from a uniform "each chord misses `q—q'`" fact, peeling the
+list head by head via `chainChordDisjoint_cons₂`. -/
+lemma chainChordDisjoint_of_isChain (q q' : ℝ × ℝ) (L : List (ℝ × ℝ))
+    (h : L.IsChain (fun a b => ∀ p ∈ segment ℝ q q', p ∉ segment ℝ a b)) :
+    chainChordDisjoint q q' L := by
+  induction L with
+  | nil => trivial
+  | cons a rest ih =>
+    cases rest with
+    | nil => trivial
+    | cons b rest' =>
+      rw [List.isChain_cons_cons] at h
+      exact (chainChordDisjoint_cons₂ q q' a b rest').mpr ⟨h.1, ih h.2⟩
+
+/-- **`chainOffCross` from a consecutive-pair chain.** If every consecutive pair `(a, b)` of the
+polyline `L` has its ray-crossing locus `cross (b - a) (· - a) = 0` avoided by the whole query
+segment `q—q'` (packaged as `List.IsChain` of the off-cross relation), then `chainOffCross q q' L`
+holds. This is the constructor that builds the horizontal-transport hypothesis consumed by
+`loopWind_eq_of_offCross` from a uniform "each edge's crossing locus misses `q—q'`" fact. -/
+lemma chainOffCross_of_isChain (q q' : ℝ × ℝ) (L : List (ℝ × ℝ))
+    (h : L.IsChain (fun a b => ∀ p ∈ segment ℝ q q', cross (b - a) (p - a) ≠ 0)) :
+    chainOffCross q q' L := by
+  induction L with
+  | nil => trivial
+  | cons a rest ih =>
+    cases rest with
+    | nil => trivial
+    | cons b rest' =>
+      rw [List.isChain_cons_cons] at h
+      exact (chainOffCross_cons₂ q q' a b rest').mpr ⟨h.1, ih h.2⟩
