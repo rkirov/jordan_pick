@@ -8869,3 +8869,127 @@ lemma chainOffCross_of_isChain (q q' : ℝ × ℝ) (L : List (ℝ × ℝ))
     | cons b rest' =>
       rw [List.isChain_cons_cons] at h
       exact (chainOffCross_cons₂ q q' a b rest').mpr ⟨h.1, ih h.2⟩
+
+/-- **Run-and-cap chord chain.** For the tail list `((range d).map v_{i+(k+1)}) ++ [(edgeThr y j, y)]`
+(the interior vertices of the arc followed by the closing threshold corner, with `j = i + d`),
+every consecutive chord is a subsegment of some arc edge `edgeSeg (i + k)` with `1 ≤ k ≤ d`: the
+run chords `v_{i+k} → v_{i+k+1}` are exactly `edgeSeg (i+k)` (definitionally), and the final cap
+chord `v_{i+d} → (edgeThr y (i+d), y)` is a subsegment of `edgeSeg (i+d)` by convexity (both
+endpoints lie on it). Proved by induction on `d`, peeling one interior vertex at a time. The run
+part of `arcChord_subset_edgeSeg`. -/
+lemma arcChord_run_chain (P : LatticePolygon) (y : ℝ) (J : ZMod P.n)
+    (hspJ : (toReal (P.vert (J + 1))).2 < y ∧ y < (toReal (P.vert J)).2) (d : ℕ) :
+    ∀ i : ZMod P.n, i + (d : ZMod P.n) = J →
+    (((List.range d).map (fun k => toReal (P.vert (i + ((k : ℕ) + 1 : ℕ)))) ++
+        [(P.edgeThr y J, y)])).IsChain
+      (fun a b => ∃ k : ℕ, 1 ≤ k ∧ k ≤ d ∧ segment ℝ a b ⊆ P.edgeSeg (i + (k : ZMod P.n))) := by
+  induction d with
+  | zero =>
+    intro i _
+    simp only [List.range_zero, List.map_nil, List.nil_append]
+    exact List.IsChain.singleton _
+  | succ m ih =>
+    intro i hiJ
+    -- the cap point uses the fixed index J = i + (m+1)
+    have hrw : (List.map (fun k => toReal (P.vert (i + ((k:ℕ)+1:ℕ)))) (List.range (m + 1)) ++
+          [(P.edgeThr y J, y)]) =
+        toReal (P.vert (i + (1:ℕ))) ::
+          (List.map (fun k => toReal (P.vert ((i+1) + ((k:ℕ)+1:ℕ)))) (List.range m) ++
+            [(P.edgeThr y J, y)]) := by
+      rw [List.range_succ_eq_map]
+      simp only [List.map_cons, List.map_map, List.cons_append, Function.comp]
+      refine congr_arg₂ List.cons (by norm_num) ?_
+      refine congr_arg₂ (· ++ ·) ?_ rfl
+      exact List.map_congr_left (fun a _ => by
+        simp only [Function.comp_apply]
+        rw [show i + ((a+1+1 : ℕ) : ZMod P.n) = i + 1 + ((a+1:ℕ):ZMod P.n) by push_cast; ring])
+    rw [hrw]
+    -- recursive chain at anchor i+1 with bound m
+    have hiJ' : (i + 1) + (m : ZMod P.n) = J := by rw [← hiJ]; push_cast; ring
+    have hrec := ih (i + 1) hiJ'
+    rw [List.isChain_cons]
+    constructor
+    · -- head pair: v_{i+1} → head(rest) ⊆ edgeSeg (i+1)
+      intro w hw
+      refine ⟨1, le_rfl, by omega, ?_⟩
+      simp only [Nat.cast_one]
+      -- determine head w of the rest list
+      rcases Nat.eq_zero_or_pos m with hm0 | hmpos
+      · -- m = 0: rest = [cap], w = (edgeThr y J, y), J = i + 1
+        subst hm0
+        simp only [List.range_zero, List.map_nil, List.nil_append,
+          List.head?_cons, Option.mem_def, Option.some.injEq] at hw
+        have hJ : J = i + (1 : ZMod P.n) := by rw [← hiJ]; push_cast; ring
+        subst hw
+        rw [hJ]
+        -- segment v_{i+1} (edgeThr y (i+1), y) ⊆ edgeSeg (i+1)
+        have hcross : (P.edgeThr y (i+1), y) ∈ P.edgeSeg (i+1) :=
+          edgeThr_mem_edgeSeg P y (i+1) (Or.inr (by rw [hJ] at hspJ; exact hspJ))
+        have hvm : toReal (P.vert (i+1)) ∈ P.edgeSeg (i+1) := by
+          rw [LatticePolygon.edgeSeg]; exact left_mem_segment ℝ _ _
+        rw [LatticePolygon.edgeSeg]
+        rw [LatticePolygon.edgeSeg] at hvm hcross
+        exact (convex_segment _ _).segment_subset hvm hcross
+      · -- m ≥ 1: rest head = v_{(i+1)+1} = v_{i+2}; chord = edgeSeg (i+1)
+        obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+        simp only [List.range_succ_eq_map, List.map_cons, List.map_map, List.cons_append,
+          List.head?_cons, Option.mem_def, Option.some.injEq] at hw
+        subst hw
+        have hv2 : toReal (P.vert ((i+1) + ((0:ℕ)+1:ℕ))) = toReal (P.vert (i + (1 : ZMod P.n) + 1)) := by
+          norm_num
+        rw [hv2, LatticePolygon.edgeSeg]
+    · -- the rest IsChain: reindex IH from anchor (i+1) to anchor i
+      refine List.IsChain.imp ?_ hrec
+      rintro a b ⟨k, hk1, hkm, hsub⟩
+      exact ⟨k + 1, by omega, by omega, by
+        rw [show i + ((k+1 : ℕ) : ZMod P.n) = (i+1) + (k : ZMod P.n) by push_cast; ring]
+        exact hsub⟩
+
+/-- **Every consecutive chord of `arcCorners` is a subsegment of an arc edge.** For the crossing-arc
+corner list `arcCorners P y i d` of a spanning up-edge `i` and spanning down-edge `i+d`, every
+consecutive pair `(a, b)` has `segment ℝ a b ⊆ edgeSeg (i + k)` for some `k ≤ d`: the head cap
+`(edgeThr y i, y) → v_{i+1}` is a subsegment of `edgeSeg i` (both endpoints lie on it, by convexity);
+the interior run chords `v_{i+k} → v_{i+k+1}` are exactly `edgeSeg (i+k)`; and the closing cap
+`v_{i+d} → (edgeThr y (i+d), y)` is a subsegment of `edgeSeg (i+d)`. Packaged as `List.IsChain` of
+the per-pair subsegment relation, the exact shape that `chainChordDisjoint_of_isChain` /
+`chainOffCross_of_isChain` consume (via `List.IsChain.imp`) once one knows the query segment is
+disjoint from every arc edge. The vertex-run induction lives in `arcChord_run_chain`. -/
+lemma arcChord_subset_edgeSeg (P : LatticePolygon) (y : ℝ) (i : ZMod P.n) (d : ℕ) (hd : 1 ≤ d)
+    (hspi : (toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2)
+    (hspj : (toReal (P.vert ((i + (d : ZMod P.n)) + 1))).2 < y ∧
+      y < (toReal (P.vert (i + (d : ZMod P.n)))).2) :
+    (arcCorners P y i d).IsChain
+      (fun a b => ∃ k : ℕ, k ≤ d ∧ segment ℝ a b ⊆ P.edgeSeg (i + (k : ZMod P.n))) := by
+  -- arcCorners = head cap :: (run ++ [closing cap])
+  have hrun := arcChord_run_chain P y (i + (d : ZMod P.n)) hspj d i rfl
+  have harc : arcCorners P y i d
+      = (P.edgeThr y i, y) :: ((List.range d).map (fun k => toReal (P.vert (i + ((k:ℕ)+1:ℕ)))) ++
+        [(P.edgeThr y (i + (d : ZMod P.n)), y)]) := by
+    rw [arcCorners]
+  rw [harc]
+  rw [List.isChain_cons]
+  constructor
+  · -- head cap: (edgeThr y i, y) → v_{i+1} ⊆ edgeSeg i  (k = 0)
+    intro w hw
+    refine ⟨0, by omega, ?_⟩
+    -- the head of the run list (d ≥ 1) is v_{i+1}
+    obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+    simp only [List.range_succ_eq_map, List.map_cons, List.map_map, List.cons_append,
+      List.head?_cons, Option.mem_def, Option.some.injEq] at hw
+    subst hw
+    have hv1 : toReal (P.vert (i + ((0:ℕ)+1:ℕ))) = toReal (P.vert (i + 1)) := by
+      norm_num
+    rw [hv1]
+    simp only [Nat.cast_zero, add_zero]
+    -- segment (edgeThr y i, y) v_{i+1} ⊆ edgeSeg i
+    have hcross : (P.edgeThr y i, y) ∈ P.edgeSeg i :=
+      edgeThr_mem_edgeSeg P y i (Or.inl hspi)
+    have hend : toReal (P.vert (i + 1)) ∈ P.edgeSeg i := by
+      rw [LatticePolygon.edgeSeg]; exact right_mem_segment ℝ _ _
+    rw [LatticePolygon.edgeSeg]
+    rw [LatticePolygon.edgeSeg] at hcross hend
+    exact (convex_segment _ _).segment_subset hcross hend
+  · -- the run+cap chain: weaken 1 ≤ k bound away
+    refine List.IsChain.imp ?_ hrun
+    rintro a b ⟨k, _, hkd, hsub⟩
+    exact ⟨k, hkd, hsub⟩
