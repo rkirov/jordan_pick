@@ -1,4 +1,4 @@
-import Top100.PicksTheorem.Defs
+import JordanPick.PicksTheorem.Defs
 
 /-!
 # The fractional lattice-point weight (count side, Step 1)

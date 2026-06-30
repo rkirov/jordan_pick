@@ -1,4 +1,4 @@
-import Top100.PicksTheorem.Winding
+import JordanPick.PicksTheorem.Winding
 
 /-!
 # Polygonal Jordan curve theorem: `winding ∈ {0,1}` (in progress)
@@ -3153,5 +3153,882 @@ theorem triangle_h01_ae (P : LatticePolygon) (hP : P.IsSimple) (hn : P.n = 3)
     ∀ᵐ q ∂MeasureTheory.volume, P.winding q = 0 ∨ P.winding q = 1 :=
   h01_ae_of_nonneg_ae_triangle P hn
     (winding_nonneg_ae_triangle_of_crossSection_pos P hn (triangle_hpos P hP hn horient))
+
+/-! ### Local constancy of the winding number off the boundary
+
+The single-edge contribution `edgeWind a b` is locally constant at any point `q₀`
+that is off the edge's closed segment and off the two horizontal lines through its
+endpoints (`edgeWind_eventually_eq_of_not_mem_seg`). Summing over a *generic
+height* (no vertex at height `q₀.2`) gives local constancy of `winding`
+(`winding_eventually_eq_generic`), hence — being `ℤ`-valued — that `winding` is
+locally constant on the open generic-height off-boundary set
+(`isLocallyConstant_winding_generic`). This is the non-circular foundation for the
+separation/dichotomy argument. -/
+
+/-- **Combined per-edge local constancy.** `edgeWind a b` is constant in a
+neighborhood of any `q₀` that lies off the closed segment `[a,b]` and off the two
+horizontal lines `y = a.2`, `y = b.2`. Two cases: if `q₀` is off the edge's
+*line* (`cross ≠ 0`) the three defining inequalities are each locally stable
+(`edgeWind_eventually_eq`); if `q₀` is on the line but off the segment, then —
+since its height equals neither endpoint — it must be strictly above or strictly
+below both endpoints, where `edgeWind` is identically `0` nearby. -/
+lemma edgeWind_eventually_eq_of_not_mem_seg (a b q₀ : ℝ × ℝ)
+    (hseg : q₀ ∉ segment ℝ a b) (h1 : q₀.2 ≠ a.2) (h2 : q₀.2 ≠ b.2) :
+    ∀ᶠ q in nhds q₀, edgeWind a b q = edgeWind a b q₀ := by
+  by_cases h3 : cross (b - a) (q₀ - a) = 0
+  · have hcy : Continuous (fun p : ℝ × ℝ => p.2) := continuous_snd
+    have hmemseg : (a.2 < q₀.2 ∧ q₀.2 < b.2) ∨ (b.2 < q₀.2 ∧ q₀.2 < a.2) → q₀ ∈ segment ℝ a b := by
+      intro hr
+      have hne : b.2 ≠ a.2 := by
+        rcases hr with ⟨x,y⟩|⟨x,y⟩ <;> intro h <;>
+          [exact absurd h (by linarith); exact absurd h.symm (by linarith)]
+      have ht := (cross_eq_zero_iff_threshold a b q₀.2 q₀.1 hne).mp h3
+      have hmem := crossThreshold_mem_segment_strict a b q₀.2 hr
+      rwa [← ht] at hmem
+    have hout : (a.2 < q₀.2 ∧ b.2 < q₀.2) ∨ (q₀.2 < a.2 ∧ q₀.2 < b.2) := by
+      rcases lt_or_gt_of_ne (Ne.symm h1) with hab | hab
+      · rcases lt_or_gt_of_ne (Ne.symm h2) with hbb | hbb
+        · exact Or.inl ⟨hab, hbb⟩
+        · exact absurd (hmemseg (Or.inl ⟨hab, hbb⟩)) hseg
+      · rcases lt_or_gt_of_ne (Ne.symm h2) with hbb | hbb
+        · exact absurd (hmemseg (Or.inr ⟨hbb, hab⟩)) hseg
+        · exact Or.inr ⟨hab, hbb⟩
+    rcases hout with ⟨ha, hb⟩ | ⟨ha, hb⟩
+    · filter_upwards [(hcy.tendsto q₀).eventually_const_lt ha,
+        (hcy.tendsto q₀).eventually_const_lt hb] with q hqa hqb
+      rw [edgeWind_eq_zero_of_above a b q hqa.le hqb.le, edgeWind_eq_zero_of_above a b q₀ ha.le hb.le]
+    · filter_upwards [(hcy.tendsto q₀).eventually_lt_const ha,
+        (hcy.tendsto q₀).eventually_lt_const hb] with q hqa hqb
+      rw [edgeWind_eq_zero_of_below a b q hqa hqb, edgeWind_eq_zero_of_below a b q₀ ha hb]
+  · exact edgeWind_eventually_eq a b q₀ h1 h2 h3
+
+/-- **Local constancy of `winding` at a generic off-boundary point.** If `q₀` is
+off the boundary and no vertex shares its height, then `winding` is constant in a
+neighborhood of `q₀`: each edge term is locally constant
+(`edgeWind_eventually_eq_of_not_mem_seg`), and a finite sum of locally constant
+terms is locally constant. -/
+lemma winding_eventually_eq_generic (P : LatticePolygon) (q₀ : ℝ × ℝ)
+    (hb : q₀ ∉ P.boundary) (hgen : ∀ i, (toReal (P.vert i)).2 ≠ q₀.2) :
+    ∀ᶠ q in nhds q₀, P.winding q = P.winding q₀ := by
+  have hpe : ∀ i ∈ (Finset.univ : Finset (ZMod P.n)), ∀ᶠ q in nhds q₀,
+      edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) q
+        = edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) q₀ := by
+    intro i _
+    exact edgeWind_eventually_eq_of_not_mem_seg _ _ _
+      (fun hmem => hb (Set.mem_iUnion.mpr ⟨i, hmem⟩)) (hgen i).symm (hgen (i + 1)).symm
+  filter_upwards [(Finset.eventually_all (I := (Finset.univ : Finset (ZMod P.n)))).mpr hpe] with q hq
+  unfold LatticePolygon.winding
+  exact Finset.sum_congr rfl fun i _ => hq i (Finset.mem_univ i)
+
+/-- **`winding` is locally constant on the generic-height off-boundary set.** Let
+`U` be the open set of points that are off the boundary and at a height shared by
+no vertex. On `U`, `winding` is locally constant (it is `ℤ`-valued and eventually
+constant at every point of `U`, by `winding_eventually_eq_generic`). This is the
+clean `IsLocallyConstant` packaging of the foundational fact; the separation
+argument restricts attention to such generic horizontal lines. -/
+lemma isLocallyConstant_winding_generic (P : LatticePolygon) :
+    IsLocallyConstant
+      (fun q : {q : ℝ × ℝ // q ∉ P.boundary ∧ ∀ i, (toReal (P.vert i)).2 ≠ q.2} =>
+        P.winding q.1) := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro q
+  have h := winding_eventually_eq_generic P q.1 q.2.1 q.2.2
+  have hcont : Continuous (Subtype.val :
+      {q : ℝ × ℝ // q ∉ P.boundary ∧ ∀ i, (toReal (P.vert i)).2 ≠ q.2} → ℝ × ℝ) :=
+    continuous_subtype_val
+  exact (hcont.continuousAt.eventually h)
+
+/-- **Winding vanishes off a large ball.** From `windingSupport_bounded`: there is
+a radius `R` beyond which the winding number is identically `0`. This pins the
+winding value on the unbounded part of the plane, the anchor for transporting
+`winding = 0` inward along the (preconnected) exterior. -/
+theorem winding_zero_on_cobounded (P : LatticePolygon) :
+    ∃ R : ℝ, ∀ q : ℝ × ℝ, R < ‖q‖ → P.winding q = 0 := by
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall 0).mp (windingSupport_bounded P)
+  refine ⟨R, fun q hq => ?_⟩
+  by_contra hne
+  have hmem : q ∈ {q : ℝ × ℝ | P.winding q ≠ 0} := hne
+  have hball := hR hmem
+  rw [Metric.mem_closedBall, dist_zero_right] at hball
+  linarith
+
+/-- Near `q₀`, if `q₀` is strictly left of the threshold of edge `(a, v)` at
+height `q₀.2` (the case `q₀.1 < v.1` when `v.2 = q₀.2`), then so is every nearby
+`q`: the threshold is continuous in `q.2`. -/
+lemma eventually_lt_crossThreshold (a v q₀ : ℝ × ℝ) (hv : v.2 = q₀.2) (hav : a.2 ≠ v.2)
+    (hlt : q₀.1 < v.1) : ∀ᶠ q in nhds q₀, q.1 < crossThreshold a v q.2 := by
+  have hd : (v.2 - a.2) ≠ 0 := sub_ne_zero.mpr (Ne.symm hav)
+  have hct : Continuous (fun p : ℝ × ℝ => crossThreshold a v p.2 - p.1) := by
+    unfold crossThreshold; fun_prop (disch := assumption)
+  have hval : crossThreshold a v q₀.2 - q₀.1 = v.1 - q₀.1 := by
+    rw [← hv]; unfold crossThreshold; field_simp; ring
+  have hpos : 0 < crossThreshold a v q₀.2 - q₀.1 := by rw [hval]; linarith
+  filter_upwards [(hct.tendsto q₀).eventually_const_lt hpos] with q hq; linarith
+
+/-- Companion: if `q₀` is strictly right of the threshold (`v.1 < q₀.1`), so is
+every nearby `q`. -/
+lemma eventually_crossThreshold_lt (a v q₀ : ℝ × ℝ) (hv : v.2 = q₀.2) (hav : a.2 ≠ v.2)
+    (hgt : v.1 < q₀.1) : ∀ᶠ q in nhds q₀, crossThreshold a v q.2 < q.1 := by
+  have hd : (v.2 - a.2) ≠ 0 := sub_ne_zero.mpr (Ne.symm hav)
+  have hct : Continuous (fun p : ℝ × ℝ => p.1 - crossThreshold a v p.2) := by
+    unfold crossThreshold; fun_prop (disch := assumption)
+  have hval : q₀.1 - crossThreshold a v q₀.2 = q₀.1 - v.1 := by
+    rw [← hv]; unfold crossThreshold; field_simp; ring
+  have hpos : 0 < q₀.1 - crossThreshold a v q₀.2 := by rw [hval]; linarith
+  filter_upwards [(hct.tendsto q₀).eventually_const_lt hpos] with q hq; linarith
+
+/-- **Run-endpoint cancellation across a horizontal run.** Generalizes
+`pairWind_eventually_eq` to *two distinct* shared-height vertices `v, w` (the two
+ends of a maximal horizontal run at height `q₀.2`, connected by `edgeWind ≡ 0`
+horizontal edges). The two *transition* edges `(a, v)` (entering the run) and
+`(w, b)` (leaving it) have endpoints `a, b` off the height; with `q₀` on the
+**same side** in `x` of both `v` and `w` (`hsame`) — which holds because
+`q₀ ∉ boundary` forces it strictly off the whole run — the combined jump of the
+two transition edges cancels, so `edgeWind (a,v) + edgeWind (w,b)` is locally
+constant near `q₀`. The proof is the `pairWind_eventually_eq` proof with the
+second edge's left endpoint `v` replaced by `w`. -/
+lemma pairWind_run_eventually_eq (a v w b q₀ : ℝ × ℝ) (hv : v.2 = q₀.2)
+    (hw : w.2 = q₀.2) (h1 : q₀.2 ≠ a.2) (h2 : q₀.2 ≠ b.2)
+    (hnev : q₀.1 ≠ v.1) (hnew : q₀.1 ≠ w.1)
+    (hsame : (q₀.1 < v.1) ↔ (q₀.1 < w.1)) :
+    ∀ᶠ q in nhds q₀,
+      edgeWind a v q + edgeWind w b q = edgeWind a v q₀ + edgeWind w b q₀ := by
+  have hcy : Continuous (fun p : ℝ × ℝ => p.2) := continuous_snd
+  have hav : a.2 ≠ v.2 := by rw [hv]; exact (Ne.symm h1)
+  have hbw : b.2 ≠ w.2 := by rw [hw]; exact (Ne.symm h2)
+  suffices hsuff : ∃ c : ℤ, ∀ᶠ q in nhds q₀, edgeWind a v q + edgeWind w b q = c by
+    obtain ⟨c, hc⟩ := hsuff
+    have hq₀ := hc.self_of_nhds
+    filter_upwards [hc] with q hq; rw [hq, hq₀]
+  rcases lt_or_gt_of_ne hnev with hsidev | hsidev
+  · -- q₀ strictly left of v (hence of w): locate crossings by threshold continuity
+    have hsidew : q₀.1 < w.1 := hsame.mp hsidev
+    have hAv := eventually_lt_crossThreshold a v q₀ hv hav hsidev
+    have hVb : ∀ᶠ q in nhds q₀, q.1 < crossThreshold w b q.2 := by
+      filter_upwards [eventually_lt_crossThreshold b w q₀ hw hbw hsidew] with q hq
+      rwa [crossThreshold_comm b w q.2 hbw] at hq
+    rcases lt_or_gt_of_ne h1.symm with haH | haH <;>
+      rcases lt_or_gt_of_ne h2.symm with hbH | hbH
+    · -- a below, b below ⇒ const 0
+      refine ⟨0, ?_⟩
+      filter_upwards [hAv, hVb, (hcy.tendsto q₀).eventually_const_lt haH,
+          (hcy.tendsto q₀).eventually_const_lt hbH] with q hqA hqB hqa hqb
+      rcases le_or_gt q₀.2 q.2 with hle | hlt
+      · rw [edgeWind_eq_zero_of_above a v q (by linarith) (by rw [hv]; linarith),
+          edgeWind_eq_zero_of_above w b q (by rw [hw]; linarith) (by linarith)]; ring
+      · have e1 : edgeWind a v q = 1 := by
+          rw [edgeWind_eq_one_iff]
+          exact ⟨by linarith, by rw [hv]; linarith,
+            (cross_pos_iff_lt_threshold a v q.2 q.1 (by linarith)).mpr hqA⟩
+        have e2 : edgeWind w b q = -1 := by
+          rw [edgeWind_eq_neg_one_iff]
+          exact ⟨by linarith, by rw [hw]; linarith,
+            (cross_neg_iff_lt_threshold w b q.2 q.1 (by rw [hw]; linarith)).mpr hqB⟩
+        rw [e1, e2]; ring
+    · -- a below, b above ⇒ const 1
+      refine ⟨1, ?_⟩
+      filter_upwards [hAv, hVb, (hcy.tendsto q₀).eventually_const_lt haH,
+          (hcy.tendsto q₀).eventually_lt_const hbH] with q hqA hqB hqa hqb
+      rcases le_or_gt q₀.2 q.2 with hle | hlt
+      · rw [edgeWind_eq_zero_of_above a v q (by linarith) (by rw [hv]; linarith)]
+        have e2 : edgeWind w b q = 1 := by
+          rw [edgeWind_eq_one_iff]
+          exact ⟨by rw [hw]; linarith, by linarith,
+            (cross_pos_iff_lt_threshold w b q.2 q.1 (by rw [hw]; linarith)).mpr hqB⟩
+        rw [e2]; ring
+      · have e1 : edgeWind a v q = 1 := by
+          rw [edgeWind_eq_one_iff]
+          exact ⟨by linarith, by rw [hv]; linarith,
+            (cross_pos_iff_lt_threshold a v q.2 q.1 (by linarith)).mpr hqA⟩
+        rw [edgeWind_eq_zero_of_below w b q (by rw [hw]; linarith) (by linarith), e1]; ring
+    · -- a above, b below ⇒ const -1
+      refine ⟨-1, ?_⟩
+      filter_upwards [hAv, hVb, (hcy.tendsto q₀).eventually_lt_const haH,
+          (hcy.tendsto q₀).eventually_const_lt hbH] with q hqA hqB hqa hqb
+      rcases le_or_gt q₀.2 q.2 with hle | hlt
+      · have e1 : edgeWind a v q = -1 := by
+          rw [edgeWind_eq_neg_one_iff]
+          exact ⟨by rw [hv]; linarith, by linarith,
+            (cross_neg_iff_lt_threshold a v q.2 q.1 (by rw [hv]; linarith)).mpr hqA⟩
+        rw [edgeWind_eq_zero_of_above w b q (by rw [hw]; linarith) (by linarith), e1]; ring
+      · rw [edgeWind_eq_zero_of_below a v q (by linarith) (by rw [hv]; linarith)]
+        have e2 : edgeWind w b q = -1 := by
+          rw [edgeWind_eq_neg_one_iff]
+          exact ⟨by linarith, by rw [hw]; linarith,
+            (cross_neg_iff_lt_threshold w b q.2 q.1 (by rw [hw]; linarith)).mpr hqB⟩
+        rw [e2]; ring
+    · -- a above, b above ⇒ const 0
+      refine ⟨0, ?_⟩
+      filter_upwards [hAv, hVb, (hcy.tendsto q₀).eventually_lt_const haH,
+          (hcy.tendsto q₀).eventually_lt_const hbH] with q hqA hqB hqa hqb
+      rcases le_or_gt q₀.2 q.2 with hle | hlt
+      · have e1 : edgeWind a v q = -1 := by
+          rw [edgeWind_eq_neg_one_iff]
+          exact ⟨by rw [hv]; linarith, by linarith,
+            (cross_neg_iff_lt_threshold a v q.2 q.1 (by rw [hv]; linarith)).mpr hqA⟩
+        have e2 : edgeWind w b q = 1 := by
+          rw [edgeWind_eq_one_iff]
+          exact ⟨by rw [hw]; linarith, by linarith,
+            (cross_pos_iff_lt_threshold w b q.2 q.1 (by rw [hw]; linarith)).mpr hqB⟩
+        rw [e1, e2]; ring
+      · rw [edgeWind_eq_zero_of_below a v q (by linarith) (by rw [hv]; linarith),
+          edgeWind_eq_zero_of_below w b q (by rw [hw]; linarith) (by linarith)]; ring
+  · -- q₀ strictly right of v (hence of w): nearby crossings are to the left, both 0
+    have hsidew : w.1 < q₀.1 := by
+      rcases lt_or_gt_of_ne hnew with h | h
+      · exact absurd (hsame.mpr h) (by linarith)
+      · exact h
+    have hAv := eventually_crossThreshold_lt a v q₀ hv hav hsidev
+    have hVb : ∀ᶠ q in nhds q₀, crossThreshold w b q.2 < q.1 := by
+      filter_upwards [eventually_crossThreshold_lt b w q₀ hw hbw hsidew] with q hq
+      rwa [crossThreshold_comm b w q.2 hbw] at hq
+    refine ⟨0, ?_⟩
+    filter_upwards [hAv, hVb] with q hqA hqB
+    have e1 : edgeWind a v q = 0 := by
+      rw [edgeWind]; split_ifs with c1 c2
+      · exact absurd ((cross_pos_iff_lt_threshold a v q.2 q.1
+          (by linarith [c1.1, c1.2.1])).mp c1.2.2) (by linarith)
+      · exact absurd ((cross_neg_iff_lt_threshold a v q.2 q.1
+          (by linarith [c2.1, c2.2.1])).mp c2.2.2) (by linarith)
+      · rfl
+    have e2 : edgeWind w b q = 0 := by
+      rw [edgeWind]; split_ifs with c1 c2
+      · exact absurd ((cross_pos_iff_lt_threshold w b q.2 q.1
+          (by linarith [c1.1, c1.2.1])).mp c1.2.2) (by linarith)
+      · exact absurd ((cross_neg_iff_lt_threshold w b q.2 q.1
+          (by linarith [c2.1, c2.2.1])).mp c2.2.2) (by linarith)
+      · rfl
+    rw [e1, e2]; ring
+
+/-- **General per-vertex cancellation at a shared-height vertex.** Two adjacent
+edges `(a, v)` and `(v, b)` share the vertex `v` at the height of `q₀`
+(`v.2 = q₀.2`), with the other endpoints off that height (`a.2 ≠ q₀.2`,
+`b.2 ≠ q₀.2`) and `q₀` not vertically aligned with `v` (`q₀.1 ≠ v.1`). Then the
+**sum** `edgeWind (a,v) + edgeWind (v,b)` is locally constant near `q₀`: the
+individual jumps across the line `y = q₀.2` cancel. Special case `v = w` of
+`pairWind_run_eventually_eq`. -/
+lemma pairWind_eventually_eq (a v b q₀ : ℝ × ℝ) (hv : v.2 = q₀.2)
+    (h1 : q₀.2 ≠ a.2) (h2 : q₀.2 ≠ b.2) (hne : q₀.1 ≠ v.1) :
+    ∀ᶠ q in nhds q₀,
+      edgeWind a v q + edgeWind v b q = edgeWind a v q₀ + edgeWind v b q₀ :=
+  pairWind_run_eventually_eq a v v b q₀ hv hv h1 h2 hne hne Iff.rfl
+
+/-- **Full local constancy of `winding` off the boundary, at heights with no
+horizontal edge.** Dropping the *generic-height* hypothesis of
+`winding_eventually_eq_generic`, we allow `q₀` to sit at a vertex height — provided
+no edge is horizontal at that height (`hnh`). The per-edge `edgeWind` terms
+incident to a height-`q₀.2` vertex individually jump across the line `y = q₀.2`,
+but `pairWind_eventually_eq` shows each incident pair's jumps cancel; the
+remaining (non-incident) edges are locally constant by
+`edgeWind_eventually_eq_of_not_mem_seg`. Summing, `winding` is locally constant
+near `q₀`.
+
+The cancellation is assembled via the weighting identity
+`∑_i D_i = ∑_i (bad i + bad (i+1)) • D_i = ∑_k bad k • (D_{k-1} + D_k)`
+(`bad` = indicator of vertices at height `q₀.2`, `D_i = edgeWind_i q − edgeWind_i q₀`):
+each summand on the right vanishes eventually (pairWind), and the termwise step
+holds because a non-incident edge has `D_i = 0` eventually. -/
+lemma winding_eventually_eq (P : LatticePolygon) (q₀ : ℝ × ℝ)
+    (hb : q₀ ∉ P.boundary)
+    (hnh : ∀ i, ¬ ((toReal (P.vert i)).2 = q₀.2 ∧ (toReal (P.vert (i + 1))).2 = q₀.2)) :
+    ∀ᶠ q in nhds q₀, P.winding q = P.winding q₀ := by
+  classical
+  set H := q₀.2 with hH
+  -- `bad k = 1` iff vertex `k` is at height `H`.
+  set bad : ZMod P.n → ℤ := fun k => if (toReal (P.vert k)).2 = H then 1 else 0 with hbad
+  -- per-edge `q ↦ edgeWind_i q`
+  set f : ZMod P.n → ℝ × ℝ → ℤ :=
+    fun i q => edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) q with hf
+  -- For each vertex `k` at height `H`, its two incident edges cancel near `q₀`.
+  have hpair : ∀ k ∈ (Finset.univ : Finset (ZMod P.n)),
+      (toReal (P.vert k)).2 = H → ∀ᶠ q in nhds q₀,
+        f (k - 1) q + f k q = f (k - 1) q₀ + f k q₀ := by
+    intro k _ hk
+    have hk1 : k - 1 + 1 = k := by abel
+    have hvne : q₀.1 ≠ (toReal (P.vert k)).1 := by
+      intro hxe
+      have hq₀v : q₀ = toReal (P.vert k) := Prod.ext hxe (by rw [hk])
+      refine hb (Set.mem_iUnion.mpr ⟨k - 1, ?_⟩)
+      rw [hq₀v]
+      show toReal (P.vert k) ∈ segment ℝ (toReal (P.vert (k - 1))) (toReal (P.vert (k - 1 + 1)))
+      rw [hk1]; exact right_mem_segment ℝ _ _
+    have h1 : q₀.2 ≠ (toReal (P.vert (k - 1))).2 := by
+      intro h
+      exact (hnh (k - 1)) ⟨by rw [hH]; exact h.symm, by rw [hk1]; exact hk⟩
+    have h2 : q₀.2 ≠ (toReal (P.vert (k + 1))).2 := by
+      intro h
+      exact (hnh k) ⟨hk, by rw [hH]; exact h.symm⟩
+    have hvk : (toReal (P.vert k)).2 = q₀.2 := by rw [hk]
+    have hpe := pairWind_eventually_eq (toReal (P.vert (k - 1))) (toReal (P.vert k))
+      (toReal (P.vert (k + 1))) q₀ hvk h1 h2 hvne
+    filter_upwards [hpe] with q hq
+    simp only [hf, hk1]
+    exact hq
+  -- For each edge with neither endpoint at height `H`, the term is locally constant.
+  have hgood : ∀ i ∈ (Finset.univ : Finset (ZMod P.n)),
+      bad i + bad (i + 1) = 0 → ∀ᶠ q in nhds q₀, f i q = f i q₀ := by
+    intro i _ hi0
+    have hbi : (toReal (P.vert i)).2 ≠ H := by
+      intro h; simp only [hbad, if_pos h] at hi0
+      have hb1 : (0:ℤ) ≤ bad (i + 1) := by simp only [hbad]; split_ifs <;> norm_num
+      omega
+    have hbi1 : (toReal (P.vert (i + 1))).2 ≠ H := by
+      intro h; simp only [hbad, if_pos h] at hi0
+      have hb0 : (0:ℤ) ≤ bad i := by simp only [hbad]; split_ifs <;> norm_num
+      omega
+    exact edgeWind_eventually_eq_of_not_mem_seg _ _ _
+      (fun hmem => hb (Set.mem_iUnion.mpr ⟨i, hmem⟩))
+      (Ne.symm hbi) (Ne.symm hbi1)
+  -- Collect the pairing facts (one per bad vertex) and the good-edge facts.
+  have evP : ∀ᶠ q in nhds q₀, ∀ k ∈ (Finset.univ : Finset (ZMod P.n)),
+      bad k = 1 → f (k - 1) q + f k q = f (k - 1) q₀ + f k q₀ := by
+    refine (Finset.eventually_all (I := (Finset.univ : Finset (ZMod P.n)))).mpr (fun k hk => ?_)
+    by_cases hkH : (toReal (P.vert k)).2 = H
+    · filter_upwards [hpair k hk hkH] with q hq _; exact hq
+    · refine Filter.Eventually.of_forall (fun q hbk => ?_)
+      have : bad k = 0 := by simp only [hbad, if_neg hkH]
+      rw [this] at hbk; exact absurd hbk (by norm_num)
+  have evG : ∀ᶠ q in nhds q₀, ∀ i ∈ (Finset.univ : Finset (ZMod P.n)),
+      bad i + bad (i + 1) = 0 → f i q = f i q₀ := by
+    refine (Finset.eventually_all (I := (Finset.univ : Finset (ZMod P.n)))).mpr (fun i hi => ?_)
+    by_cases hi0 : bad i + bad (i + 1) = 0
+    · filter_upwards [hgood i hi hi0] with q hq _; exact hq
+    · exact Filter.Eventually.of_forall (fun q hc => absurd hc hi0)
+  filter_upwards [evP, evG] with q hqP hqG
+  -- Define the per-edge difference and run the weighting identity.
+  set D : ZMod P.n → ℤ := fun i => f i q - f i q₀ with hD
+  have hbad01 : ∀ i, bad i = 0 ∨ bad i = 1 := by
+    intro i; simp only [hbad]; split_ifs <;> simp
+  -- Termwise: `D i = (bad i + bad (i+1)) • D i` (good edges have `D i = 0`).
+  have hterm : ∀ i, D i = (bad i + bad (i + 1)) * D i := by
+    intro i
+    by_cases hsum1 : bad i + bad (i + 1) = 1
+    · rw [hsum1, one_mul]
+    · -- not exactly 1 ⇒ either 0 (good) or 2 (horizontal, excluded)
+      rcases hbad01 i with hi | hi <;> rcases hbad01 (i + 1) with hi1 | hi1
+      · -- both 0: good edge, D i = 0
+        have hDi : D i = 0 := by
+          show f i q - f i q₀ = 0
+          rw [hqG i (Finset.mem_univ i) (by rw [hi, hi1]; ring)]; ring
+        rw [hDi, hi, hi1]; ring
+      · -- bad i = 0, bad (i+1) = 1: sum = 1, contradiction
+        exact absurd (show bad i + bad (i + 1) = 1 by rw [hi, hi1]; ring) hsum1
+      · exact absurd (show bad i + bad (i + 1) = 1 by rw [hi, hi1]; ring) hsum1
+      · -- both 1: horizontal edge at H, excluded by hnh
+        exfalso
+        have hbi : (toReal (P.vert i)).2 = H := by
+          by_contra hc
+          have : bad i = 0 := by simp only [hbad, if_neg hc]
+          rw [this] at hi; exact absurd hi (by norm_num)
+        have hbi1 : (toReal (P.vert (i + 1))).2 = H := by
+          by_contra hc
+          have : bad (i + 1) = 0 := by simp only [hbad, if_neg hc]
+          rw [this] at hi1; exact absurd hi1 (by norm_num)
+        exact hnh i ⟨hbi, hbi1⟩
+  -- Sum the termwise identity and reorganize by the shift `k ↦ k - 1`.
+  have hsumeq : P.winding q - P.winding q₀ = ∑ i, D i := by
+    unfold LatticePolygon.winding
+    rw [← Finset.sum_sub_distrib]
+  have hstep : (∑ i, D i) = ∑ k, bad k * (D (k - 1) + D k) := by
+    calc ∑ i, D i = ∑ i, (bad i + bad (i + 1)) * D i := by
+          exact Finset.sum_congr rfl (fun i _ => hterm i)
+      _ = ∑ i, (bad i * D i + bad (i + 1) * D i) := by
+          exact Finset.sum_congr rfl (fun i _ => by ring)
+      _ = (∑ i, bad i * D i) + ∑ i, bad (i + 1) * D i := by rw [Finset.sum_add_distrib]
+      _ = (∑ k, bad k * D k) + ∑ k, bad k * D (k - 1) := by
+          congr 1
+          rw [← Equiv.sum_comp (Equiv.subRight (1 : ZMod P.n))]
+          simp [Equiv.subRight]
+      _ = ∑ k, bad k * (D (k - 1) + D k) := by
+          rw [← Finset.sum_add_distrib]; exact Finset.sum_congr rfl (fun k _ => by ring)
+  -- Each summand vanishes: bad `k` ⇒ the incident pair cancels.
+  have hzero : ∀ k ∈ (Finset.univ : Finset (ZMod P.n)), bad k * (D (k - 1) + D k) = 0 := by
+    intro k _
+    rcases hbad01 k with hk0 | hk1
+    · rw [hk0]; ring
+    · have hpk := hqP k (Finset.mem_univ k) hk1
+      have : D (k - 1) + D k = 0 := by rw [hD]; simp only; linarith [hpk]
+      rw [this]; ring
+  have : P.winding q - P.winding q₀ = 0 := by
+    rw [hsumeq, hstep, Finset.sum_eq_zero hzero]
+  linarith [this]
+
+/-- **Same-side across a horizontal segment.** If `c, d, q₀` share the height
+`q₀.2` (`c.2 = q₀.2 = d.2`) and `q₀` lies off the closed segment `[c, d]`, then
+`q₀.1` is on the same side of `c.1` and `d.1`. (At a common height, membership in
+`[c, d]` is exactly membership of `q₀.1` in the `x`-interval `[c.1, d.1]`; being
+off the segment forces `q₀.1` strictly outside, i.e. on one side of both.) -/
+lemma same_side_of_not_mem_horizontal_seg (c d q₀ : ℝ × ℝ)
+    (hc : c.2 = q₀.2) (hd : d.2 = q₀.2) (hseg : q₀ ∉ segment ℝ c d) :
+    (q₀.1 < c.1 ↔ q₀.1 < d.1) := by
+  have hxmem : q₀.1 ∈ segment ℝ c.1 d.1 → q₀ ∈ segment ℝ c d := by
+    rw [segment_eq_image, segment_eq_image]
+    rintro ⟨t, ht, hxt⟩
+    refine ⟨t, ht, ?_⟩
+    apply Prod.ext
+    · simpa using hxt
+    · simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
+      rw [hc, hd]; ring
+  by_contra hcon
+  apply hseg; apply hxmem
+  rw [segment_eq_uIcc, Set.mem_uIcc]
+  by_cases hd1 : q₀.1 < d.1
+  · have hc1 : ¬ q₀.1 < c.1 := fun h => (hcon ⟨fun _ => hd1, fun _ => h⟩)
+    left; exact ⟨le_of_not_gt hc1, le_of_lt hd1⟩
+  · have hc1 : q₀.1 < c.1 := by
+      by_contra h; exact hcon ⟨fun hh => absurd hh h, fun hh => absurd hh hd1⟩
+    right; exact ⟨le_of_not_gt hd1, le_of_lt hc1⟩
+
+/-- **Same-side along a horizontal run.** If the consecutive vertices
+`vert j, vert (j+1), …, vert (j+m)` all sit at height `H = q₀.2` and `q₀` avoids
+each connecting (horizontal) edge segment, then `q₀.1` is on the same side of the
+first and last vertex `x`-coordinates. Chains `same_side_of_not_mem_horizontal_seg`
+along the run by induction on `m`. -/
+lemma same_side_chain (P : LatticePolygon) (q₀ : ℝ × ℝ) (j : ZMod P.n)
+    (H : ℝ) (hH : q₀.2 = H) :
+    ∀ m : ℕ, (∀ k : ℕ, k ≤ m → (toReal (P.vert (j + (k : ZMod P.n)))).2 = H) →
+      (∀ k : ℕ, k < m → q₀ ∉ segment ℝ (toReal (P.vert (j + (k : ZMod P.n))))
+          (toReal (P.vert (j + (k : ZMod P.n) + 1)))) →
+      (q₀.1 < (toReal (P.vert j)).1 ↔ q₀.1 < (toReal (P.vert (j + (m : ZMod P.n)))).1) := by
+  intro m
+  induction m with
+  | zero => intro _ _; simp
+  | succ p ih =>
+    intro hheight hseg
+    have hstep : (q₀.1 < (toReal (P.vert (j + (p : ZMod P.n)))).1 ↔
+        q₀.1 < (toReal (P.vert (j + (p : ZMod P.n) + 1))).1) := by
+      apply same_side_of_not_mem_horizontal_seg
+      · rw [hheight p (Nat.le_succ p), hH]
+      · have : (j + (p : ZMod P.n) + 1) = j + ((p + 1 : ℕ) : ZMod P.n) := by push_cast; ring
+        rw [this, hheight (p + 1) (le_refl _), hH]
+      · exact hseg p (Nat.lt_succ_self p)
+    have hih := ih (fun k hk => hheight k (Nat.le_succ_of_le hk))
+      (fun k hk => hseg k (Nat.lt_succ_of_lt hk))
+    have hcast : (j + ((p + 1 : ℕ) : ZMod P.n)) = (j + (p : ZMod P.n) + 1) := by push_cast; ring
+    rw [hcast]; exact hih.trans hstep
+
+/-- **Full local constancy of `winding` off the boundary.** Dropping *all* extra
+hypotheses of `winding_eventually_eq`: for any `q₀ ∉ P.boundary`, `winding` is
+constant in a neighborhood of `q₀`. Horizontal edges at height `q₀.2` no longer
+need exclusion — they contribute `edgeWind ≡ 0` (`edgeWind_eq_zero_of_eq_height`),
+and the *transition* edges entering/leaving each maximal horizontal run cancel in
+pairs (`pairWind_run_eventually_eq`, with the same-side hypothesis supplied by
+`same_side_chain` since `q₀` lies off the whole run). The pairing of transition
+edges is realized as an involution on edge indices (`Finset.sum_involution`):
+each entering edge `i` (`¬bad i ∧ bad (i+1)`) is matched with the leaving edge at
+`i + fwd (i+1)`, where `fwd` is the forward run length, and vice versa via the
+backward run length `bwd`. -/
+lemma winding_eventually_eq_full (P : LatticePolygon) (q₀ : ℝ × ℝ)
+    (hb : q₀ ∉ P.boundary) :
+    ∀ᶠ q in nhds q₀, P.winding q = P.winding q₀ := by
+  classical
+  set H := q₀.2 with hH
+  set bad : ZMod P.n → Prop := fun k => (toReal (P.vert k)).2 = H with hbad
+  -- `q₀` avoids every edge segment.
+  have hsegq : ∀ i, q₀ ∉ segment ℝ (toReal (P.vert i)) (toReal (P.vert (i + 1))) :=
+    fun i hmem => hb (Set.mem_iUnion.mpr ⟨i, hmem⟩)
+  -- For a vertex at height `H`, `q₀` is not vertically aligned with it.
+  have hxne : ∀ k, bad k → q₀.1 ≠ (toReal (P.vert k)).1 := by
+    intro k hk hxe
+    have hq₀v : q₀ = toReal (P.vert k) := Prod.ext hxe (by rw [hk])
+    refine hb (Set.mem_iUnion.mpr ⟨k - 1, ?_⟩)
+    rw [hq₀v]
+    show toReal (P.vert k) ∈ segment ℝ (toReal (P.vert (k - 1))) (toReal (P.vert (k - 1 + 1)))
+    rw [sub_add_cancel]; exact right_mem_segment ℝ _ _
+  by_cases hallbad : ∀ k, bad k
+  · -- Degenerate: every vertex at height `H` ⇒ every edge horizontal ⇒ `winding ≡ 0`.
+    have hzero : ∀ q : ℝ × ℝ, P.winding q = 0 := by
+      intro q
+      unfold LatticePolygon.winding
+      exact Finset.sum_eq_zero fun i _ =>
+        edgeWind_eq_zero_of_eq_height _ _ _ (by rw [hallbad i, hallbad (i + 1)])
+    filter_upwards with q; rw [hzero q, hzero q₀]
+  · push_neg at hallbad
+    obtain ⟨k₀, hk₀⟩ := hallbad
+    -- Forward and backward "next non-`bad` vertex" existence.
+    have hexF : ∀ j : ZMod P.n, ∃ m : ℕ, ¬ bad (j + (m : ZMod P.n)) := by
+      intro j
+      refine ⟨(k₀ - j).val, ?_⟩
+      rw [ZMod.natCast_val, ZMod.cast_id]; simpa using hk₀
+    have hexB : ∀ j : ZMod P.n, ∃ s : ℕ, ¬ bad (j - (s : ZMod P.n)) := by
+      intro j
+      refine ⟨(j - k₀).val, ?_⟩
+      rw [ZMod.natCast_val, ZMod.cast_id]; simpa using hk₀
+    set fwd : ZMod P.n → ℕ := fun j => Nat.find (hexF j) with hfwd
+    set bwd : ZMod P.n → ℕ := fun j => Nat.find (hexB j) with hbwd
+    -- Spec/min facts.
+    have hfwd_spec : ∀ j, ¬ bad (j + ((fwd j : ℕ) : ZMod P.n)) := fun j => Nat.find_spec (hexF j)
+    have hfwd_min : ∀ j, ∀ k : ℕ, k < fwd j → bad (j + (k : ZMod P.n)) := by
+      intro j k hk; by_contra hc; exact Nat.find_min (hexF j) hk hc
+    have hbwd_spec : ∀ j, ¬ bad (j - ((bwd j : ℕ) : ZMod P.n)) := fun j => Nat.find_spec (hexB j)
+    have hbwd_min : ∀ j, ∀ k : ℕ, k < bwd j → bad (j - (k : ZMod P.n)) := by
+      intro j k hk; by_contra hc; exact Nat.find_min (hexB j) hk hc
+    -- per-edge `q ↦ edgeWind_i q` and difference `D`.
+    set f : ZMod P.n → ℝ × ℝ → ℤ :=
+      fun i q => edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) q with hf
+    -- A "transition" edge has exactly one endpoint at height `H`.
+    set tFwd : ZMod P.n → Prop := fun i => ¬ bad i ∧ bad (i + 1) with htFwd
+    set tBwd : ZMod P.n → Prop := fun i => bad i ∧ ¬ bad (i + 1) with htBwd
+    -- The involution partner.
+    set g : ZMod P.n → ZMod P.n := fun i =>
+      if tFwd i then i + ((fwd (i + 1) : ℕ) : ZMod P.n)
+      else if tBwd i then i - ((bwd i : ℕ) : ZMod P.n)
+      else i with hg
+    -- KEY eventually-fact: for every transition edge, the matched pair cancels.
+    have hpair : ∀ᶠ q in nhds q₀, ∀ i ∈ (Finset.univ : Finset (ZMod P.n)),
+        f i q + f (g i) q = f i q₀ + f (g i) q₀ := by
+      refine (Finset.eventually_all (I := (Finset.univ : Finset (ZMod P.n)))).mpr (fun i _ => ?_)
+      by_cases hTF : tFwd i
+      · -- entering edge `i`: partner `i + fwd (i+1)` (a leaving edge).
+        have hbi : ¬ bad i := hTF.1
+        have hbi1 : bad (i + 1) := hTF.2
+        have hgi : g i = i + ((fwd (i + 1) : ℕ) : ZMod P.n) := by rw [hg]; simp only [if_pos hTF]
+        -- run: vertices `i+1, …, i + fwd (i+1)` are bad, `i + fwd (i+1) + 1` is not.
+        set F := fwd (i + 1) with hF
+        have hF1 : 1 ≤ F := by
+          rw [Nat.one_le_iff_ne_zero]; intro h
+          have hs := hfwd_spec (i + 1); rw [← hF, h] at hs
+          simp only [Nat.cast_zero, add_zero] at hs; exact hs hbi1
+        have hlast_bad : bad (i + (F : ZMod P.n)) := by
+          have hb := hfwd_min (i + 1) (F - 1) (by omega)
+          have he : (i + 1) + (((F - 1 : ℕ)) : ZMod P.n) = i + (F : ZMod P.n) := by
+            rw [Nat.cast_sub hF1]; push_cast; ring
+          rwa [he] at hb
+        have hnext_nbad : ¬ bad (i + (F : ZMod P.n) + 1) := by
+          have hs := hfwd_spec (i + 1)
+          have he : (i + 1) + ((F : ℕ) : ZMod P.n) = i + (F : ZMod P.n) + 1 := by push_cast; ring
+          rw [← hF, he] at hs; exact hs
+        -- same-side along the run: `q₀` left of `vert (i+1)` ↔ left of `vert (i+F)`.
+        have hsame : (q₀.1 < (toReal (P.vert (i + 1))).1 ↔
+            q₀.1 < (toReal (P.vert (i + (F : ZMod P.n)))).1) := by
+          have hchain := same_side_chain P q₀ (i + 1) H hH.symm (F - 1)
+            (fun k hk => hfwd_min (i + 1) k (by omega))
+            (fun k hk => hsegq (i + 1 + (k : ZMod P.n)))
+          have he : (i + 1) + (((F - 1 : ℕ)) : ZMod P.n) = i + (F : ZMod P.n) := by
+            rw [Nat.cast_sub hF1]; push_cast; ring
+          rwa [he] at hchain
+        have hpe := pairWind_run_eventually_eq (toReal (P.vert i)) (toReal (P.vert (i + 1)))
+          (toReal (P.vert (i + (F : ZMod P.n)))) (toReal (P.vert (i + (F : ZMod P.n) + 1))) q₀
+          hbi1 hlast_bad (fun h => hbi h.symm) (fun h => hnext_nbad h.symm)
+          (hxne (i + 1) hbi1) (hxne (i + (F : ZMod P.n)) hlast_bad) hsame
+        filter_upwards [hpe] with q hq
+        rw [hgi, hf]; exact hq
+      · by_cases hTB : tBwd i
+        · -- leaving edge `i`: partner `i - bwd i` (an entering edge), by symmetry.
+          have hbi : bad i := hTB.1
+          have hbi1 : ¬ bad (i + 1) := hTB.2
+          have hgi : g i = i - ((bwd i : ℕ) : ZMod P.n) := by
+            rw [hg]; simp only [if_neg hTF, if_pos hTB]
+          set B := bwd i with hB
+          have hB1 : 1 ≤ B := by
+            rw [Nat.one_le_iff_ne_zero]; intro h
+            have hs := hbwd_spec i; rw [← hB, h] at hs
+            simp only [Nat.cast_zero, sub_zero] at hs; exact hs hbi
+          have hentry_nbad : ¬ bad (i - (B : ZMod P.n)) := hbwd_spec i
+          have hentry_bad1 : bad (i - (B : ZMod P.n) + 1) := by
+            have hb := hbwd_min i (B - 1) (by omega)
+            have he : i - ((B - 1 : ℕ) : ZMod P.n) = i - (B : ZMod P.n) + 1 := by
+              rw [Nat.cast_sub hB1]; push_cast; ring
+            rwa [he] at hb
+          -- entering vertex is `i - B + 1`, run runs `i - B + 1, …, i`.
+          have hsame : (q₀.1 < (toReal (P.vert (i - (B : ZMod P.n) + 1))).1 ↔
+              q₀.1 < (toReal (P.vert i)).1) := by
+            have hchain := same_side_chain P q₀ (i - (B : ZMod P.n) + 1) H hH.symm (B - 1)
+              (fun k hk => by
+                have hbadk := hbwd_min i (B - 1 - k) (by omega)
+                have he : (i - (B : ZMod P.n) + 1) + (k : ZMod P.n)
+                    = i - ((B - 1 - k : ℕ) : ZMod P.n) := by
+                  rw [Nat.cast_sub (by omega), Nat.cast_sub hB1]; push_cast; ring
+                rw [he]; exact hbadk)
+              (fun k hk => hsegq (i - (B : ZMod P.n) + 1 + (k : ZMod P.n)))
+            have he : (i - (B : ZMod P.n) + 1) + (((B - 1 : ℕ)) : ZMod P.n) = i := by
+              rw [Nat.cast_sub hB1]; push_cast; ring
+            rwa [he] at hchain
+          have hpe := pairWind_run_eventually_eq (toReal (P.vert (i - (B : ZMod P.n))))
+            (toReal (P.vert (i - (B : ZMod P.n) + 1))) (toReal (P.vert i))
+            (toReal (P.vert (i + 1))) q₀
+            hentry_bad1 hbi (fun h => hentry_nbad h.symm) (fun h => hbi1 h.symm)
+            (hxne _ hentry_bad1) (hxne i hbi) hsame
+          filter_upwards [hpe] with q hq
+          have hgf : f (g i) q = edgeWind (toReal (P.vert (i - (B : ZMod P.n))))
+              (toReal (P.vert (i - (B : ZMod P.n) + 1))) q := by
+            rw [hgi, hf]
+          have hgf₀ : f (g i) q₀ = edgeWind (toReal (P.vert (i - (B : ZMod P.n))))
+              (toReal (P.vert (i - (B : ZMod P.n) + 1))) q₀ := by
+            rw [hgi, hf]
+          rw [hgf, hgf₀, hf]; simp only; linarith [hq]
+        · -- non-transition edge: `g i = i`, and `f i` is locally constant (D = 0 nearby).
+          have hgi : g i = i := by rw [hg]; simp only [if_neg hTF, if_neg hTB]
+          rw [hgi]
+          -- both endpoints same `bad` status; if both bad ⇒ horizontal (f ≡ 0); else good.
+          by_cases hbi : bad i
+          · have hbi1 : bad (i + 1) := by
+              by_contra hc; exact hTB ⟨hbi, hc⟩
+            -- horizontal edge: `f i ≡ 0`.
+            filter_upwards with q
+            rw [hf]; simp only
+            rw [edgeWind_eq_zero_of_eq_height _ _ q (by rw [hbi, hbi1]),
+              edgeWind_eq_zero_of_eq_height _ _ q₀ (by rw [hbi, hbi1])]
+          · have hbi1 : ¬ bad (i + 1) := by
+              by_contra hc; exact hTF ⟨hbi, hc⟩
+            have hev := edgeWind_eventually_eq_of_not_mem_seg
+              (toReal (P.vert i)) (toReal (P.vert (i + 1))) q₀ (hsegq i)
+              (fun h => hbi (by rw [hbad]; exact h.symm))
+              (fun h => hbi1 (by rw [hbad]; exact h.symm))
+            filter_upwards [hev] with q hq
+            rw [hf]; simp only; rw [hq]
+    -- `g` is an involution on `univ`.
+    have hinv : ∀ a : ZMod P.n, g (g a) = a := by
+      intro a
+      by_cases hTF : tFwd a
+      · -- entering edge: `g a = a + F`, a leaving edge whose `bwd = F`.
+        have hbi : ¬ bad a := hTF.1
+        have hbi1 : bad (a + 1) := hTF.2
+        set F := fwd (a + 1) with hFdef
+        have hga : g a = a + (F : ZMod P.n) := by rw [hg]; simp only [if_pos hTF, ← hFdef]
+        have hF1 : 1 ≤ F := by
+          rw [Nat.one_le_iff_ne_zero]; intro h
+          have hs := hfwd_spec (a + 1); rw [← hFdef, h] at hs
+          simp only [Nat.cast_zero, add_zero] at hs; exact hs hbi1
+        have hlast_bad : bad (a + (F : ZMod P.n)) := by
+          have hb := hfwd_min (a + 1) (F - 1) (by omega)
+          have he : (a + 1) + (((F - 1 : ℕ)) : ZMod P.n) = a + (F : ZMod P.n) := by
+            rw [Nat.cast_sub hF1]; push_cast; ring
+          rwa [he] at hb
+        have hnext_nbad : ¬ bad (a + (F : ZMod P.n) + 1) := by
+          have hs := hfwd_spec (a + 1)
+          have he : (a + 1) + ((F : ℕ) : ZMod P.n) = a + (F : ZMod P.n) + 1 := by push_cast; ring
+          rw [← hFdef, he] at hs; exact hs
+        -- `g a = a + F` is a leaving edge (not forward-transition).
+        have hTFga : ¬ tFwd (a + (F : ZMod P.n)) := fun h => hnext_nbad h.2
+        have hTBga : tBwd (a + (F : ZMod P.n)) := ⟨hlast_bad, hnext_nbad⟩
+        -- `bwd (a + F) = F`.
+        have hbwdF : bwd (a + (F : ZMod P.n)) = F := by
+          rw [hbwd, Nat.find_eq_iff]
+          refine ⟨?_, ?_⟩
+          · have he : a + (F : ZMod P.n) - (F : ZMod P.n) = a := by ring
+            rw [he]; exact hbi
+          · intro s hs hns
+            have hb := hfwd_min (a + 1) (F - 1 - s) (by omega)
+            have he : (a + 1) + ((F - 1 - s : ℕ) : ZMod P.n) = a + (F : ZMod P.n) - (s : ZMod P.n) := by
+              rw [Nat.cast_sub (by omega), Nat.cast_sub hF1]; push_cast; ring
+            rw [he] at hb; exact hns hb
+        rw [hga, hg]; simp only [if_neg hTFga, if_pos hTBga, hbwdF]; ring
+      · by_cases hTB : tBwd a
+        · -- leaving edge: `g a = a - B`, an entering edge whose `fwd = B`.
+          have hbi : bad a := hTB.1
+          have hbi1 : ¬ bad (a + 1) := hTB.2
+          set B := bwd a with hBdef
+          have hga : g a = a - (B : ZMod P.n) := by
+            rw [hg]; simp only [if_neg hTF, if_pos hTB, ← hBdef]
+          have hB1 : 1 ≤ B := by
+            rw [Nat.one_le_iff_ne_zero]; intro h
+            have hs := hbwd_spec a; rw [← hBdef, h] at hs
+            simp only [Nat.cast_zero, sub_zero] at hs; exact hs hbi
+          have hentry_nbad : ¬ bad (a - (B : ZMod P.n)) := hbwd_spec a
+          have hentry_bad1 : bad (a - (B : ZMod P.n) + 1) := by
+            have hb := hbwd_min a (B - 1) (by omega)
+            have he : a - ((B - 1 : ℕ) : ZMod P.n) = a - (B : ZMod P.n) + 1 := by
+              rw [Nat.cast_sub hB1]; push_cast; ring
+            rwa [he] at hb
+          have hTFga : tFwd (a - (B : ZMod P.n)) := ⟨hentry_nbad, hentry_bad1⟩
+          -- `fwd (a - B + 1) = B`.
+          have hfwdB : fwd (a - (B : ZMod P.n) + 1) = B := by
+            rw [hfwd, Nat.find_eq_iff]
+            refine ⟨?_, ?_⟩
+            · have he : a - (B : ZMod P.n) + 1 + (B : ZMod P.n) = a + 1 := by ring
+              rw [he]; exact hbi1
+            · intro s hs hns
+              have hb := hbwd_min a (B - 1 - s) (by omega)
+              have he : a - ((B - 1 - s : ℕ) : ZMod P.n)
+                  = a - (B : ZMod P.n) + 1 + (s : ZMod P.n) := by
+                rw [Nat.cast_sub (by omega), Nat.cast_sub hB1]; push_cast; ring
+              rw [he] at hb; exact hns hb
+          rw [hga, hg]; simp only [if_pos hTFga, hfwdB]; ring
+        · rw [hg]; simp only [if_neg hTF, if_neg hTB]
+    -- Assemble via `Finset.sum_involution` on the difference `D`.
+    filter_upwards [hpair] with q hq
+    have hsum : (∑ i, (f i q - f i q₀)) = 0 := by
+      refine Finset.sum_involution (fun i _ => g i) (fun i _ => ?_) (fun i _ hne => ?_)
+        (fun i _ => Finset.mem_univ _) (fun i _ => ?_)
+      · have := hq i (Finset.mem_univ i); linarith [this]
+      · intro hgi
+        have := hq i (Finset.mem_univ i)
+        rw [hgi] at this; apply hne; linarith [this]
+      · exact hinv i
+    have hwd : P.winding q - P.winding q₀ = ∑ i, (f i q - f i q₀) := by
+      unfold LatticePolygon.winding; rw [← Finset.sum_sub_distrib]
+    linarith [hwd, hsum]
+
+/-- **`winding` is locally constant on the off-boundary set with no horizontal
+edge at the point's height.** Packaging of `winding_eventually_eq`: on the subtype
+of points `q` that are off the boundary and at a height carrying no horizontal
+edge, `winding` is locally constant. This strictly extends
+`isLocallyConstant_winding_generic` (which excluded *all* vertex heights); here
+only horizontal-edge heights are excluded. -/
+lemma isLocallyConstant_winding_noHoriz (P : LatticePolygon) :
+    IsLocallyConstant
+      (fun q : {q : ℝ × ℝ // q ∉ P.boundary ∧
+          ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2)} =>
+        P.winding q.1) := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro q
+  have h := winding_eventually_eq P q.1 q.2.1 q.2.2
+  have hcont : Continuous (Subtype.val :
+      {q : ℝ × ℝ // q ∉ P.boundary ∧
+        ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2)} → ℝ × ℝ) :=
+    continuous_subtype_val
+  exact (hcont.continuousAt.eventually h)
+
+/-- **`winding` is locally constant on the entire off-boundary set.** The clean
+final packaging: on the open set `P.boundaryᶜ` (as a subtype), `winding` is locally
+constant. No height restriction whatsoever — `winding_eventually_eq_full` handles
+horizontal-edge heights via run-pairing. This is the topological input to the
+Jordan-curve separation: `winding` is constant on each connected component of the
+off-boundary set, so the components split into `winding = 0` (exterior) and
+`winding ≠ 0` (interior) classes. -/
+lemma isLocallyConstant_winding (P : LatticePolygon) :
+    IsLocallyConstant
+      (fun q : {q : ℝ × ℝ // q ∉ P.boundary} => P.winding q.1) := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro q
+  have h := winding_eventually_eq_full P q.1 q.2
+  have hcont : Continuous (Subtype.val :
+      {q : ℝ × ℝ // q ∉ P.boundary} → ℝ × ℝ) := continuous_subtype_val
+  exact (hcont.continuousAt.eventually h)
+
+/-- The off-boundary set `P.boundaryᶜ` is open (complement of the closed
+`P.boundary`). -/
+lemma isOpen_compl_boundary (P : LatticePolygon) : IsOpen P.boundaryᶜ :=
+  (boundary_isClosed P).isOpen_compl
+
+/-- **Winding is constant on every preconnected off-boundary set.** If `s ⊆
+P.boundaryᶜ` is preconnected, then `winding` takes a single value on `s`. Transfers
+the subtype local constancy (`isLocallyConstant_winding`) along the open embedding
+`Subtype.val : P.boundaryᶜ → ℝ²` (open map + injective, with `s ⊆ range`), so the
+preimage of `s` is preconnected and `IsLocallyConstant.apply_eq_of_isPreconnected`
+applies. This is the bridge from local constancy to "winding labels components". -/
+lemma winding_const_of_isPreconnected (P : LatticePolygon) {s : Set (ℝ × ℝ)}
+    (hs : s ⊆ P.boundaryᶜ) (hpre : IsPreconnected s) {p q : ℝ × ℝ}
+    (hp : p ∈ s) (hq : q ∈ s) : P.winding p = P.winding q := by
+  have hloc := isLocallyConstant_winding P
+  have hopen : IsOpenMap (Subtype.val : {q : ℝ × ℝ // q ∉ P.boundary} → ℝ × ℝ) :=
+    (isOpen_compl_boundary P).isOpenEmbedding_subtypeVal.isOpenMap
+  have hrange : s ⊆ Set.range (Subtype.val : {q : ℝ × ℝ // q ∉ P.boundary} → ℝ × ℝ) := by
+    rw [Subtype.range_coe_subtype]; exact hs
+  have hsub : IsPreconnected ((Subtype.val :
+      {q : ℝ × ℝ // q ∉ P.boundary} → ℝ × ℝ) ⁻¹' s) :=
+    hpre.preimage_of_isOpenMap Subtype.val_injective hopen hrange
+  exact hloc.apply_eq_of_isPreconnected hsub (x := ⟨p, hs hp⟩) (y := ⟨q, hs hq⟩) hp hq
+
+/-- **Winding is constant on a connected component of the off-boundary set.**
+Instance of `winding_const_of_isPreconnected` for `s = connectedComponentIn
+P.boundaryᶜ q`: every point of the component carrying `q` has the same winding as
+`q`. So `winding` is a locally constant *label* on the components of `P.boundaryᶜ`. -/
+lemma winding_const_on_connectedComponentIn (P : LatticePolygon) {q : ℝ × ℝ}
+    (hq : q ∈ P.boundaryᶜ) {p : ℝ × ℝ} (hp : p ∈ connectedComponentIn P.boundaryᶜ q) :
+    P.winding p = P.winding q :=
+  winding_const_of_isPreconnected P (connectedComponentIn_subset _ _)
+    isPreconnected_connectedComponentIn hp (mem_connectedComponentIn hq)
+
+/-- The winding number is locally constant on `P.boundaryᶜ` as a *function on the
+ambient plane* restricted to the open off-boundary set: the set `{q | q ∉
+P.boundary ∧ winding q ≠ 0}` is open. (Each such point has a neighborhood on which
+`winding` is constant `≠ 0`, by `winding_eventually_eq_full`.) -/
+lemma isOpen_winding_ne_zero (P : LatticePolygon) :
+    IsOpen {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0} := by
+  rw [isOpen_iff_eventually]
+  rintro q ⟨hqb, hqw⟩
+  have hev := winding_eventually_eq_full P q hqb
+  have hbopen := (isOpen_compl_boundary P).eventually_mem hqb
+  filter_upwards [hev, hbopen] with p hp hpb
+  exact ⟨hpb, by rw [hp]; exact hqw⟩
+
+/-- The interior region `{winding = 1}` is open (and lies off the boundary, since
+boundary points have winding `0`... more precisely: it is the off-boundary points
+with winding `1`). Stated as openness of `{q ∉ boundary ∧ winding q = 1}`. -/
+lemma isOpen_winding_eq_one (P : LatticePolygon) :
+    IsOpen {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q = 1} := by
+  rw [isOpen_iff_eventually]
+  rintro q ⟨hqb, hqw⟩
+  have hev := winding_eventually_eq_full P q hqb
+  have hbopen := (isOpen_compl_boundary P).eventually_mem hqb
+  filter_upwards [hev, hbopen] with p hp hpb
+  exact ⟨hpb, by rw [hp]; exact hqw⟩
+
+/-- **The unbounded component is the exterior.** If `q ∉ boundary` lies in the same
+connected component of `P.boundaryᶜ` as some far-away point `q₀` with `R < ‖q₀‖`
+(`R` the cobounded radius from `winding_zero_on_cobounded`), then `winding q = 0`.
+Concretely: any off-boundary point joined within `boundaryᶜ` to a point beyond the
+winding-support radius has winding `0`. -/
+lemma winding_zero_of_joinedIn_far (P : LatticePolygon) {q q₀ : ℝ × ℝ}
+    (hpre : ∃ s : Set (ℝ × ℝ), s ⊆ P.boundaryᶜ ∧ IsPreconnected s ∧ q ∈ s ∧ q₀ ∈ s)
+    (hfar : ∃ R : ℝ, (∀ p : ℝ × ℝ, R < ‖p‖ → P.winding p = 0) ∧ R < ‖q₀‖) :
+    P.winding q = 0 := by
+  obtain ⟨s, hsub, hspre, hqs, hq₀s⟩ := hpre
+  obtain ⟨R, hR, hRq₀⟩ := hfar
+  rw [winding_const_of_isPreconnected P hsub hspre hqs hq₀s]
+  exact hR q₀ hRq₀
+
+/-- **Path-connectedness of the inside reduces to connectedness.** Since the
+off-boundary winding `≠ 0` set is OPEN (`isOpen_winding_ne_zero`) and `ℝ²` is
+locally path-connected, `IsConnected ⟹ IsPathConnected` for it
+(`IsOpen.isConnected_iff_isPathConnected`). So the remaining content of the
+separation core — the inside is path-connected — is exactly that the off-boundary
+winding `≠ 0` set is **connected** (preconnected + nonempty), i.e. forms a single
+component. This isolates the one hard separation lemma. -/
+lemma inside_isPathConnected_of_isConnected (P : LatticePolygon)
+    (hconn : IsConnected {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0}) :
+    IsPathConnected {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0} :=
+  (isOpen_winding_ne_zero P).isConnected_iff_isPathConnected.mp hconn
+
+/-- **Winding `= 0` when the rightward horizontal ray is clear of the boundary.**
+If no edge is horizontal at height `q.2`, and the whole ray `{(x, q.2) | q.1 ≤ x}`
+avoids the boundary, then `winding q = 0`. The winding is locally constant along
+the ray (`winding_eventually_eq`, valid since the ray is off-boundary and the
+height carries no horizontal edge), the ray `Ici q.1` is preconnected, and the
+winding vanishes far to the right (`winding_eq_zero_of_right`). This is the
+rigorous "`q` is in the unbounded component ⟹ `winding = 0`" for the common case
+where the unbounded component is witnessed by a clear horizontal ray. -/
+theorem winding_eq_zero_of_ray_clear (P : LatticePolygon) (q : ℝ × ℝ)
+    (hnh : ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2))
+    (hray : ∀ x : ℝ, q.1 ≤ x → ((x, q.2) : ℝ × ℝ) ∉ P.boundary) :
+    P.winding q = 0 := by
+  classical
+  set H := q.2 with hH
+  -- `g x = winding (x, H)`, locally constant on `Ici q.1` (all off-boundary).
+  set g : ℝ → ℤ := fun x => P.winding (x, H) with hg
+  have hloc : IsLocallyConstant (fun x : ↥(Set.Ici q.1) => g x.1) := by
+    rw [IsLocallyConstant.iff_eventually_eq]
+    intro x
+    have hxb : ((x.1, H) : ℝ × ℝ) ∉ P.boundary := hray x.1 x.2
+    have hev := winding_eventually_eq P (x.1, H) hxb (by simpa [hH] using hnh)
+    have hcont : Continuous (fun x : ↥(Set.Ici q.1) => ((x.1, H) : ℝ × ℝ)) := by
+      fun_prop
+    exact (hcont.continuousAt.eventually hev)
+  -- A far-right point on the ray has winding `0`.
+  have hne : (Finset.univ.image (fun i => (P.vert i).1)).Nonempty :=
+    Finset.univ_nonempty.image _
+  set xM := (Finset.univ.image (fun i => (P.vert i).1)).max' hne with hxM
+  have hxMbound : ∀ i, ((P.vert i).1 : ℝ) < (max q.1 xM + 1 : ℝ) := by
+    intro i
+    have h0 : (P.vert i).1 ≤ xM :=
+      Finset.le_max' _ ((P.vert i).1)
+        (Finset.mem_image_of_mem (fun j => (P.vert j).1) (Finset.mem_univ i))
+    have h1 : ((P.vert i).1 : ℝ) ≤ (xM : ℝ) := by exact_mod_cast h0
+    have h2 : ((P.vert i).1 : ℝ) ≤ max q.1 (xM : ℝ) := le_trans h1 (le_max_right _ _)
+    linarith
+  set x₁ : ℝ := max q.1 xM + 1 with hx1
+  have hx1ge : q.1 ≤ x₁ := by rw [hx1]; have := le_max_left q.1 xM; linarith
+  have hzero : g x₁ = 0 := by
+    rw [hg]; exact winding_eq_zero_of_right P (x₁, H) (fun i => hxMbound i)
+  -- Transport along the preconnected ray `Ici q.1`.
+  haveI : PreconnectedSpace ↥(Set.Ici q.1) :=
+    isPreconnected_iff_preconnectedSpace.mp isPreconnected_Ici
+  have key := hloc.apply_eq_of_preconnectedSpace
+    (⟨q.1, le_refl q.1⟩ : ↥(Set.Ici q.1)) (⟨x₁, hx1ge⟩ : ↥(Set.Ici q.1))
+  simp only at key
+  have hqg : P.winding q = g q.1 := by rw [hg, hH]
+  rw [hqg, key, hzero]
 
 end Pick

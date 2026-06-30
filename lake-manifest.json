@@ -91,6 +91,6 @@
    "inputRev": "v4.31.0",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "top100",
+ "name": "jordan_pick",
  "lakeDir": ".lake",
  "fixedToolchain": false}

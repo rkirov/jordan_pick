@@ -1,4 +1,4 @@
-import Top100.PicksTheorem.Defs
+import JordanPick.PicksTheorem.Defs
 
 /-!
 # Basic properties of the integer winding number
@@ -47,6 +47,19 @@ lemma edgeWind_eq_zero_of_below (a b q : ℝ × ℝ) (ha : q.2 < a.2) (hb : q.2 
     rintro ⟨h, _, _⟩; linarith
   have h2 : ¬ (b.2 ≤ q.2 ∧ q.2 < a.2 ∧ cross (b - a) (q - a) < 0) := by
     rintro ⟨h, _, _⟩; linarith
+  rw [if_neg h1, if_neg h2]
+
+/-- A **horizontal** edge (both endpoints at the same height) contributes nothing
+to the winding around *any* `q`: neither `edgeWind` branch can fire, since each
+requires `q.2` to lie strictly between the two endpoint heights. Hence such an
+edge is identically `0`, and in particular trivially locally constant. -/
+lemma edgeWind_eq_zero_of_eq_height (a b q : ℝ × ℝ) (h : a.2 = b.2) :
+    edgeWind a b q = 0 := by
+  unfold edgeWind
+  have h1 : ¬ (a.2 ≤ q.2 ∧ q.2 < b.2 ∧ 0 < cross (b - a) (q - a)) := by
+    rintro ⟨ha, hb, _⟩; rw [← h] at hb; linarith
+  have h2 : ¬ (b.2 ≤ q.2 ∧ q.2 < a.2 ∧ cross (b - a) (q - a) < 0) := by
+    rintro ⟨ha, hb, _⟩; rw [h] at hb; linarith
   rw [if_neg h1, if_neg h2]
 
 /-- An edge not spanning `q`'s height contributes nothing to the horizontal-step
@@ -576,5 +589,142 @@ theorem one_le_B (P : LatticePolygon) : 1 ≤ P.B := by
   have h := (Set.ncard_pos (boundaryLattice_finite P)).mpr hne
   show 1 ≤ P.boundaryLattice.ncard
   omega
+
+/-- **Per-edge local constancy (off the two endpoint heights).** If `q₀` lies on
+neither horizontal line through the endpoints and is not on the edge's *line*
+(`cross ≠ 0`), then `edgeWind a b` is constant in a neighborhood of `q₀`: the
+three defining inequalities are all locally stable (each is a strict comparison of
+a continuous function against a constant it does not meet at `q₀`). This is the
+seed of `winding`'s local constancy off the boundary. -/
+lemma edgeWind_eventually_eq (a b q₀ : ℝ × ℝ) (h1 : q₀.2 ≠ a.2) (h2 : q₀.2 ≠ b.2)
+    (h3 : cross (b - a) (q₀ - a) ≠ 0) :
+    ∀ᶠ q in nhds q₀, edgeWind a b q = edgeWind a b q₀ := by
+  have hc : Continuous (fun p : ℝ × ℝ => cross (b - a) (p - a)) := by unfold cross; fun_prop
+  have hcy : Continuous (fun p : ℝ × ℝ => p.2) := continuous_snd
+  have key : ∀ (f : ℝ × ℝ → ℝ) (c : ℝ), Continuous f → f q₀ ≠ c →
+      ∀ᶠ q in nhds q₀, (c ≤ f q ↔ c ≤ f q₀) ∧ (f q < c ↔ f q₀ < c) ∧ (c < f q ↔ c < f q₀) := by
+    intro f c hf hfc
+    rcases lt_or_gt_of_ne hfc with hlt | hgt
+    · filter_upwards [(hf.tendsto q₀).eventually_lt_const hlt] with q hq
+      refine ⟨⟨fun h => ?_, fun h => ?_⟩, ⟨fun h => ?_, fun h => ?_⟩, ⟨fun h => ?_, fun h => ?_⟩⟩ <;>
+        first | (exfalso; linarith) | linarith
+    · filter_upwards [(hf.tendsto q₀).eventually_const_lt hgt] with q hq
+      refine ⟨⟨fun h => ?_, fun h => ?_⟩, ⟨fun h => ?_, fun h => ?_⟩, ⟨fun h => ?_, fun h => ?_⟩⟩ <;>
+        first | (exfalso; linarith) | linarith
+  filter_upwards [key (fun p => p.2) a.2 hcy h1, key (fun p => p.2) b.2 hcy h2,
+    key (fun p => cross (b - a) (p - a)) 0 hc h3] with q ha hb hcr
+  unfold edgeWind
+  simp only [ha.1, hb.2.1, hcr.2.2, hb.1, ha.2.1, hcr.2.1]
+
+/-- **Per-vertex cancellation at a shared-height vertex (left side).** Two adjacent
+edges `(a, v)` and `(v, b)` share the vertex `v`, which lies at the height of `q₀`
+(`v.2 = q₀.2`). The point `q₀` is strictly left of `v` (and of `a`, `b`), and the
+other endpoints avoid `q₀`'s height (`q₀.2 ≠ a.2`, `q₀.2 ≠ b.2`). Then, although
+each individual `edgeWind` term jumps as `q` crosses the line `y = q₀.2`, their
+**sum is locally constant** near `q₀`: the two incident edges have cancelling
+jumps. (Four height-configurations of `a`, `b` relative to `q₀.2`, each giving a
+constant sum on both half-planes.) -/
+lemma pairWind_eventually_eq_left (a v b q₀ : ℝ × ℝ) (hv : v.2 = q₀.2)
+    (h1 : q₀.2 ≠ a.2) (h2 : q₀.2 ≠ b.2)
+    (hvl : q₀.1 < v.1) (hal : q₀.1 < a.1) (hbl : q₀.1 < b.1) :
+    ∀ᶠ q in nhds q₀, edgeWind a v q + edgeWind v b q = edgeWind a v q₀ + edgeWind v b q₀ := by
+  have hcl : Continuous (fun p : ℝ × ℝ => p.1) := continuous_fst
+  have hcy : Continuous (fun p : ℝ × ℝ => p.2) := continuous_snd
+  -- The sum is eventually equal to a constant `c`; evaluate at `q₀ ∈ nhds q₀`.
+  suffices h : ∃ c : ℤ, ∀ᶠ q in nhds q₀, edgeWind a v q + edgeWind v b q = c by
+    obtain ⟨c, hc⟩ := h
+    have hq₀ := hc.self_of_nhds
+    filter_upwards [hc] with q hq; rw [hq, hq₀]
+  rcases lt_or_gt_of_ne h1.symm with haH | haH <;> rcases lt_or_gt_of_ne h2.symm with hbH | hbH
+  · -- a below, b below ⇒ const 0
+    refine ⟨0, ?_⟩
+    filter_upwards [(hcl.tendsto q₀).eventually_lt_const hvl,
+        (hcl.tendsto q₀).eventually_lt_const hal,
+        (hcl.tendsto q₀).eventually_lt_const hbl,
+        (hcy.tendsto q₀).eventually_const_lt haH,
+        (hcy.tendsto q₀).eventually_const_lt hbH] with q hqv hqa hqb hqaH hqbH
+    rcases le_or_gt q₀.2 q.2 with hle | hlt
+    · rw [edgeWind_eq_zero_of_above a v q (by linarith) (by rw [hv]; linarith),
+        edgeWind_eq_zero_of_above v b q (by rw [hv]; linarith) (by linarith)]; ring
+    · have e1 : edgeWind a v q = 1 := by
+        rw [edgeWind_eq_one_iff]
+        exact ⟨by linarith, by rw [hv]; linarith,
+          cross_pos_of_left a v q (by linarith) (by rw [hv]; linarith) hqa hqv⟩
+      have e2 : edgeWind v b q = -1 := by
+        rw [edgeWind_eq_neg_one_iff]
+        exact ⟨by linarith, by rw [hv]; linarith,
+          cross_neg_of_left v b q (by linarith) (by rw [hv]; linarith) hqv hqb⟩
+      rw [e1, e2]; ring
+  · -- a below, b above ⇒ const 1
+    refine ⟨1, ?_⟩
+    filter_upwards [(hcl.tendsto q₀).eventually_lt_const hvl,
+        (hcl.tendsto q₀).eventually_lt_const hal,
+        (hcl.tendsto q₀).eventually_lt_const hbl,
+        (hcy.tendsto q₀).eventually_const_lt haH,
+        (hcy.tendsto q₀).eventually_lt_const hbH] with q hqv hqa hqb hqaH hqbH
+    rcases le_or_gt q₀.2 q.2 with hle | hlt
+    · rw [edgeWind_eq_zero_of_above a v q (by linarith) (by rw [hv]; linarith)]
+      have e2 : edgeWind v b q = 1 := by
+        rw [edgeWind_eq_one_iff]
+        exact ⟨by rw [hv]; linarith, by linarith,
+          cross_pos_of_left v b q (by rw [hv]; linarith) (by linarith) hqv hqb⟩
+      rw [e2]; ring
+    · have e1 : edgeWind a v q = 1 := by
+        rw [edgeWind_eq_one_iff]
+        exact ⟨by linarith, by rw [hv]; linarith,
+          cross_pos_of_left a v q (by linarith) (by rw [hv]; linarith) hqa hqv⟩
+      rw [edgeWind_eq_zero_of_below v b q (by rw [hv]; linarith) (by linarith), e1]; ring
+  · -- a above, b below ⇒ const -1
+    refine ⟨-1, ?_⟩
+    filter_upwards [(hcl.tendsto q₀).eventually_lt_const hvl,
+        (hcl.tendsto q₀).eventually_lt_const hal,
+        (hcl.tendsto q₀).eventually_lt_const hbl,
+        (hcy.tendsto q₀).eventually_lt_const haH,
+        (hcy.tendsto q₀).eventually_const_lt hbH] with q hqv hqa hqb hqaH hqbH
+    rcases le_or_gt q₀.2 q.2 with hle | hlt
+    · have e1 : edgeWind a v q = -1 := by
+        rw [edgeWind_eq_neg_one_iff]
+        exact ⟨by rw [hv]; linarith, by linarith,
+          cross_neg_of_left a v q (by rw [hv]; linarith) (by linarith) hqa hqv⟩
+      rw [edgeWind_eq_zero_of_above v b q (by rw [hv]; linarith) (by linarith), e1]; ring
+    · rw [edgeWind_eq_zero_of_below a v q (by linarith) (by rw [hv]; linarith)]
+      have e2 : edgeWind v b q = -1 := by
+        rw [edgeWind_eq_neg_one_iff]
+        exact ⟨by linarith, by rw [hv]; linarith,
+          cross_neg_of_left v b q (by linarith) (by rw [hv]; linarith) hqv hqb⟩
+      rw [e2]; ring
+  · -- a above, b above ⇒ const 0
+    refine ⟨0, ?_⟩
+    filter_upwards [(hcl.tendsto q₀).eventually_lt_const hvl,
+        (hcl.tendsto q₀).eventually_lt_const hal,
+        (hcl.tendsto q₀).eventually_lt_const hbl,
+        (hcy.tendsto q₀).eventually_lt_const haH,
+        (hcy.tendsto q₀).eventually_lt_const hbH] with q hqv hqa hqb hqaH hqbH
+    rcases le_or_gt q₀.2 q.2 with hle | hlt
+    · have e1 : edgeWind a v q = -1 := by
+        rw [edgeWind_eq_neg_one_iff]
+        exact ⟨by rw [hv]; linarith, by linarith,
+          cross_neg_of_left a v q (by rw [hv]; linarith) (by linarith) hqa hqv⟩
+      have e2 : edgeWind v b q = 1 := by
+        rw [edgeWind_eq_one_iff]
+        exact ⟨by rw [hv]; linarith, by linarith,
+          cross_pos_of_left v b q (by rw [hv]; linarith) (by linarith) hqv hqb⟩
+      rw [e1, e2]; ring
+    · rw [edgeWind_eq_zero_of_below a v q (by linarith) (by rw [hv]; linarith),
+        edgeWind_eq_zero_of_below v b q (by rw [hv]; linarith) (by linarith)]; ring
+
+/-- **Per-vertex cancellation at a shared-height vertex (right side).** As
+`pairWind_eventually_eq_left`, but `q₀` lies strictly to the *right* of both edges
+(`a.1, v.1, b.1 < q₀.1`). Then the rightward ray from any nearby `q` misses both
+incident edges entirely, so both terms are identically `0` near `q₀`. -/
+lemma pairWind_eventually_eq_right (a v b q₀ : ℝ × ℝ)
+    (har : a.1 < q₀.1) (hvr : v.1 < q₀.1) (hbr : b.1 < q₀.1) :
+    ∀ᶠ q in nhds q₀, edgeWind a v q + edgeWind v b q = edgeWind a v q₀ + edgeWind v b q₀ := by
+  have hcl : Continuous (fun p : ℝ × ℝ => p.1) := continuous_fst
+  filter_upwards [(hcl.tendsto q₀).eventually_const_lt har,
+      (hcl.tendsto q₀).eventually_const_lt hvr,
+      (hcl.tendsto q₀).eventually_const_lt hbr] with q hqa hqv hqb
+  rw [edgeWind_eq_zero_of_right a v q hqa hqv, edgeWind_eq_zero_of_right v b q hqv hqb,
+    edgeWind_eq_zero_of_right a v q₀ har hvr, edgeWind_eq_zero_of_right v b q₀ hvr hbr]
 
 end Pick

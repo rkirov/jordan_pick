@@ -1,5 +1,5 @@
-import Top100.PicksTheorem.Weight
-import Top100.PicksTheorem.Area
+import JordanPick.PicksTheorem.Weight
+import JordanPick.PicksTheorem.Area
 
 /-!
 # The per-edge identity (bridging the count side and the area side)

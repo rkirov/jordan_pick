@@ -1,4 +1,4 @@
-import Top100.PicksTheorem.Defs
+import JordanPick.PicksTheorem.Defs
 
 /-!
 # Algebra of `cross`

@@ -114,11 +114,12 @@ end LatticePolygon
 
 open LatticePolygon
 
-/-- **Pick's theorem** (Freek #92): the area of a simple, positively-oriented
-lattice polygon equals `I + B/2 − 1`. -/
-theorem pick (P : LatticePolygon) (hsimple : P.IsSimple)
-    (horient : P.PositivelyOriented) :
-    P.area = (P.I : ℝ) + (P.B : ℝ) / 2 - 1 := by
-  sorry
+/- **Pick's theorem** (Freek #92): the area of a simple, positively-oriented
+lattice polygon equals `I + B/2 − 1`.
+
+The theorem is stated and proved as `Pick.pick` in
+`JordanPick/PicksTheorem/Pick.lean`: this `Defs` file is upstream of the entire
+Jordan-curve / ear-clipping development the proof relies on, so the final
+statement lives at the top of the import chain rather than here. -/
 
 end Pick

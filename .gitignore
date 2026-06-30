@@ -1,1 +1,20 @@
+# Lake build artifacts and fetched dependencies (incl. the Mathlib cache)
 /.lake
+build/
+*.olean
+*.ilean
+*.trace
+
+# External references consulted during development. NOT part of the build, and
+# includes third-party material (papers, other repos) that must not be
+# redistributed. Keep this out of the repo.
+/reference/
+
+# Generated lean-eval submission bundle — regenerate with
+# `submission/bundle-engine.sh`. The script + README + toolchain are tracked;
+# the bundled copy of the engine is not.
+/submission/Submission/
+
+# Editor / OS noise
+.DS_Store
+*.swp
