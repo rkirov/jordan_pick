@@ -66,6 +66,21 @@ documents the assembly. See it for the (logistics-only) remaining steps.
 * Area is the rigorous Lebesgue measure of the enclosed region, not
   shoelace-as-definition.
 
+## Relation to prior work
+
+Clean-room with respect to proofs, with prior art credited explicitly:
+
+* The **geometric core** — the polygonal Jordan curve theorem and the
+  ear-clipping (Meisters two-ears) reduction that yield `Pick.pick` — is
+  original. The closest prior Lean attempt (Eisermann & Zumkeller, below) proves
+  only the *algebraic* count identity and leaves the geometric half (a
+  winding/Umlaufsatz argument) unproved (`sorry`).
+* The **count side** (`latWeight` / `latWeightSum` in `Weight.lean`) follows the
+  discrete-angle-weight device of Eisermann & Zumkeller (`dang` / `Welp`); the
+  per-edge identity is proved independently here (a column decomposition rather
+  than their four-box partition + reflection involution). See the `Weight.lean`
+  header for specifics.
+
 ## References
 
 **Targets and tooling**

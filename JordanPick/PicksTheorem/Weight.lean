@@ -12,8 +12,18 @@ with half-weight on the axis. Values lie in `{-½, -¼, 0, ¼, ½}`.
 Important: unlike `winding`, `latWeight (u-q) (v-q)` does **not** have finite
 support as `q` ranges over ℤ² (the `±½` contributions of a slanted edge persist
 to infinity in `y`). The per-edge identity therefore holds over a *box* `Box r`
-large enough to contain the polygon, not over all of ℤ². This mirrors the radius
-parameter in the algebraic Pick development.
+large enough to contain the polygon, not over all of ℤ².
+
+## Prior art
+
+The fractional-weight count side here follows the discrete-angle-weight device of
+Eisermann & Zumkeller, *Formalizing Pick's Theorem, efficiently* (arXiv:2603.23095):
+our `latWeight` is their `dang`, and `latWeightSum` (the box-sum, `∑_{Box r} latWeight`)
+plays the role of their `Welp`. The per-edge identity `latWeightSum = trapezoidArea`
+is proved independently here — we decompose the box by *columns*, whereas they use a
+four-box partition with a reflection involution. The original content of this
+repository is the *geometric* completion (the polygonal Jordan curve theorem and the
+ear-clipping reduction), which their development leaves unproved (`sorry`).
 -/
 
 namespace Pick
@@ -284,18 +294,18 @@ noncomputable def Box (r : ℕ) : Finset Pt := Finset.Icc (-(r : ℤ), -(r : ℤ
 
 /-- Per-edge weighted lattice sum over `Box r`: the count-side analogue of one
 trapezoid. -/
-noncomputable def welp (u v : Pt) (r : ℕ) : ℚ := ∑ q ∈ Box r, latWeight (u - q) (v - q)
+noncomputable def latWeightSum (u v : Pt) (r : ℕ) : ℚ := ∑ q ∈ Box r, latWeight (u - q) (v - q)
 
-/-- `welp` is antisymmetric in the edge direction, matching `trapezoidArea`. -/
-lemma welp_skew (u v : Pt) (r : ℕ) : welp v u r = - welp u v r := by
-  unfold welp
+/-- `latWeightSum` is antisymmetric in the edge direction, matching `trapezoidArea`. -/
+lemma latWeightSum_skew (u v : Pt) (r : ℕ) : latWeightSum v u r = - latWeightSum u v r := by
+  unfold latWeightSum
   rw [← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun q _ => latWeight_skew (u - q) (v - q)
 
 /-- A vertical edge (equal `x`-coordinates) has zero weight, matching
 `trapezoidArea`. -/
-lemma welp_eq_zero_of_fst_eq (u v : Pt) (r : ℕ) (h : u.1 = v.1) : welp u v r = 0 := by
-  unfold welp
+lemma latWeightSum_eq_zero_of_fst_eq (u v : Pt) (r : ℕ) (h : u.1 = v.1) : latWeightSum u v r = 0 := by
+  unfold latWeightSum
   refine Finset.sum_eq_zero fun q _ => latWeight_eq_zero_of_sign_eq _ _ ?_
   simp only [Prod.fst_sub, h]
 
@@ -462,10 +472,10 @@ lemma sum_latWeight_eq_zero_of_invariant (u v : Pt) (S : Finset Pt)
     (fun q _ hf heq => hf (latWeight_eq_zero_of_fixed u v q heq)) (fun q hq => hS q hq)
     (fun q _ => by abel)
 
-/-- `welp` equals the weight sum over the asymmetric part `Box \ σ(Box)`: the
+/-- `latWeightSum` equals the weight sum over the asymmetric part `Box \ σ(Box)`: the
 symmetric part (where the reflection `σ q = u+v−q` stays in the box) cancels. -/
-lemma welp_eq_sum_asymm (u v : Pt) (r : ℕ) :
-    welp u v r =
+lemma latWeightSum_eq_sum_asymm (u v : Pt) (r : ℕ) :
+    latWeightSum u v r =
       ∑ q ∈ (Box r).filter (fun q => u + v - q ∉ Box r), latWeight (u - q) (v - q) := by
   classical
   have hinv : ∑ q ∈ (Box r).filter (fun q => u + v - q ∈ Box r), latWeight (u - q) (v - q) = 0 := by
@@ -474,13 +484,13 @@ lemma welp_eq_sum_asymm (u v : Pt) (r : ℕ) :
     rw [Finset.mem_filter] at hq ⊢
     have hb : u + v - (u + v - q) = q := by abel
     exact ⟨hq.2, by rw [hb]; exact hq.1⟩
-  unfold welp
+  unfold latWeightSum
   rw [← Finset.sum_filter_add_sum_filter_not (Box r) (fun q => u + v - q ∈ Box r), hinv, zero_add]
 
-/-- `welp` reduces to a sum over the middle columns `u.1 ≤ q.1 ≤ v.1`: the left
+/-- `latWeightSum` reduces to a sum over the middle columns `u.1 ≤ q.1 ≤ v.1`: the left
 and right columns contribute nothing (`latWeight_eq_zero_of_lt_fst`/`_gt_fst`). -/
-lemma welp_eq_sum_middle (u v : Pt) (r : ℕ) (huv : u.1 < v.1) :
-    welp u v r =
+lemma latWeightSum_eq_sum_middle (u v : Pt) (r : ℕ) (huv : u.1 < v.1) :
+    latWeightSum u v r =
       ∑ q ∈ (Box r).filter (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1), latWeight (u - q) (v - q) := by
   classical
   have hzero : (∑ q ∈ (Box r).filter (fun q => ¬(u.1 ≤ q.1 ∧ q.1 ≤ v.1)),
@@ -491,7 +501,7 @@ lemma welp_eq_sum_middle (u v : Pt) (r : ℕ) (huv : u.1 < v.1) :
     rcases not_and_or.mp hq.2 with h | h
     · exact latWeight_eq_zero_of_lt_fst u v q (by omega) (by omega)
     · exact latWeight_eq_zero_of_gt_fst u v q (by omega) (by omega)
-  unfold welp
+  unfold latWeightSum
   rw [← Finset.sum_filter_add_sum_filter_not (Box r) (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1),
     hzero, add_zero]
 
@@ -507,16 +517,16 @@ lemma sigma_notMem_iff (u v q : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box
   rw [h1, h2]
   omega
 
-/-- `welp` equals the weight sum over the explicit rectangle (middle columns ∩
+/-- `latWeightSum` equals the weight sum over the explicit rectangle (middle columns ∩
 bottom strip). Non-rectangle cells of the asymmetric region are either outside
 the middle columns (weight 0) or excluded by `sigma_notMem_iff`. -/
-lemma welp_eq_sum_rect (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
+lemma latWeightSum_eq_sum_rect (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
     (hu : u ∈ Box r) (hv : v ∈ Box r) (hy : 0 ≤ u.2 + v.2) :
-    welp u v r =
+    latWeightSum u v r =
       ∑ q ∈ (Box r).filter (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1 ∧ q.2 ≤ u.2 + v.2 - r - 1),
         latWeight (u - q) (v - q) := by
   classical
-  rw [welp_eq_sum_asymm u v r]
+  rw [latWeightSum_eq_sum_asymm u v r]
   symm
   apply Finset.sum_subset
   · intro q hq
@@ -604,12 +614,12 @@ lemma col_sum_boundary_right (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
 /-- **Per-edge identity, base case** (`u.1 < v.1`, `u.2+v.2 ≥ 0`, vertices in the
 box): the lattice-point weight sum equals the trapezoid value
 `−(u.2+v.2)(v.1−u.1)/2`. Assembles the three column sums over the rectangle. -/
-lemma welp_eq_trapezoid_base (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
+lemma latWeightSum_eq_trapezoid_base (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
     (hu : u ∈ Box r) (hv : v ∈ Box r) (hy : 0 ≤ u.2 + v.2) :
-    welp u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
+    latWeightSum u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
   have hu2 : u.2 ≤ (r : ℤ) := ((mem_Box r u).mp hu).2.2.2
   have hv2 : v.2 ≤ (r : ℤ) := ((mem_Box r v).mp hv).2.2.2
-  rw [welp_eq_sum_rect u v r huv hu hv hy, rect_eq_Icc u v r hu hv hy,
+  rw [latWeightSum_eq_sum_rect u v r huv hu hv hy, rect_eq_Icc u v r hu hv hy,
     ← Finset.Icc_product_Icc, Finset.sum_product]
   have hsplit : Finset.Icc u.1 v.1 = insert u.1 (insert v.1 (Finset.Ioo u.1 v.1)) := by
     ext x; simp only [Finset.mem_Icc, Finset.mem_insert, Finset.mem_Ioo]; omega
@@ -627,12 +637,12 @@ lemma welp_eq_trapezoid_base (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
   push_cast
   ring
 
-/-- Reflecting an edge across the `x`-axis negates `welp` (reindex the box sum by
+/-- Reflecting an edge across the `x`-axis negates `latWeightSum` (reindex the box sum by
 `ρ q = (q.1, −q.2)`, which preserves the box). Used to drop the `u.2+v.2 ≥ 0`
 assumption in the per-edge identity. -/
-lemma welp_yreflect (u v : Pt) (r : ℕ) :
-    welp (u.1, -u.2) (v.1, -v.2) r = -welp u v r := by
-  unfold welp
+lemma latWeightSum_yreflect (u v : Pt) (r : ℕ) :
+    latWeightSum (u.1, -u.2) (v.1, -v.2) r = -latWeightSum u v r := by
+  unfold latWeightSum
   rw [← Finset.sum_neg_distrib]
   refine Finset.sum_nbij' (fun q => (q.1, -q.2)) (fun q => (q.1, -q.2)) ?_ ?_ ?_ ?_ ?_
   · intro a ha; simp only [mem_Box] at ha ⊢; omega
@@ -659,30 +669,30 @@ lemma latWeight_eq_of_both_above (a b : Pt) (ha : 0 < a.2) (hb : 0 < b.2) :
 
 /-- Per-edge identity (`u.1 < v.1`, any orientation): the weight sum equals the
 trapezoid value. The `u.2+v.2 < 0` case follows from the base case by the
-`y`-reflection (`welp_yreflect`). -/
-lemma welp_eq_trapezoid_lt (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
+`y`-reflection (`latWeightSum_yreflect`). -/
+lemma latWeightSum_eq_trapezoid_lt (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
     (hu : u ∈ Box r) (hv : v ∈ Box r) :
-    welp u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
+    latWeightSum u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
   by_cases hy : 0 ≤ u.2 + v.2
-  · exact welp_eq_trapezoid_base u v r huv hu hv hy
+  · exact latWeightSum_eq_trapezoid_base u v r huv hu hv hy
   · have hρu : (u.1, -u.2) ∈ Box r := by simp only [mem_Box] at hu ⊢; omega
     have hρv : (v.1, -v.2) ∈ Box r := by simp only [mem_Box] at hv ⊢; omega
-    have hb := welp_eq_trapezoid_base (u.1, -u.2) (v.1, -v.2) r huv hρu hρv
+    have hb := latWeightSum_eq_trapezoid_base (u.1, -u.2) (v.1, -v.2) r huv hρu hρv
       (by show (0 : ℤ) ≤ -u.2 + -v.2; omega)
-    rw [welp_yreflect] at hb
+    rw [latWeightSum_yreflect] at hb
     dsimp only at hb
     push_cast at hb ⊢
     linarith
 
 /-- **Per-edge identity** (all cases): for an edge with endpoints in the box, the
 lattice-point weight sum equals the trapezoid value `−(u.2+v.2)(v.1−u.1)/2`. -/
-lemma welp_eq_trapezoid (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) :
-    welp u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
+lemma latWeightSum_eq_trapezoid (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) :
+    latWeightSum u v r = -(((u.2 + v.2) * (v.1 - u.1) : ℤ) : ℚ) / 2 := by
   rcases lt_trichotomy u.1 v.1 with h | h | h
-  · exact welp_eq_trapezoid_lt u v r h hu hv
-  · rw [welp_eq_zero_of_fst_eq u v r h]
+  · exact latWeightSum_eq_trapezoid_lt u v r h hu hv
+  · rw [latWeightSum_eq_zero_of_fst_eq u v r h]
     rw [show v.1 - u.1 = 0 by omega]; simp
-  · rw [welp_skew v u r, welp_eq_trapezoid_lt v u r h hv hu]
+  · rw [latWeightSum_skew v u r, latWeightSum_eq_trapezoid_lt v u r h hv hu]
     push_cast; ring
 
 end Pick

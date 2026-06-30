@@ -4,7 +4,7 @@ import JordanPick.PicksTheorem.Area
 /-!
 # The per-edge identity (bridging the count side and the area side)
 
-Combines the `ℚ`-valued lattice-point weight `welp` (Weight.lean) with the
+Combines the `ℚ`-valued lattice-point weight `latWeightSum` (Weight.lean) with the
 `ℝ`-valued `trapezoidArea` (Area.lean): for a lattice edge with endpoints in the
 box, the (cast) weight sum equals the trapezoid area.
 -/
@@ -13,22 +13,22 @@ namespace Pick
 
 /-- **Per-edge identity in `ℝ`** (all cases): for an edge with endpoints in the
 box, the cast weight sum equals the trapezoid area. -/
-lemma welp_eq_trapezoid_real (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) :
-    ((welp u v r : ℚ) : ℝ) = trapezoidArea (toReal u) (toReal v) := by
-  rw [welp_eq_trapezoid u v r hu hv, ← count_value_eq_trapezoid u v]
+lemma latWeightSum_eq_trapezoid_real (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) :
+    ((latWeightSum u v r : ℚ) : ℝ) = trapezoidArea (toReal u) (toReal v) := by
+  rw [latWeightSum_eq_trapezoid u v r hu hv, ← count_value_eq_trapezoid u v]
   push_cast
   ring
 
 open LatticePolygon in
 /-- **Step 1 complete (shoelace side).** For a box containing all vertices, the
-shoelace area equals the sum over edges of the lattice-point weight `welp`.
-Expanding `welp`, this is `shoelace = ∑_{q ∈ Box r} ∑ᵢ latWeight (vᵢ−q) (vᵢ₊₁−q)`,
+shoelace area equals the sum over edges of the lattice-point weight `latWeightSum`.
+Expanding `latWeightSum`, this is `shoelace = ∑_{q ∈ Box r} ∑ᵢ latWeight (vᵢ−q) (vᵢ₊₁−q)`,
 i.e. `shoelace = ∑_q ŵ(q)`. -/
-theorem shoelace_eq_sum_welp (P : LatticePolygon) (r : ℕ) (hr : ∀ i, P.vert i ∈ Box r) :
-    P.shoelace = ∑ i, ((welp (P.vert i) (P.vert (i + 1)) r : ℚ) : ℝ) := by
+theorem shoelace_eq_sum_latWeightSum (P : LatticePolygon) (r : ℕ) (hr : ∀ i, P.vert i ∈ Box r) :
+    P.shoelace = ∑ i, ((latWeightSum (P.vert i) (P.vert (i + 1)) r : ℚ) : ℝ) := by
   rw [← sum_trapezoidArea_eq_shoelace P]
   exact Finset.sum_congr rfl fun i _ =>
-    (welp_eq_trapezoid_real (P.vert i) (P.vert (i + 1)) r (hr i) (hr (i + 1))).symm
+    (latWeightSum_eq_trapezoid_real (P.vert i) (P.vert (i + 1)) r (hr i) (hr (i + 1))).symm
 
 /-- **Step 1, final form.** The shoelace area equals the sum over lattice points
 `q` in the box of the angle-weight `ŵ(q) = ∑ᵢ latWeight (vᵢ−q) (vᵢ₊₁−q)`. This is
@@ -36,9 +36,9 @@ the count-side quantity Step 3 connects to `I + B/2 − 1`. -/
 theorem shoelace_eq_totalWeight (P : LatticePolygon) (r : ℕ) (hr : ∀ i, P.vert i ∈ Box r) :
     P.shoelace =
       ((∑ q ∈ Box r, ∑ i, latWeight (P.vert i - q) (P.vert (i + 1) - q) : ℚ) : ℝ) := by
-  rw [shoelace_eq_sum_welp P r hr, ← Rat.cast_sum]
+  rw [shoelace_eq_sum_latWeightSum P r hr, ← Rat.cast_sum]
   congr 1
-  simp only [welp]
+  simp only [latWeightSum]
   rw [Finset.sum_comm]
 
 /-- The polygon's angle-weight at a lattice point `q`: `ŵ(q) = ∑ᵢ latWeight
