@@ -7851,65 +7851,6 @@ def IsDiagonal (P : LatticePolygon) (i j : ZMod P.n) : Prop :=
     ∀ k : ZMod P.n,
       Disjoint (openSegment ℝ (toReal (P.vert i)) (toReal (P.vert j))) (P.edgeSeg k)
 
-/-- **Closest contained vertex.** If the closed corner triangle `(vᵢ₋₁, vᵢ, vᵢ₊₁)` contains
-some polygon vertex other than the three corners, then it contains one, `w`, of minimal
-distance to the apex `vᵢ`. This is the vertex O'Rourke joins to `vᵢ` to form a diagonal. -/
-lemma exists_closest_contained (P : LatticePolygon) (i : ZMod P.n)
-    (hne : ∃ j : ZMod P.n, j ≠ i - 1 ∧ j ≠ i ∧ j ≠ i + 1 ∧
-      inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-        (toReal (P.vert j))) :
-    ∃ w : ZMod P.n,
-      (w ≠ i - 1 ∧ w ≠ i ∧ w ≠ i + 1 ∧
-        inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-          (toReal (P.vert w))) ∧
-      ∀ j : ZMod P.n, j ≠ i - 1 → j ≠ i → j ≠ i + 1 →
-        inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-          (toReal (P.vert j)) →
-        dist (toReal (P.vert i)) (toReal (P.vert w)) ≤
-          dist (toReal (P.vert i)) (toReal (P.vert j)) := by
-  classical
-  set S : Finset (ZMod P.n) :=
-    Finset.univ.filter (fun j => j ≠ i - 1 ∧ j ≠ i ∧ j ≠ i + 1 ∧
-      inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-        (toReal (P.vert j))) with hSdef
-  have hSne : S.Nonempty := by
-    obtain ⟨j, hj⟩ := hne
-    exact ⟨j, by rw [hSdef, Finset.mem_filter]; exact ⟨Finset.mem_univ _, hj⟩⟩
-  obtain ⟨w, hwS, hwmin⟩ :=
-    Finset.exists_min_image S (fun j => dist (toReal (P.vert i)) (toReal (P.vert j))) hSne
-  rw [hSdef, Finset.mem_filter] at hwS
-  refine ⟨w, hwS.2, ?_⟩
-  intro j hj1 hj2 hj3 hjT
-  exact hwmin j (by rw [hSdef, Finset.mem_filter]; exact ⟨Finset.mem_univ _, hj1, hj2, hj3, hjT⟩)
-
-/-- **Convex/empty dichotomy (front half of `exists_diagonal`).** A simple positively-oriented
-polygon either already has an ear vertex (a convex vertex with empty corner triangle), or it
-has a convex vertex `i` together with the closest contained vertex `w` of its corner triangle.
-In the second case `[vᵢ, v_w]` is the diagonal candidate of O'Rourke's Lemma 1.3. -/
-lemma exists_ear_or_closestContained (P : LatticePolygon) (hS : P.IsSimple)
-    (hO : P.PositivelyOriented) :
-    (∃ i : ZMod P.n, isEarVertex P i) ∨
-    (∃ i w : ZMod P.n, 0 < cornerCross P i ∧
-      (w ≠ i - 1 ∧ w ≠ i ∧ w ≠ i + 1 ∧
-        inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-          (toReal (P.vert w))) ∧
-      ∀ j : ZMod P.n, j ≠ i - 1 → j ≠ i → j ≠ i + 1 →
-        inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-          (toReal (P.vert j)) →
-        dist (toReal (P.vert i)) (toReal (P.vert w)) ≤
-          dist (toReal (P.vert i)) (toReal (P.vert j))) := by
-  classical
-  obtain ⟨i, hconv⟩ := exists_convex_vertex P hS hO
-  by_cases hemp : ∃ j : ZMod P.n, j ≠ i - 1 ∧ j ≠ i ∧ j ≠ i + 1 ∧
-      inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-        (toReal (P.vert j))
-  · right
-    obtain ⟨w, hw, hwmin⟩ := exists_closest_contained P i hemp
-    exact ⟨i, w, hconv, hw, hwmin⟩
-  · left
-    push_neg at hemp
-    exact ⟨i, isEarVertex_of_empty P i hconv hemp⟩
-
 /-- **Depth** of a point `x` below the base line `(vᵢ₋₁, vᵢ₊₁)` of the corner triangle at
 `i`, toward the apex `vᵢ`. Equals the third `inTriangle` half-plane functional
 `cross (vᵢ₋₁ − vᵢ₊₁) (x − vᵢ₊₁)`; it is `0` on the base line, `cornerCross`-positive at the
