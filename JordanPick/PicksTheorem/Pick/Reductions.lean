@@ -76,7 +76,7 @@ lemma angleWeight_vertex_triangle (P : LatticePolygon) (hn : P.n = 3) (k : ZMod 
 /-- `toReal` is subtraction-linear. -/
 lemma toReal_sub (a b : Pt) : toReal (a - b) = toReal a - toReal b := by
   unfold toReal
-  simp [Prod.ext_iff, Prod.fst_sub, Prod.snd_sub]
+  simp [Prod.fst_sub, Prod.snd_sub]
 
 /-- Sum over `ZMod P.n` with `P.n = 3` expands to three terms. -/
 lemma sum_zmodPn {M : Type*} [AddCommMonoid M] (P : LatticePolygon) (hn : P.n = 3)
@@ -319,7 +319,7 @@ lemma angleWeight_eq_zero_of_fst_sign_const (P : LatticePolygon) (q : Pt) (s : �
   have hz : ∀ i, (Int.sign (crossZ (P.vert i - q) (P.vert (i + 1) - q)) : ℚ)
       * (|Int.sign (P.vert i - q).1 - Int.sign (P.vert (i + 1) - q).1| : ℚ) = 0 := by
     intro i
-    simp only [h i, h (i + 1), sub_self, abs_zero, Int.cast_zero, mul_zero]
+    simp only [h i, h (i + 1), sub_self, abs_zero, mul_zero]
   rw [Finset.sum_congr rfl (fun i _ => hz i), Finset.sum_const_zero]; simp
 
 /-- A lattice point on edge `k`'s segment is collinear with its endpoints, so the
@@ -2018,7 +2018,6 @@ lemma angleWeight_eq_zero_of_not_mem (P : LatticePolygon) (hn : P.n = 3)
     rcases lt_trichotomy (crossZ (P.vert k - q) (P.vert (k + 1) - q)) 0 with ha | ha | ha <;>
     first
       | (exfalso; linarith [hknp])
-      | (exfalso; linarith [hsum])
       | exact angleWeight_eq_zero_of_neg_edge P hn q k ha hb hc
       | exact angleWeight_eq_zero_of_zero_pos_neg P hn q k ha hb hc
       | exact angleWeight_eq_zero_of_zero_neg_pos P hn q k ha hb hc
@@ -2030,14 +2029,8 @@ lemma angleWeight_eq_zero_of_not_mem (P : LatticePolygon) (hn : P.n = 3)
           (by rw [e21]; exact hc) (by rw [e21, e22]; exact ha) (by rw [e22]; exact hb)
       | exact angleWeight_eq_zero_of_zero_pos_neg P hn q (k + 1)
           (by rw [e11]; exact hb) (by rw [e11, e12]; exact hc) (by rw [e12]; exact ha)
-      | exact angleWeight_eq_zero_of_zero_neg_pos P hn q (k + 1)
-          (by rw [e11]; exact hb) (by rw [e11, e12]; exact hc) (by rw [e12]; exact ha)
-      | exact angleWeight_eq_zero_of_zero_pos_neg P hn q (k + 2)
-          (by rw [e21]; exact hc) (by rw [e21, e22]; exact ha) (by rw [e22]; exact hb)
       | exact angleWeight_eq_zero_of_zero_neg_pos P hn q (k + 2)
           (by rw [e21]; exact hc) (by rw [e21, e22]; exact ha) (by rw [e22]; exact hb)
-      | exact absurd (mem_boundary_of_adjacent_zero P hn horient q (k + 1)
-          (by rw [e11]; exact hb) (by rw [e11, e12]; exact hc)) hbdry
       | exact absurd (mem_boundary_of_adjacent_zero P hn horient q (k + 2)
           (by rw [e21]; exact hc) (by rw [e21, e22]; exact ha)) hbdry
 
@@ -2197,7 +2190,7 @@ lemma finsum_angleWeight_eq (P : LatticePolygon) (hn : P.n = 3)
     intro q hqi hqb
     exact Set.disjoint_left.1 (interiorLattice_disjoint_boundaryLattice P)
       ((Set.Finite.mem_toFinset _).1 hqi) ((Set.Finite.mem_toFinset _).1 hqb)
-  rw [finsum_eq_finset_sum_of_support_subset _ hsupp, Finset.sum_union hdisj,
+  rw [finsum_eq_finsetSum_of_support_subset _ hsupp, Finset.sum_union hdisj,
     sum_interiorLattice_angleWeight P hn horient,
     sum_boundaryLattice_angleWeight P hn horient hsimple]
   ring
@@ -2376,7 +2369,7 @@ lemma winding_deleteLast_add_ear (P : LatticePolygon) (h : 2 ≤ P.n) (q : ℝ �
     simp [Fin.val_last]
   have eDiag2 : (((Fin.last m + 1 : Fin (m+1)).val : ℕ) : ZMod (m+2)) = (0 : ZMod (m+2)) := by
     rw [show (Fin.last m + 1 : Fin (m+1)) = 0 by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]]
+      apply Fin.val_injective; simp]
     simp
   have eEarA1 : ((Fin.last m).castSucc : Fin (m+2)) = (m : ZMod (m+2)) := by
     apply Fin.val_injective
@@ -2392,7 +2385,7 @@ lemma winding_deleteLast_add_ear (P : LatticePolygon) (h : 2 ≤ P.n) (q : ℝ �
     rw [ZMod.val_natCast_of_lt (by omega)]
   have eEarB2 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : ZMod (m+2)) := by
     have h0 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : Fin (m+2)) := by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]
+      apply Fin.val_injective; simp
     exact h0
   have eEarA2 : ((Fin.last m).castSucc + 1 : Fin (m+2)) = ((m : ZMod (m+2)) + 1 : ZMod (m+2)) := by
     have h1 : ((m : ZMod (m+2)) + 1 : ZMod (m+2)) = ((m+1 : ℕ) : ZMod (m+2)) := by push_cast; ring
@@ -2462,7 +2455,7 @@ lemma cross_sum_deleteLast_add_ear (P : LatticePolygon) (h : 2 ≤ P.n) (m : ℕ
     simp [Fin.val_last]
   have eDiag2 : (((Fin.last m + 1 : Fin (m+1)).val : ℕ) : ZMod (m+2)) = (0 : ZMod (m+2)) := by
     rw [show (Fin.last m + 1 : Fin (m+1)) = 0 by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]]
+      apply Fin.val_injective; simp]
     simp
   have eEarA1 : ((Fin.last m).castSucc : Fin (m+2)) = (m : ZMod (m+2)) := by
     apply Fin.val_injective
@@ -2478,7 +2471,7 @@ lemma cross_sum_deleteLast_add_ear (P : LatticePolygon) (h : 2 ≤ P.n) (m : ℕ
     rw [ZMod.val_natCast_of_lt (by omega)]
   have eEarB2 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : ZMod (m+2)) := by
     have h0 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : Fin (m+2)) := by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]
+      apply Fin.val_injective; simp
     exact h0
   have eEarA2 : ((Fin.last m).castSucc + 1 : Fin (m+2)) = ((m : ZMod (m+2)) + 1 : ZMod (m+2)) := by
     have h1 : ((m : ZMod (m+2)) + 1 : ZMod (m+2)) = ((m+1 : ℕ) : ZMod (m+2)) := by push_cast; ring
@@ -2514,7 +2507,7 @@ lemma shoelace_deleteLast_add_ear (P : LatticePolygon) (h : 2 ≤ P.n) (m : ℕ)
   ring
 
 /-- The **ear triangle** `(vₘ, vₘ₊₁, v₀)` of `P` as a standalone 3-vertex polygon. -/
-def earTri (P : LatticePolygon) (m : ℕ) (hm : P.n = m + 2) : LatticePolygon where
+def earTri (P : LatticePolygon) (m : ℕ) (_ : P.n = m + 2) : LatticePolygon where
   n := 3
   pos := by norm_num
   vert := ![P.vert (m : ZMod P.n), P.vert ((m : ZMod P.n) + 1), P.vert 0]
@@ -2611,26 +2604,20 @@ lemma boundary_deleteLast_union_earTri (P : LatticePolygon) (h : 2 ≤ P.n) (m :
     · apply Set.iUnion_subset
       intro i
       rcases zmod3_cases i with rfl | rfl | rfl <;>
-        simp only [LatticePolygon.edgeSeg, earTri, show ((1:ZMod 3)+1 = 2) from rfl,
-          show ((2:ZMod 3)+1 = 0) from rfl, show ((0:ZMod 3)+1 = 1) from rfl,
-          Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-          Matrix.tail_cons] <;> intro y hy
+        simp only [LatticePolygon.edgeSeg, earTri] <;> intro y hy
       · exact Or.inl (Or.inl hy)
       · exact Or.inl (Or.inr hy)
       · exact Or.inr hy
     · intro y hy
       rcases hy with (hy | hy) | hy
       · refine Set.mem_iUnion.2 ⟨0, ?_⟩
-        simp only [LatticePolygon.edgeSeg, earTri, show ((0:ZMod 3)+1 = 1) from rfl,
-          Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
+        simp only [LatticePolygon.edgeSeg, earTri]
         exact hy
       · refine Set.mem_iUnion.2 ⟨1, ?_⟩
-        simp only [LatticePolygon.edgeSeg, earTri, show ((1:ZMod 3)+1 = 2) from rfl,
-          Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+        simp only [LatticePolygon.edgeSeg, earTri]
         exact hy
       · refine Set.mem_iUnion.2 ⟨2, ?_⟩
-        simp only [LatticePolygon.edgeSeg, earTri, show ((2:ZMod 3)+1 = 0) from rfl,
-          Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, Matrix.cons_val_zero]
+        simp only [LatticePolygon.edgeSeg, earTri]
         exact hy
   rw [hearB]; clear hearB
   obtain ⟨n, pos, vert⟩ := P
@@ -2681,7 +2668,7 @@ lemma boundary_deleteLast_union_earTri (P : LatticePolygon) (h : 2 ≤ P.n) (m :
     simp [Fin.val_last]
   have hdiagL0 : (((Fin.last m + 1 : Fin (m+1)).val : ℕ) : ZMod (m+2)) = (0 : ZMod (m+2)) := by
     rw [show (Fin.last m + 1 : Fin (m+1)) = 0 by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]]
+      apply Fin.val_injective; simp]
     simp
   have hearA1 : ((Fin.last m).castSucc : Fin (m+2)) = (m : ZMod (m+2)) := by
     apply Fin.val_injective
@@ -2705,11 +2692,11 @@ lemma boundary_deleteLast_union_earTri (P : LatticePolygon) (h : 2 ≤ P.n) (m :
     rw [ZMod.val_natCast_of_lt (by omega)]
   have hearB2 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : ZMod (m+2)) := by
     have h0 : (Fin.last (m+1) + 1 : Fin (m+2)) = (0 : Fin (m+2)) := by
-      apply Fin.val_injective; simp [Fin.val_last, Fin.val_add_one]
+      apply Fin.val_injective; simp
     exact h0
   rw [hsub]
   simp only [Function.comp_apply, hearB2]
-  simp only [hdiagL, hdiagL0, hearA1, hearA2, hearB1]
+  simp only [hdiagL, hdiagL0, hearA1, hearB1]
   -- Pure set algebra: the diagonal `v_m → v_0` (from deleteLast and the ear's reverse) coincides.
   rw [segment_symm ℝ (toReal (vert 0)) (toReal (vert (m : ZMod (m+2))))]
   ext x

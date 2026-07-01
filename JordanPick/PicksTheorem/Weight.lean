@@ -164,7 +164,7 @@ lemma latWeight_skew (a b : Pt) : latWeight b a = - latWeight a b := by
 nothing. -/
 lemma latWeight_eq_zero_of_sign_eq (a b : Pt) (h : Int.sign a.1 = Int.sign b.1) :
     latWeight a b = 0 := by
-  unfold latWeight; rw [h]; simp only [sub_self, abs_zero, Int.cast_zero, zero_mul, zero_div]
+  unfold latWeight; rw [h]; simp only [sub_self, abs_zero, zero_mul, zero_div]
 
 /-- `Int.sign` takes only the values `-1, 0, 1`. -/
 lemma sign_trichotomy (x : ℤ) : Int.sign x = -1 ∨ Int.sign x = 0 ∨ Int.sign x = 1 := by
@@ -549,7 +549,7 @@ lemma latWeightSum_eq_sum_rect (u v : Pt) (r : ℕ) (huv : u.1 < v.1)
 /-- The rectangle filter set is exactly the lattice box
 `[u.1, v.1] × [−r, u.2+v.2−r−1]` (the extra `Box r` bounds are implied since the
 vertices lie in the box). -/
-lemma rect_eq_Icc (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) (hy : 0 ≤ u.2 + v.2) :
+lemma rect_eq_Icc (u v : Pt) (r : ℕ) (hu : u ∈ Box r) (hv : v ∈ Box r) (_ : 0 ≤ u.2 + v.2) :
     (Box r).filter (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1 ∧ q.2 ≤ u.2 + v.2 - r - 1)
       = Finset.Icc (u.1, -(r : ℤ)) (v.1, u.2 + v.2 - r - 1) := by
   simp only [mem_Box] at hu hv

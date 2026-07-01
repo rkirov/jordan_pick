@@ -31,7 +31,7 @@ abbrev Plane := EuclideanSpace ℝ (Fin 2)
 /-! ## Phase 1 — the once-around loop on `AddCircle 1` is not nullhomotopic -/
 
 /-- The covering map `ℝ → AddCircle 1`. -/
-noncomputable def cover : IsCoveringMap ((↑) : ℝ → AddCircle (1 : ℝ)) :=
+theorem cover : IsCoveringMap ((↑) : ℝ → AddCircle (1 : ℝ)) :=
   AddCircle.isCoveringMap_coe 1
 
 /-- The once-around loop `t ↦ ↑t` in `AddCircle 1`. -/
@@ -222,6 +222,7 @@ lemma Acoef_pos (x) : 0 < Acoef f x := by
   rw [Acoef, real_inner_self_eq_norm_sq]
   exact pow_pos (norm_pos_iff.mpr (dvec_ne f hf x)) 2
 
+omit hf in
 lemma Ccoef_nonpos (x) : Ccoef f x ≤ 0 := by
   rw [Ccoef, sub_nonpos]
   have : ‖(f x : Plane)‖ ≤ 1 := by
@@ -230,7 +231,7 @@ lemma Ccoef_nonpos (x) : Ccoef f x ≤ 0 := by
 
 lemma discr_nonneg (x) : 0 ≤ discr f x := by
   have hA := (Acoef_pos f hf x).le
-  have hC := Ccoef_nonpos f hf x
+  have hC := Ccoef_nonpos f x
   have : 0 ≤ Acoef f x * (- Ccoef f x) := mul_nonneg hA (by linarith)
   rw [discr]; nlinarith [sq_nonneg (Bcoef f x)]
 

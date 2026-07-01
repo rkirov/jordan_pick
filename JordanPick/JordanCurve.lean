@@ -49,7 +49,7 @@ Brouwer: if they were disjoint, the explicit normalized map
 `F(s,t) = ((v₁ t − h₁ s)/N, (h₂ s − v₂ t)/N)` (with `N` the sup-norm of
 `h s − v t`) sends the parameter square `[-1,1]²` to its boundary with no fixed
 point. Coordinates are `p 0`, `p 1` of `p : Plane`. -/
-theorem crossing (hbr : BrouwerFPT) {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤ d)
+theorem crossing (hbr : BrouwerFPT) {a b c d : ℝ} (_hab : a ≤ b) (_hcd : c ≤ d)
     (h v : ℝ → Plane)
     (hh : ContinuousOn h (Icc (-1) 1)) (hv : ContinuousOn v (Icc (-1) 1))
     (hhE : ∀ t ∈ Icc (-1:ℝ) 1, h t 0 ∈ Icc a b ∧ h t 1 ∈ Icc c d)
@@ -699,7 +699,7 @@ private lemma complexLIE_one : Arcs.complexLIE (1 : ℂ) = !₂[(1:ℝ), 0] := b
   simp only [Complex.one_re, Complex.one_im, one_smul, zero_smul, add_zero,
     EuclideanSpace.basisFun_apply]
   ext i; fin_cases i <;>
-    simp [EuclideanSpace.single_apply, PiLp.toLp_apply]
+    simp
 
 /-- `complexLIE (-1) = !₂[-1,0]`. -/
 private lemma complexLIE_negOne : Arcs.complexLIE (-1 : ℂ) = !₂[(-1:ℝ), 0] := by
@@ -709,7 +709,7 @@ private lemma complexLIE_negOne : Arcs.complexLIE (-1 : ℂ) = !₂[(-1:ℝ), 0]
   simp only [Complex.neg_re, Complex.one_re, Complex.neg_im, Complex.one_im, neg_zero,
     zero_smul, add_zero, EuclideanSpace.basisFun_apply]
   ext i; fin_cases i <;>
-    simp [EuclideanSpace.single_apply, PiLp.toLp_apply]
+    simp
 
 /-- **Task 1 (farthest pair).** The compact curve `range r` contains a pair `a, b`
 realizing the diameter of `J`, and `a ≠ b` (as `r` is injective on the sphere, which
@@ -722,10 +722,10 @@ theorem exists_farthest_pair {r : sphere (0 : Plane) 1 → Plane}
   -- two explicit distinct points on the sphere, hence in `range r`
   have hs1 : (!₂[(1:ℝ), 0] : Plane) ∈ sphere (0 : Plane) 1 := by
     rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Fin.sum_univ_two]
-    simp [PiLp.toLp_apply]
+    simp
   have hs2 : (!₂[(-1:ℝ), 0] : Plane) ∈ sphere (0 : Plane) 1 := by
     rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Fin.sum_univ_two]
-    simp [PiLp.toLp_apply]
+    simp
   set s1 : sphere (0 : Plane) 1 := ⟨!₂[(1:ℝ), 0], hs1⟩ with hs1def
   set s2 : sphere (0 : Plane) 1 := ⟨!₂[(-1:ℝ), 0], hs2⟩ with hs2def
   have hs12 : s1 ≠ s2 := by
@@ -882,7 +882,7 @@ reparametrized by `arc_path`) staying in the rectangle `[-1,1]×[-2,2]`
 bottom edge `y=-2` to the top edge `y=2`.  Delivers a curve point on the vertical
 axis. -/
 theorem segment_meets_curve (hbr : BrouwerFPT)
-    {r : sphere (0 : Plane) 1 → Plane} (hcont : Continuous r) (hinj : Injective r)
+    {r : sphere (0 : Plane) 1 → Plane} (hcont : Continuous r) (_hinj : Injective r)
     (hm : (!₂[(-1:ℝ), 0] : Plane) ∈ range r) (hp : (!₂[(1:ℝ), 0] : Plane) ∈ range r)
     (hfar : ∀ z ∈ range r, ∀ w ∈ range r, dist z w ≤ 2) :
     ∃ p ∈ range r, p 0 = 0 ∧ p 1 ∈ Icc (-2:ℝ) 2 := by
@@ -1021,11 +1021,11 @@ theorem jordan_arcs (hbr : BrouwerFPT)
   -- transport path-connectedness of the arc interiors down to the plane
   have hpcB1 : IsPathConnected (B₁ \ {!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]}) := by
     have h := hpcA1.image (continuous_subtype_val (p := fun z => z ∈ range r))
-    rwa [Set.image_diff Subtype.coe_injective, Set.image_insert_eq, Set.image_singleton,
+    rwa [Set.image_sdiff Subtype.coe_injective, Set.image_insert_eq, Set.image_singleton,
       hJx, hJy] at h
   have hpcB2 : IsPathConnected (B₂ \ {!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]}) := by
     have h := hpcA2.image (continuous_subtype_val (p := fun z => z ∈ range r))
-    rwa [Set.image_diff Subtype.coe_injective, Set.image_insert_eq, Set.image_singleton,
+    rwa [Set.image_sdiff Subtype.coe_injective, Set.image_insert_eq, Set.image_singleton,
       hJx, hJy] at h
   -- `l` lies in `range r = B₁ ∪ B₂`; label the containing arc `J_n`
   have hlB : l ∈ B₁ ∪ B₂ := by rw [hBu]; exact hlr
@@ -1212,7 +1212,7 @@ rectangle's bottom edge), the axis segment from the interior point `m ∈ J_n` d
 avoiding `J_s`, contradicting `vertical_meets_arc` (`J_s` joins `a` to `b`).  The
 crossing point lies on the segment, so it sits on the axis at height `≤ m 1`. -/
 theorem ms_meets_Js (hbr : BrouwerFPT)
-    {r : sphere (0 : Plane) 1 → Plane} (hcont : Continuous r) (hinj : Injective r)
+    {r : sphere (0 : Plane) 1 → Plane} (_hcont : Continuous r) (_hinj : Injective r)
     (hmr : (!₂[(-1:ℝ), 0] : Plane) ∈ range r) (hpr : (!₂[(1:ℝ), 0] : Plane) ∈ range r)
     (hfar : ∀ z ∈ range r, ∀ w ∈ range r, dist z w ≤ 2)
     {J_n J_s : Set Plane}
@@ -1676,7 +1676,7 @@ theorem step_A_normalized (hbr : BrouwerFPT)
       have hmem : m ∈ J_n ∩ J_s := ⟨hmJn, hpm_eq ▸ hpJs⟩
       rw [hInter] at hmem
       rcases hmem with h' | h' <;>
-        (have hc := congrArg (fun x : Plane => x 0) h'; simp only [hm0, ha0, hb0] at hc; norm_num at hc)
+        (have hc := congrArg (fun x : Plane => x 0) h'; simp only [hm0] at hc; norm_num at hc)
   have hqm : q 1 < m 1 := lt_of_le_of_lt hqp hpm_lt
   have hpz₀_lt : p 1 < z₀ 1 := by rw [hz₀1e]; linarith
   have hz₀m_lt : z₀ 1 < m 1 := by rw [hz₀1e]; linarith
@@ -1686,19 +1686,19 @@ theorem step_A_normalized (hbr : BrouwerFPT)
   have hmab : m ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hm0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hm0] at hc; norm_num at hc)
   have hlab : l ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hl0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hl0] at hc; norm_num at hc)
   have hqab : q ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hq0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hq0] at hc; norm_num at hc)
   have hpab : p ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hp0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hp0] at hc; norm_num at hc)
   -- **A.0** : `z₀ ∉ range r`
   have hz₀c : z₀ ∈ (range r)ᶜ := by
     intro hz₀r
@@ -1824,10 +1824,10 @@ theorem step_A_normalized (hbr : BrouwerFPT)
     have hg5cont : ContinuousOn g5 (Icc (-1:ℝ) 1) := (by fun_prop : Continuous g5).continuousOn
     have hg5a : g5 (-1) = l := by simp [hg5def]
     have hg5b : g5 1 = !₂[(0:ℝ), 2] := by simp [hg5def]
-    have hg5x : ∀ t, g5 t 0 = 0 := fun t => by simp [hg5def, hl0, hn0]
+    have hg5x : ∀ t, g5 t 0 = 0 := fun t => by simp [hg5def, hl0]
     have hg5y : ∀ t ∈ Icc (-1:ℝ) 1, g5 t 1 ∈ Icc (l 1) 2 := by
       intro t ht; rw [mem_Icc] at ht ⊢
-      simp only [hg5def, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul, hn1]
+      simp only [hg5def, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul]
       constructor <;> nlinarith [ht.1, ht.2, hlE1.2]
     have hg5missJs : ∀ t ∈ Icc (-1:ℝ) 1, g5 t ∉ J_s := by
       intro t ht hJs
@@ -1881,10 +1881,10 @@ theorem step_A_normalized (hbr : BrouwerFPT)
     have hg1cont : ContinuousOn g1 (Icc (-1:ℝ) 1) := (by fun_prop : Continuous g1).continuousOn
     have hg1a : g1 (-1) = !₂[(0:ℝ), -2] := by simp [hg1def]
     have hg1b : g1 1 = q := by simp [hg1def]
-    have hg1x : ∀ t, g1 t 0 = 0 := fun t => by simp [hg1def, hs0, hq0]
+    have hg1x : ∀ t, g1 t 0 = 0 := fun t => by simp [hg1def, hq0]
     have hg1y : ∀ t ∈ Icc (-1:ℝ) 1, g1 t 1 ∈ Icc (-2:ℝ) (q 1) := by
       intro t ht; rw [mem_Icc] at ht ⊢
-      simp only [hg1def, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul, hs1]
+      simp only [hg1def, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul]
       constructor <;> nlinarith [ht.1, ht.2, hqE1.1]
     have hg1missJn : ∀ t ∈ Icc (-1:ℝ) 1, g1 t ∉ J_n := by
       intro t ht hJn
@@ -2056,17 +2056,17 @@ private lemma isPreconnected_rect_compl :
     (convex_Ioi _).is_linear_preimage (EuclideanSpace.proj (1:Fin 2)).isLinear
   -- membership witnesses at the four "corners"
   have mAD_A : (!₂[(-2:ℝ), 3] : Plane) ∈ {v : Plane | v 0 ∈ Iio (-1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Iio, show (!₂[(-2:ℝ), 3] : Plane) 0 = -2 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Iio]; norm_num
   have mAD_D : (!₂[(-2:ℝ), 3] : Plane) ∈ {v : Plane | v 1 ∈ Ioi (2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi, show (!₂[(-2:ℝ), 3] : Plane) 1 = 3 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
   have mB_D : (!₂[(2:ℝ), 3] : Plane) ∈ {v : Plane | v 1 ∈ Ioi (2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi, show (!₂[(2:ℝ), 3] : Plane) 1 = 3 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
   have mB_B : (!₂[(2:ℝ), 3] : Plane) ∈ {v : Plane | v 0 ∈ Ioi (1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi, show (!₂[(2:ℝ), 3] : Plane) 0 = 2 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
   have mC_B : (!₂[(2:ℝ), -3] : Plane) ∈ {v : Plane | v 0 ∈ Ioi (1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi, show (!₂[(2:ℝ), -3] : Plane) 0 = 2 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
   have mC_C : (!₂[(2:ℝ), -3] : Plane) ∈ {v : Plane | v 1 ∈ Iio (-2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Iio, show (!₂[(2:ℝ), -3] : Plane) 1 = -3 from by simp]; norm_num
+    simp only [Set.mem_setOf_eq, mem_Iio]; norm_num
   have hAD : IsPreconnected ({v : Plane | v 0 ∈ Iio (-1:ℝ)} ∪ {v : Plane | v 1 ∈ Ioi (2:ℝ)}) :=
     cA.isPreconnected.union _ mAD_A mAD_D cD.isPreconnected
   have hADB : IsPreconnected (({v : Plane | v 0 ∈ Iio (-1:ℝ)} ∪ {v : Plane | v 1 ∈ Ioi (2:ℝ)})
@@ -2182,7 +2182,7 @@ theorem step_B_normalized (hbr : BrouwerFPT)
       have hmem : m ∈ J_n ∩ J_s := ⟨hmJn, hpm_eq ▸ hpJs⟩
       rw [hInter] at hmem
       rcases hmem with h' | h' <;>
-        (have hc := congrArg (fun x : Plane => x 0) h'; simp only [hm0, ha0, hb0] at hc; norm_num at hc)
+        (have hc := congrArg (fun x : Plane => x 0) h'; simp only [hm0] at hc; norm_num at hc)
   have hqm : q 1 < m 1 := lt_of_le_of_lt hqp hpm_lt
   have hpz₀_lt : p 1 < z₀ 1 := by rw [hz₀1e]; linarith
   have hz₀m_lt : z₀ 1 < m 1 := by rw [hz₀1e]; linarith
@@ -2191,19 +2191,19 @@ theorem step_B_normalized (hbr : BrouwerFPT)
   have hmab : m ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hm0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hm0] at hc; norm_num at hc)
   have hlab : l ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hl0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hl0] at hc; norm_num at hc)
   have hqab : q ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hq0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hq0] at hc; norm_num at hc)
   have hpab : p ∉ ({!₂[(-1:ℝ), 0], !₂[(1:ℝ), 0]} : Set Plane) := by
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (h | h) <;>
-      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hp0, ha0, hb0] at hc; norm_num at hc)
+      (have hc := congrArg (fun x : Plane => x 0) h; simp only [hp0] at hc; norm_num at hc)
   have hz₀c : z₀ ∈ (range r)ᶜ := by
     intro hz₀r
     rw [← hUnion] at hz₀r

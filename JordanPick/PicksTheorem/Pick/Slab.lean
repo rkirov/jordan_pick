@@ -370,7 +370,7 @@ lemma joinedIn_consecutive_gap_in_slab (hP : P.IsSimple) (y₁ y₂ : ℝ)
     (hslab : ∀ i, ¬ (y₁ < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < y₂))
     (iL iR : ZMod P.n) {y : ℝ} (hy : y ∈ Set.Ioo y₁ y₂)
     (hiL : iL ∈ P.spanningSet y) (hiR : iR ∈ P.spanningSet y)
-    (hLR : P.edgeThr y iL < P.edgeThr y iR)
+    (_hLR : P.edgeThr y iL < P.edgeThr y iR)
     (hcons : ∀ k ∈ P.spanningSet y, P.edgeThr y k ≤ P.edgeThr y iL ∨ P.edgeThr y iR ≤ P.edgeThr y k)
     {p q : ℝ × ℝ}
     (hp : p.2 ∈ Set.Ioo y₁ y₂ ∧ P.edgeThr p.2 iL < p.1 ∧ p.1 < P.edgeThr p.2 iR)
@@ -1018,7 +1018,7 @@ lemma exists_winding_eq_one_of_cornerCross (hS : P.IsSimple)
     linarith
   obtain ⟨y, hlo, hhiaux, hgen⟩ := exists_generic_height_mem_Ioo P ym (ym + min 1 (1/(2*(D+1))))
     (by have : (0:ℝ) < min 1 (1/(2*(D+1))) := lt_min one_pos (by positivity); linarith)
-  have hhi : y < ym + 1 := lt_of_lt_of_le hhiaux (by simp [min_le_left])
+  have hhi : y < ym + 1 := lt_of_lt_of_le hhiaux (by simp)
   have hDnn : (0:ℝ) ≤ D := Finset.sum_nonneg (fun j _ => abs_nonneg _)
   have hsmall : D * (y - ym) < 1/2 := by
     have hyb : y - ym < 1/(2*(D+1)) :=

@@ -404,7 +404,7 @@ lemma deleteLast_kept_idx_avoid (R : LatticePolygon) (h2 : 2 ≤ R.n) (m : ℕ) 
     rw [← ZMod.natCast_zmod_val i, hz, Nat.cast_zero]
 
 /-- **The clip's diagonal R-edge `↑(m-1)` is the segment `v_{m-1} → v_m`.** -/
-lemma deleteLast_edge_pre_diag (R : LatticePolygon) (m : ℕ) (hm : R.n = m + 2) (hm1 : 1 ≤ m) :
+lemma deleteLast_edge_pre_diag (R : LatticePolygon) (m : ℕ) (_hm : R.n = m + 2) (hm1 : 1 ≤ m) :
     R.edgeSeg (((m - 1 : ℕ)) : ZMod R.n)
       = segment ℝ (toReal (R.vert (((m - 1 : ℕ)) : ZMod R.n))) (toReal (R.vert (m : ZMod R.n))) := by
   rw [LatticePolygon.edgeSeg]
@@ -412,7 +412,7 @@ lemma deleteLast_edge_pre_diag (R : LatticePolygon) (m : ℕ) (hm : R.n = m + 2)
   rw [Nat.cast_sub hm1]; push_cast; ring
 
 /-- **The clip's R-edge `0` is the segment `v_0 → v_1`.** -/
-lemma deleteLast_edge_zero (R : LatticePolygon) (m : ℕ) (hm : R.n = m + 2) :
+lemma deleteLast_edge_zero (R : LatticePolygon) (m : ℕ) (_hm : R.n = m + 2) :
     R.edgeSeg (0 : ZMod R.n)
       = segment ℝ (toReal (R.vert 0)) (toReal (R.vert 1)) := by
   rw [LatticePolygon.edgeSeg]; norm_num

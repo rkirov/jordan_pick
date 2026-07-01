@@ -250,7 +250,7 @@ lemma edgeWind_eq_one_iff (a b q : ℝ × ℝ) :
     unfold edgeWind at h
     by_cases h1 : a.2 ≤ q.2 ∧ q.2 < b.2 ∧ 0 < cross (b - a) (q - a)
     · exact h1
-    · rw [if_neg h1] at h; split_ifs at h <;> simp_all
+    · rw [if_neg h1] at h; split_ifs at h; simp_all
   · intro h; unfold edgeWind; rw [if_pos h]
 
 /-- `edgeWind = −1` exactly characterizes the downward-crossing condition. -/

@@ -285,7 +285,7 @@ the positive height gap `(y−b.2)`. Hence the two have the **same sign**: the c
 turns left (`cross > 0`) iff the outgoing up-crossing lies right of the incoming
 down-crossing in the band just above the apex. -/
 lemma crossThreshold_gap_eq_cornerCross (a b c : ℝ × ℝ) (y : ℝ)
-    (hba : b.2 < a.2) (hbc : b.2 < c.2) (hby : b.2 < y) :
+    (hba : b.2 < a.2) (hbc : b.2 < c.2) (_hby : b.2 < y) :
     (crossThreshold b c y - crossThreshold a b y) * ((a.2 - b.2) * (c.2 - b.2))
       = cross (b - a) (c - b) * (y - b.2) := by
   unfold crossThreshold cross
@@ -865,7 +865,7 @@ open upper half-plane `{y > 0} ⊆ UpperHalfOpen`. Hence the fan vectors at the
 lex-lowest apex (all strictly inside the support half-plane by
 `lex_lowest_strict_support`) are *totally and strictly* angularly ordered by
 `u ≼ v := 0 ≤ cross u v` — no boundary wrap. -/
-lemma cross_trans_strict_support (δ : ℝ) (hδ : 0 < δ) (u v w : ℝ × ℝ)
+lemma cross_trans_strict_support (δ : ℝ) (_hδ : 0 < δ) (u v w : ℝ × ℝ)
     (hu : 0 < δ * u.1 + u.2) (hv : 0 < δ * v.1 + v.2) (hw : 0 < δ * w.1 + w.2)
     (h1 : 0 ≤ cross u v) (h2 : 0 < cross v w) : 0 < cross u w := by
   have key : ∀ a b : ℝ × ℝ,
@@ -1294,9 +1294,7 @@ lemma earTri_isSimple_of_cornerCross_ne (R : LatticePolygon) (m : ℕ) (hm : R.n
   · -- no degenerate edge
     intro i
     rcases zmod3_cases i with rfl | rfl | rfl <;>
-      simp only [earTri, show ((0:ZMod 3)+1 = 1) from rfl, show ((1:ZMod 3)+1 = 2) from rfl,
-        show ((2:ZMod 3)+1 = 0) from rfl, Matrix.cons_val_zero, Matrix.cons_val_one,
-        Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+      simp only [earTri]
     · intro he
       exact hAB (by rw [show a = b from congrArg toReal he, sub_self]; simp [cross])
     · intro he
@@ -1310,10 +1308,7 @@ lemma earTri_isSimple_of_cornerCross_ne (R : LatticePolygon) (m : ℕ) (hm : R.n
   · -- adjacent edges meet exactly at the shared vertex
     intro i
     rcases zmod3_cases i with rfl | rfl | rfl <;>
-      simp only [LatticePolygon.edgeSeg, earTri, show ((0:ZMod 3)+1 = 1) from rfl,
-        show ((1:ZMod 3)+1 = 2) from rfl, show ((2:ZMod 3)+1 = 0) from rfl,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-        Matrix.tail_cons]
+      simp only [LatticePolygon.edgeSeg, earTri]
     · exact segment_adjacent_inter_of_cross_ne_zero _ _ _ hAB
     · exact segment_adjacent_inter_of_cross_ne_zero _ _ _ hBC
     · exact segment_adjacent_inter_of_cross_ne_zero _ _ _ hCA
@@ -1526,7 +1521,7 @@ def linP (P : LatticePolygon) (c d : ℤ) : LatticePolygon where
 lemma linP_toReal (P : LatticePolygon) (c d : ℤ) (i : ZMod P.n) :
     toReal ((linP P c d).vert i) = linLinMap (c : ℝ) (d : ℝ) (toReal (P.vert i)) := by
   simp only [linP_vert, toReal, linLinMap_apply]
-  push_cast; constructor <;> ring
+  push_cast; constructor
 
 /-- The height (second real coordinate) of a transformed vertex is the functional
 `c·x + d·y`. -/

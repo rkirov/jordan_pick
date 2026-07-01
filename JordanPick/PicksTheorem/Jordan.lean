@@ -1137,7 +1137,7 @@ lemma winding_real_continuousAt_of_not_vertex (P : LatticePolygon) (x y₀ : ℝ
     funext y
     simp only [LatticePolygon.winding, Int.cast_sum]
   rw [heq]
-  exact tendsto_finset_sum _ fun i _ =>
+  exact tendsto_finsetSum _ fun i _ =>
     edgeWind_real_continuousAt _ _ x y₀ (hv i) (hv (i + 1)) (hx i)
 
 /-- **Sum-split at a vertex.** Isolate the two edges incident to `vert k`
@@ -1181,7 +1181,7 @@ lemma winding_section_continuousAt_passthrough_asc (P : LatticePolygon) (x : ℝ
             ((edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) : ℤ) : ℝ))
       from funext fun y => winding_real_split_pair P x y k hk]
   refine (edgeWind_pair_continuousAt _ _ _ x h1 h2 hxk).add ?_
-  exact tendsto_finset_sum _ fun i hi =>
+  exact tendsto_finsetSum _ fun i hi =>
     edgeWind_real_continuousAt _ _ x _ (hrest i hi).1 (hrest i hi).2.1 (hrest i hi).2.2
 
 /-- **Winding section continuity at a pass-through vertex (descending).** Mirror
@@ -1206,7 +1206,7 @@ lemma winding_section_continuousAt_passthrough_desc (P : LatticePolygon) (x : �
             ((edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) : ℤ) : ℝ))
       from funext fun y => winding_real_split_pair P x y k hk]
   refine (edgeWind_pair_continuousAt_desc _ _ _ x h1 h2 hxk).add ?_
-  exact tendsto_finset_sum _ fun i hi =>
+  exact tendsto_finsetSum _ fun i hi =>
     edgeWind_real_continuousAt _ _ x _ (hrest i hi).1 (hrest i hi).2.1 (hrest i hi).2.2
 
 /-- **a.e.-continuity at a pass-through vertex height.** Combining both
@@ -1574,7 +1574,7 @@ theorem winding_integrable (P : LatticePolygon) :
     exact MeasureTheory.integrable_const _
   · filter_upwards with q
     by_cases hq : P.winding q = 0
-    · simp [hq, Set.indicator_apply]
+    · simp [hq]
     · rw [Set.indicator_of_mem hq, Real.norm_eq_abs, ← Int.cast_abs]
       exact_mod_cast abs_winding_le P q
 
@@ -1695,7 +1695,7 @@ lemma crossSection_integrable (P : LatticePolygon) (y : ℝ) :
     exact MeasureTheory.integrable_const _
   · filter_upwards with x
     by_cases hx : P.winding (x, y) = 0
-    · simp [hx, Set.indicator_apply]
+    · simp [hx]
     · rw [Set.indicator_of_mem hx, Real.norm_eq_abs, ← Int.cast_abs]
       exact_mod_cast abs_winding_le P (x, y)
 
@@ -1774,7 +1774,7 @@ lemma integral_Iio_indicator_sub (a b : ℝ) (h : b ≤ a) :
   · exact integral_indicator_Ico a b h
   · funext x
     simp only [Set.indicator_apply, Set.mem_Iio, Set.mem_Ico]
-    by_cases h1 : x < a <;> by_cases h2 : x < b <;> simp_all <;> linarith
+    by_cases h1 : x < a <;> by_cases h2 : x < b <;> simp_all; linarith
 
 /-- **Green's theorem, brick (threshold integrability).** The cancellation-
 adjusted term `[x<a] − [x<b]` is integrable (it equals the indicator of the
@@ -1792,7 +1792,7 @@ lemma integrable_Iio_indicator_sub (a b : ℝ) (h : b ≤ a) :
     exact MeasureTheory.integrable_const _
   · funext x
     simp only [Set.indicator_apply, Set.mem_Iio, Set.mem_Ico]
-    by_cases h1 : x < a <;> by_cases h2 : x < b <;> simp_all <;> linarith
+    by_cases h1 : x < a <;> by_cases h2 : x < b <;> simp_all; linarith
 
 /-- The real-valued winding as an explicit signed step-function sum (cast of
 `winding_generic_sum`). This is the integrand form for the cross-section
@@ -1957,7 +1957,7 @@ theorem crossSection_value (P : LatticePolygon) (y : ℝ)
       exact MeasureTheory.integrable_zero _ _ _
   rw [show (fun x => (P.winding (x, y) : ℝ)) = _ from
     funext fun x => winding_eq_adjusted_sum P x y hy,
-    MeasureTheory.integral_finset_sum _ hint]
+    MeasureTheory.integral_finsetSum _ hint]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [integral_adjusted_term]
   simp only [sub_zero]
@@ -2143,7 +2143,7 @@ theorem greens_theorem (P : LatticePolygon) :
     filter_upwards [hco] with y hy
     exact crossSection_value P y hy
   rw [MeasureTheory.integral_congr_ae hae,
-    MeasureTheory.integral_finset_sum _ fun i _ => edge_term_y_integrable _ _]
+    MeasureTheory.integral_finsetSum _ fun i _ => edge_term_y_integrable _ _]
   exact (Finset.sum_congr rfl fun i _ =>
       edge_y_integral (toReal (P.vert i)) (toReal (P.vert (i + 1)))).trans
     (sum_edge_contrib_eq_shoelace P)
@@ -3567,7 +3567,7 @@ lemma same_side_of_not_mem_horizontal_seg (c d q₀ : ℝ × ℝ)
     refine ⟨t, ht, ?_⟩
     apply Prod.ext
     · simpa using hxt
-    · simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
+    · simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul]
       rw [hc, hd]; ring
   by_contra hcon
   apply hseg; apply hxmem
@@ -3696,7 +3696,7 @@ lemma winding_eventually_eq_full (P : LatticePolygon) (q₀ : ℝ × ℝ)
           rwa [he] at hb
         have hnext_nbad : ¬ bad (i + (F : ZMod P.n) + 1) := by
           have hs := hfwd_spec (i + 1)
-          have he : (i + 1) + ((F : ℕ) : ZMod P.n) = i + (F : ZMod P.n) + 1 := by push_cast; ring
+          have he : (i + 1) + ((F : ℕ) : ZMod P.n) = i + (F : ZMod P.n) + 1 := by ring
           rw [← hF, he] at hs; exact hs
         -- same-side along the run: `q₀` left of `vert (i+1)` ↔ left of `vert (i+F)`.
         have hsame : (q₀.1 < (toReal (P.vert (i + 1))).1 ↔
@@ -3797,7 +3797,7 @@ lemma winding_eventually_eq_full (P : LatticePolygon) (q₀ : ℝ × ℝ)
           rwa [he] at hb
         have hnext_nbad : ¬ bad (a + (F : ZMod P.n) + 1) := by
           have hs := hfwd_spec (a + 1)
-          have he : (a + 1) + ((F : ℕ) : ZMod P.n) = a + (F : ZMod P.n) + 1 := by push_cast; ring
+          have he : (a + 1) + ((F : ℕ) : ZMod P.n) = a + (F : ZMod P.n) + 1 := by ring
           rw [← hFdef, he] at hs; exact hs
         -- `g a = a + F` is a leaving edge (not forward-transition).
         have hTFga : ¬ tFwd (a + (F : ZMod P.n)) := fun h => hnext_nbad h.2

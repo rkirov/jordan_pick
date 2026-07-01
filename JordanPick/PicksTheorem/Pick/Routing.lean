@@ -684,8 +684,8 @@ lemma plateau_seg_isolating_ball (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ)
     have htL1 : (t : ℕ) < L + 1 := by omega
     have ht1L1 : (t : ℕ) + 1 < L + 1 := by omega
     refine ⟨?_, ?_, ?_⟩
-    · have := hjrun ⟨(t : ℕ), htL1⟩; simp only [Fin.val_mk] at this; exact (this.symm)
-    · have := hjrun ⟨(t : ℕ) + 1, ht1L1⟩; simp only [Fin.val_mk] at this
+    · have := hjrun ⟨(t : ℕ), htL1⟩; simp only [] at this; exact (this.symm)
+    · have := hjrun ⟨(t : ℕ) + 1, ht1L1⟩; simp only [] at this
       have hcast : p + (t : ℕ) + 1 = p + ((t : ℕ) + 1 : ℕ) := by push_cast; ring
       rw [hcast]; exact this.symm
     · -- j + 1 ≠ p + t  ⟺  j ≠ p + t - 1
@@ -700,7 +700,7 @@ lemma plateau_seg_isolating_ball (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ)
         have hjeq : j = p + (((t : ℕ) - 1 : ℕ)) := add_right_cancel h
         have hlt : (t : ℕ) - 1 < L + 1 := by omega
         have := hjrun ⟨(t : ℕ) - 1, hlt⟩
-        simp only [Fin.val_mk] at this
+        simp only [] at this
         exact this hjeq
   -- per-pair separations
   have hsep : ∀ (t : Fin L) (j : ZMod P.n),
@@ -783,7 +783,7 @@ lemma plateau_clear_above_near_vertex (hsimple : P.IsSimple) (p : ZMod P.n) (L :
           rw [this]
           have hlt : (s : ℕ) + 1 < L + 1 := by omega
           have := hrun ⟨(s : ℕ) + 1, hlt⟩
-          simp only [Fin.val_mk] at this; rw [this]
+          simp only [] at this; rw [this]
         · -- s = L : leaving edge endpoint vert(p+L+1) strictly below w
           have hsv : (s : ℕ) = L := hseq
           have : p + (s : ℕ) + 1 = p + (L : ℕ) + 1 := by rw [hsv]
@@ -1155,14 +1155,14 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
     have hep0 : toReal (P.vert (p + ((t : Fin L) : ℕ))) = (f t.castSucc, w) := by
       have : ((t : Fin L).castSucc : Fin (L+1)) = ⟨(t : ℕ), by omega⟩ := by apply Fin.ext; simp
       rw [Prod.ext_iff]; refine ⟨?_, hrun ⟨(t:ℕ), by omega⟩⟩
-      simp only [hf, this, Fin.val_mk]
+      simp only [hf, this]
     have hep1 : toReal (P.vert (p + ((t : Fin L) : ℕ) + 1)) = (f t.succ, w) := by
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by
         push_cast; ring
       have hsv : ((t : Fin L).succ : Fin (L+1)) = ⟨(t:ℕ)+1, by omega⟩ := by apply Fin.ext; simp
       rw [hcast, Prod.ext_iff]
       refine ⟨?_, hrun ⟨(t:ℕ)+1, by omega⟩⟩
-      simp only [hf, hsv, Fin.val_mk]
+      simp only [hf, hsv]
     rw [LatticePolygon.edgeSeg, hep0, hep1]
     exact mem_segment_horizontal _ _ w x ht
   -- (x,z) ∈ boundary: on some edge j
@@ -1190,7 +1190,7 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
         · have : p + (s : ℕ) + 1 = p + ((s : ℕ) + 1 : ℕ) := by push_cast; ring
           rw [this]
           have := hrun ⟨(s : ℕ) + 1, by omega⟩
-          simp only [Fin.val_mk] at this; rw [this]
+          simp only [] at this; rw [this]
         · have hsv : (s : ℕ) = L := hseq
           have : p + (s : ℕ) + 1 = p + (L : ℕ) + 1 := by rw [hsv]
           rw [this]; exact hbelowR.le
@@ -1277,7 +1277,7 @@ are continuous in the height. Hence for any `ρ > 0` there is a two-sided neighb
 that lets the apex-cross choose flank columns strictly outside the closing "Λ". -/
 lemma apex_thresholds_localize (k : ZMod P.n)
     (hdkm1 : (toReal (P.vert (k - 1))).2 ≠ (toReal (P.vert k)).2)
-    (hdk : (toReal (P.vert (k + 1))).2 ≠ (toReal (P.vert k)).2)
+    (_hdk : (toReal (P.vert (k + 1))).2 ≠ (toReal (P.vert k)).2)
     (ρ : ℝ) (hρ : 0 < ρ) :
     ∃ η > 0, ∀ s, (toReal (P.vert k)).2 - η < s → s < (toReal (P.vert k)).2 + η →
       |P.edgeThr s (k - 1) - (toReal (P.vert k)).1| < ρ ∧
@@ -1323,7 +1323,7 @@ lemma plateau_thresholds_localize (p : ZMod P.n) (L : ℕ)
     (w : ℝ)
     (hrun : ∀ t : Fin (L + 1), (toReal (P.vert (p + (t : ℕ)))).2 = w)
     (hbelowL : (toReal (P.vert (p - 1))).2 < w)
-    (hbelowR : (toReal (P.vert (p + (L : ℕ) + 1))).2 < w)
+    (_hbelowR : (toReal (P.vert (p + (L : ℕ) + 1))).2 < w)
     (ρ : ℝ) (hρ : 0 < ρ) :
     ∃ η > 0, ∀ s, w - η < s → s < w + η →
       |P.edgeThr s (p - 1) - (toReal (P.vert p)).1| < ρ ∧
@@ -1415,7 +1415,7 @@ lemma plateau_edgeThr_lt_enter_of_outer (hsimple : P.IsSimple) (p eL : ZMod P.n)
         (nhds (P.edgeThr w eL)) := (hc_eL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z (p - 1)) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w (p - 1))) := (hc_pm1.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1489,7 +1489,7 @@ lemma plateau_leave_lt_edgeThr_of_outer (hsimple : P.IsSimple) (p eR : ZMod P.n)
         (nhds (P.edgeThr w (p + (L : ℕ)))) := (hc_pL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z eR) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w eR)) := (hc_eR.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1546,14 +1546,14 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
     have hep0 : toReal (P.vert (p + ((t : Fin L) : ℕ))) = (f t.castSucc, w) := by
       have : ((t : Fin L).castSucc : Fin (L+1)) = ⟨(t : ℕ), by omega⟩ := by apply Fin.ext; simp
       rw [Prod.ext_iff]; refine ⟨?_, hrun ⟨(t:ℕ), by omega⟩⟩
-      simp only [hf, this, Fin.val_mk]
+      simp only [hf, this]
     have hep1 : toReal (P.vert (p + ((t : Fin L) : ℕ) + 1)) = (f t.succ, w) := by
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by
         push_cast; ring
       have hsv : ((t : Fin L).succ : Fin (L+1)) = ⟨(t:ℕ)+1, by omega⟩ := by apply Fin.ext; simp
       rw [hcast, Prod.ext_iff]
       refine ⟨?_, hrun ⟨(t:ℕ)+1, by omega⟩⟩
-      simp only [hf, hsv, Fin.val_mk]
+      simp only [hf, hsv]
     rw [LatticePolygon.edgeSeg, hep0, hep1]
     exact mem_segment_horizontal _ _ w c ht
   -- e and the run edge p+t are non-adjacent ⟹ disjoint, contradicting shared (c,w)
@@ -1562,8 +1562,8 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
     have htL1 : ((t : Fin L) : ℕ) < L + 1 := by omega
     have ht1L1 : ((t : Fin L) : ℕ) + 1 < L + 1 := by omega
     refine ⟨?_, ?_, ?_⟩
-    · have := herun ⟨((t : Fin L) : ℕ), htL1⟩; simp only [Fin.val_mk] at this; exact this.symm
-    · have := herun ⟨((t : Fin L) : ℕ) + 1, ht1L1⟩; simp only [Fin.val_mk] at this
+    · have := herun ⟨((t : Fin L) : ℕ), htL1⟩; simp only [] at this; exact this.symm
+    · have := herun ⟨((t : Fin L) : ℕ) + 1, ht1L1⟩; simp only [] at this
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by push_cast; ring
       rw [hcast]; exact this.symm
     · intro h
@@ -1577,7 +1577,7 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
         have heeq : e = p + ((((t : Fin L) : ℕ) - 1 : ℕ)) := add_right_cancel h
         have hlt : ((t : Fin L) : ℕ) - 1 < L + 1 := by omega
         have := herun ⟨((t : Fin L) : ℕ) - 1, hlt⟩
-        simp only [Fin.val_mk] at this
+        simp only [] at this
         exact this heeq
   have hdisj : Disjoint (P.edgeSeg (p + ((t : Fin L) : ℕ))) (P.edgeSeg e) :=
     hsimple.2.1 _ _ hrunidx.1 hrunidx.2.1 hrunidx.2.2
@@ -1599,7 +1599,7 @@ lemma plateau_outer_lt_xmin (hsimple : P.IsSimple) (p eL : ZMod P.n) (L : ℕ) (
     (heL_span : eL ∈ P.spanningSet y) (heL_span_w : eL ∈ P.spanningSet w)
     (hord : P.edgeThr y eL < P.edgeThr y (p - 1))
     (mL mR : Fin (L + 1))
-    (hmin : ∀ t : Fin (L + 1),
+    (_hmin : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (mL : ℕ)))).1 ≤ (toReal (P.vert (p + (t : ℕ)))).1)
     (hmax : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (t : ℕ)))).1 ≤ (toReal (P.vert (p + (mR : ℕ)))).1) :
@@ -1636,7 +1636,7 @@ lemma plateau_outer_gt_xmax (hsimple : P.IsSimple) (p eR : ZMod P.n) (L : ℕ) (
     (mL mR : Fin (L + 1))
     (hmin : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (mL : ℕ)))).1 ≤ (toReal (P.vert (p + (t : ℕ)))).1)
-    (hmax : ∀ t : Fin (L + 1),
+    (_hmax : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (t : ℕ)))).1 ≤ (toReal (P.vert (p + (mR : ℕ)))).1) :
     (toReal (P.vert (p + (mR : ℕ)))).1 < P.edgeThr w eR := by
   have heRpL : eR ≠ p + (L : ℕ) := heRrun ⟨L, by omega⟩
@@ -1718,7 +1718,7 @@ lemma edgeThr_lt_apex_of_outer (hsimple : P.IsSimple) (k eL : ZMod P.n)
         (nhds (P.edgeThr w eL)) := (hc_eL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z (k - 1)) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w (k - 1))) := (hc_km1.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1790,7 +1790,7 @@ lemma apex_lt_edgeThr_of_outer (hsimple : P.IsSimple) (k eR : ZMod P.n)
         (nhds (P.edgeThr w k)) := (hc_k.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z eR) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w eR)) := (hc_eR.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -2119,7 +2119,7 @@ lemma apex_cross_plateau (hsimple : P.IsSimple) (p eL eR : ZMod P.n) (L : ℕ) (
     (hpm1_y : (p - 1) ∈ P.spanningSet y) (hpL_y : (p + (L : ℕ)) ∈ P.spanningSet y)
     (heL_w : eL ∈ P.spanningSet w) (heR_w : eR ∈ P.spanningSet w)
     (ho1 : P.edgeThr y eL < P.edgeThr y (p - 1))
-    (ho2 : P.edgeThr y (p - 1) < P.edgeThr y (p + (L : ℕ)))
+    (_ho2 : P.edgeThr y (p - 1) < P.edgeThr y (p + (L : ℕ)))
     (ho3 : P.edgeThr y (p + (L : ℕ)) < P.edgeThr y eR)
     (hconsL : ∀ i ∈ P.spanningSet y,
       P.edgeThr y i ≤ P.edgeThr y eL ∨ P.edgeThr y (p - 1) ≤ P.edgeThr y i)

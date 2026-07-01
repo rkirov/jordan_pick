@@ -192,7 +192,7 @@ theorem shoelace_eq_finsum (P : LatticePolygon) :
   obtain ⟨r, hr⟩ := exists_box P
   rw [shoelace_eq_totalWeight P r hr]
   congr 1
-  rw [finsum_eq_finset_sum_of_support_subset (angleWeight P) (s := Box r) ?_]
+  rw [finsum_eq_finsetSum_of_support_subset (angleWeight P) (s := Box r) ?_]
   · rfl
   · intro q hq
     rw [Function.mem_support] at hq
