@@ -1,11 +1,10 @@
 # jordan_pick
 
-A clean-room Lean 4 / Mathlib formalization of the **polygonal Jordan curve
-theorem** and **Pick's theorem** (Freek's *Formalizing 100 Theorems* #92).
-
-Both are genuinely missing from Mathlib. Pick's theorem rests on the polygonal
-Jordan curve theorem, so the two live together here: the JCT is the engine
-underneath Pick.
+A clean-room Lean 4 / Mathlib formalization of **Pick's theorem** (Freek's
+*Formalizing 100 Theorems* #92), the **polygonal Jordan curve theorem**, and the
+full **(continuous) Jordan curve theorem** — all genuinely missing from Mathlib.
+Two lean-eval problems are solved: [`pick`](https://lean-lang.org/eval/problems/pick/)
+and [`jordan_curve`](https://lean-lang.org/eval/problems/jordan_curve/).
 
 ## Main results
 
@@ -17,6 +16,8 @@ All proved **sorry-free**; `#print axioms` shows only the three standard axioms
 | **Pick's theorem** | `Pick.pick` (`JordanPick/PicksTheorem/Pick.lean`) | a simple, positively-oriented lattice polygon has `area = I + B/2 − 1` (area = Lebesgue measure of the winding interior; `I`/`B` interior/boundary lattice-point counts) |
 | **Polygonal Jordan curve theorem** | `Pick.LatticePolygon.compl_boundary_atMost_two` (`JordanPick/PicksTheorem/Pick.lean`) | the complement of a simple polygon's boundary has at most two connected components, with the winding number locally constant `∈ {0, 1}` |
 | **lean-eval Pick** | `LeanEval.Geometry.PicksTheorem.pick` (`JordanPick/PicksTheorem/EvalBridgeMain.lean`) | the exact statement of <https://lean-lang.org/eval/problems/pick/> (Mathlib `Polygon`, *topological* interior, no orientation hypothesis), bridged to `Pick.pick` |
+| **Jordan curve theorem (continuous)** | `JordanCurve.jordan_curve` (`JordanPick/JordanCurve.lean`) | the exact statement of <https://lean-lang.org/eval/problems/jordan_curve/>: a continuous injection `S¹ → ℝ²` has a complement with exactly two connected components (`Nat.card (ConnectedComponents (range r)ᶜ) = 2`) |
+| **Brouwer fixed point theorem (2D)** | `JordanCurve.Brouwer.brouwerFPT` (`JordanPick/JordanCurve/Brouwer.lean`) | every continuous self-map of a nonempty compact convex subset of `ℝ²` has a fixed point |
 
 ## Approach
 
@@ -28,9 +29,19 @@ theorem, via a deepest-contained-vertex diagonal split with a non-circular
 winding-jump separation argument) reduces the area identity to the triangle
 case.
 
-The lean-eval target adds a bridge: Mathlib `Polygon` ↔ our `LatticePolygon`,
+The lean-eval Pick target adds a bridge: Mathlib `Polygon` ↔ our `LatticePolygon`,
 the topological interior ↔ the winding interior, an orientation WLOG (vertex
 reversal), and lattice-count matching.
+
+The **continuous Jordan curve theorem** is a separate development (it does *not*
+use the polygonal one): **Maehara's proof** — reduce the separation statement to
+the **Brouwer fixed point theorem** via two lemmas (a crossing lemma for
+transversal paths in a rectangle, and "each component has the curve as its
+boundary"), plus the farthest-pair normalization and the `l,m,p,q,z₀`
+construction that pins down exactly one bounded component. Brouwer FPT for `ℝ²`
+is then built from the ground up: `π₁(S¹) ≅ ℤ` → no retraction of the disk onto
+its boundary → Brouwer on the disk (ray-retraction) → the general convex-compact
+case (nearest-point projection).
 
 ## Building
 
@@ -80,6 +91,15 @@ Clean-room with respect to proofs, with prior art credited explicitly:
   per-edge identity is proved independently here (a column decomposition rather
   than their four-box partition + reflection involution). See the `Weight.lean`
   header for specifics.
+* The continuous JCT's **Maehara reduction** and the **Brouwer** chain
+  (no-retraction, disk Brouwer, convex-compact) are original to this repo.
+  Their one imported input, **`π₁(S¹) ≅ ℤ`**
+  (`JordanPick/JordanCurve/FundamentalGroupCircle.lean`), is **vendored with
+  attribution** from Mathlib community PR
+  [#36119](https://github.com/leanprover-community/mathlib4/pull/36119) by
+  **Ruize Chen** (Apache-2.0), since that PR is not yet in a Mathlib release we
+  depend on. The copyright header is preserved; if the PR later merges, replace
+  the vendored file with the upstream import.
 
 ## References
 

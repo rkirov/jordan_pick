@@ -14,3 +14,4 @@ import JordanPick.PicksTheorem.Pick.EarClip
 import JordanPick.PicksTheorem.Pick
 -- The bridge to the lean-lang.org eval Pick statement (sorry-free).
 import JordanPick.PicksTheorem.EvalBridgeMain
+import JordanPick.JordanCurve
