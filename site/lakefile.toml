@@ -1,0 +1,22 @@
+# Verso Manual-genre exposition for the jordan_pick formalization.
+# A standalone Lake package — it deliberately does NOT depend on the JordanPick
+# library (theorem statements are shown as text; importing the library would pull
+# Mathlib into the native link closure of the executable). Pinned to a stable
+# toolchain (v4.30.0) with a known-good Verso, independent of the main proof
+# (which stays on v4.32.0-rc1 + Mathlib master).
+name = "jordanpicksite"
+reservoir = false
+version = "0.1.0"
+defaultTargets = ["jordanpicksite"]
+
+[[require]]
+scope = "leanprover"
+name = "verso"
+rev = "v4.30.0"
+
+[[lean_lib]]
+name = "Site"
+
+[[lean_exe]]
+name = "jordanpicksite"
+root = "Main"

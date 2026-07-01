@@ -5,6 +5,12 @@ build/
 *.ilean
 *.trace
 
+# Verso documentation site (site/) build artifacts. The sources
+# (site/lakefile.toml, site/lean-toolchain, site/lake-manifest.json, site/Main.lean,
+# site/Site.lean, site/Site/, site/404.html) are tracked; these are not.
+/site/.lake/
+/site/_out/
+
 # External references consulted during development. NOT part of the build, and
 # includes third-party material (papers, other repos) that must not be
 # redistributed. Keep this out of the repo.
