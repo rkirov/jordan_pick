@@ -49,8 +49,11 @@ case (nearest-point projection).
 lake build
 ```
 
-Pinned to **Lean `v4.31.0`** + **Mathlib `v4.31.0`** (`lean-toolchain`,
-`lakefile.toml`). Mathlib is fetched as a dependency.
+Pinned to **Lean `v4.32.0-rc1`** + **Mathlib `360da6f`** (a `master` commit) via
+`lean-toolchain` / `lakefile.toml` — chosen to **match the lean-eval harness**,
+so both eval submissions build against the harness's exact dependencies. Mathlib
+is fetched as a dependency. (The proof is version-robust: it also builds
+unchanged on the `v4.31.0` release.)
 
 ## Layout
 

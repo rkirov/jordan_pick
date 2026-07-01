@@ -78,13 +78,13 @@ The engine is ~28k lines across 15 modules (namespace `Pick`); the bridge adds
    `#print axioms LeanEval.Geometry.PicksTheorem.pick` shows no `sorryAx`
    (verified locally: `[propext, Classical.choice, Quot.sound]`).
 
-## ⚠️ Toolchain risk — check this first
+## Toolchain — matches the harness
 
-Our engine + bridge are verified against **Lean `v4.31.0`** + **Mathlib
-`v4.31.0`** (`lean-toolchain` is copied here). The proof is complete *at this
-pin*. The lean-eval harness pins its *own* Mathlib version, and the bundled
-~28k-line engine must compile there. **If lean-eval's pin differs from
-`v4.31.0`, expect Mathlib API-drift breakage** in the engine. Confirm the
-eval's `lean-toolchain` / `lake-manifest` Mathlib revision; if it differs,
-either pin the submission workspace to `v4.31.0` (if the harness allows) or
-budget for an engine port to the harness's Mathlib.
+The engine + bridge build against **Lean `v4.32.0-rc1`** + **Mathlib `360da6f`**
+(`lean-toolchain` copied here) — the **same pin the lean-eval harness uses**, so
+the bundled engine compiles against the harness's exact dependencies. (The proof
+is version-robust: it also builds unchanged on the `v4.31.0` release.) Re-check
+the harness's `lean-toolchain` / `lake-manifest` before submitting in case
+lean-eval has since bumped its Mathlib `master` pin; if so, re-pin to match (the
+port from `v4.31.0` → `v4.32.0-rc1` needed **zero** code changes, so a further
+small bump is expected to be cheap).

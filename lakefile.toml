@@ -11,7 +11,7 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.31.0"
+rev = "360da6fa66c1273b76b6b2d8c5666fd5ac2e3b56"
 
 [[lean_lib]]
 name = "JordanPick"

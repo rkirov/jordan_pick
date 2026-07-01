@@ -77,8 +77,10 @@ theorem jordan_curve
 end Submission
 SHIM
 
+# Match the main project's toolchain + Mathlib pin (kept in sync with lean-eval).
 cp "$ROOT/lean-toolchain" "$OUT/lean-toolchain"
-cat > "$OUT/lakefile.toml" <<'LAKE'
+MREV="$(sed -n 's/^rev = "\(.*\)"/\1/p' "$ROOT/lakefile.toml" | head -1)"
+cat > "$OUT/lakefile.toml" <<LAKE
 # For local building of the submission library only. In the real lean-eval
 # workspace this file is TRUSTED and supplied by the harness (do not edit there).
 name = "jordan_curve"
@@ -87,7 +89,7 @@ defaultTargets = ["Submission"]
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.31.0"
+rev = "$MREV"
 
 [[lean_lib]]
 name = "Submission"
