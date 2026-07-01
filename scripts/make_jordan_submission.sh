@@ -33,7 +33,12 @@ if [[ ! -f "$SRC/JordanCurve.lean" ]]; then
   exit 1
 fi
 
-rm -rf "$OUT"
+# Only (re)generate the SOLVER-OWNED parts (Submission.lean + Submission/). The
+# trusted workspace files (Challenge.lean, Solution.lean, config.json, holes.json,
+# lakefile.toml, lean-toolchain, WorkspaceTest.lean, README.md) come verbatim from
+# lean-eval's generated/jordan_curve/ and are left untouched here.
+mkdir -p "$OUT"
+rm -rf "$LIB"
 mkdir -p "$LIB"
 
 # Re-root the module prefix `JordanPick.JordanCurve` -> `Submission`.
@@ -68,32 +73,18 @@ Mathlib.
 
 namespace Submission
 
-theorem jordan_curve
-    (r : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 → EuclideanSpace ℝ (Fin 2))
+-- Statement copied verbatim from the generated `Submission.lean` stub / `Challenge.lean`;
+-- only the proof (`sorry`) is replaced with a delegation to our development.
+theorem jordan_curve (r : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 → EuclideanSpace ℝ (Fin 2))
     (_hcont : Continuous r) (_hinj : Function.Injective r) :
-    Nat.card (ConnectedComponents ((Set.range r)ᶜ : Set (EuclideanSpace ℝ (Fin 2)))) = 2 :=
+    Nat.card
+        (ConnectedComponents ((Set.range r)ᶜ : Set (EuclideanSpace ℝ (Fin 2)))) =
+      2 :=
   _root_.JordanCurve.jordan_curve r _hcont _hinj
 
 end Submission
 SHIM
 
-# Match the main project's toolchain + Mathlib pin (kept in sync with lean-eval).
-cp "$ROOT/lean-toolchain" "$OUT/lean-toolchain"
-MREV="$(sed -n 's/^rev = "\(.*\)"/\1/p' "$ROOT/lakefile.toml" | head -1)"
-cat > "$OUT/lakefile.toml" <<LAKE
-# For local building of the submission library only. In the real lean-eval
-# workspace this file is TRUSTED and supplied by the harness (do not edit there).
-name = "jordan_curve"
-defaultTargets = ["Submission"]
-
-[[require]]
-name = "mathlib"
-scope = "leanprover-community"
-rev = "$MREV"
-
-[[lean_lib]]
-name = "Submission"
-LAKE
-
-echo "Generated $OUT  ($(find "$LIB" -name '*.lean' | wc -l) library files + Submission.lean)"
-echo "Solver-owned: Submission.lean + Submission/ (drop into lean-eval generated/jordan_curve/)."
+echo "Regenerated solver-owned parts in $OUT: Submission.lean + Submission/ ($(find "$LIB" -name '*.lean' | wc -l) library files)."
+echo "Trusted files (Challenge/Solution/config/holes/lakefile/lean-toolchain/WorkspaceTest/README) left untouched."
+echo "Our main project is pinned to lean-eval's exact deps (v4.32.0-rc1 + Mathlib 360da6f), so these build as-is."

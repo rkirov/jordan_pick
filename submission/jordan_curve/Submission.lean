@@ -12,10 +12,13 @@ Mathlib.
 
 namespace Submission
 
-theorem jordan_curve
-    (r : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 → EuclideanSpace ℝ (Fin 2))
+-- Statement copied verbatim from the generated `Submission.lean` stub / `Challenge.lean`;
+-- only the proof (`sorry`) is replaced with a delegation to our development.
+theorem jordan_curve (r : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 → EuclideanSpace ℝ (Fin 2))
     (_hcont : Continuous r) (_hinj : Function.Injective r) :
-    Nat.card (ConnectedComponents ((Set.range r)ᶜ : Set (EuclideanSpace ℝ (Fin 2)))) = 2 :=
+    Nat.card
+        (ConnectedComponents ((Set.range r)ᶜ : Set (EuclideanSpace ℝ (Fin 2)))) =
+      2 :=
   _root_.JordanCurve.jordan_curve r _hcont _hinj
 
 end Submission
