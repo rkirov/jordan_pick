@@ -429,7 +429,7 @@ lemma not_mem_boundary_of_crossZ_ne (P : LatticePolygon) (q : Pt)
     (hne : ∀ k, crossZ (P.vert k - q) (P.vert (k + 1) - q) ≠ 0) :
     toReal q ∉ P.boundary := by
   rw [LatticePolygon.boundary, Set.mem_iUnion]
-  push_neg
+  push Not
   intro k hmem
   exact hne k (crossZ_eq_zero_of_mem_edgeSeg P q k hmem)
 
@@ -874,7 +874,7 @@ lemma exists_vertex_right (q v0 v1 v2 : Pt)
     (h2 : 0 < crossZ (v2 - q) (v0 - q)) :
     q.1 < v0.1 ∨ q.1 < v1.1 ∨ q.1 < v2.1 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : crossZ (v1 - q) (v2 - q) * (q.1 - v0.1) + crossZ (v2 - q) (v0 - q) * (q.1 - v1.1)
       + crossZ (v0 - q) (v1 - q) * (q.1 - v2.1) = 0 := by
@@ -897,7 +897,7 @@ lemma exists_vertex_left (q v0 v1 v2 : Pt)
     (h2 : 0 < crossZ (v2 - q) (v0 - q)) :
     v0.1 < q.1 ∨ v1.1 < q.1 ∨ v2.1 < q.1 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : crossZ (v1 - q) (v2 - q) * (v0.1 - q.1) + crossZ (v2 - q) (v0 - q) * (v1.1 - q.1)
       + crossZ (v0 - q) (v1 - q) * (v2.1 - q.1) = 0 := by
@@ -939,7 +939,7 @@ lemma exists_vertex_above (q v0 v1 v2 : Pt)
     (h2 : 0 < crossZ (v2 - q) (v0 - q)) :
     q.2 < v0.2 ∨ q.2 < v1.2 ∨ q.2 < v2.2 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : crossZ (v1 - q) (v2 - q) * (q.2 - v0.2) + crossZ (v2 - q) (v0 - q) * (q.2 - v1.2)
       + crossZ (v0 - q) (v1 - q) * (q.2 - v2.2) = 0 := by
@@ -962,7 +962,7 @@ lemma exists_vertex_below (q v0 v1 v2 : Pt)
     (h2 : 0 < crossZ (v2 - q) (v0 - q)) :
     v0.2 < q.2 ∨ v1.2 < q.2 ∨ v2.2 < q.2 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : crossZ (v1 - q) (v2 - q) * (v0.2 - q.2) + crossZ (v2 - q) (v0 - q) * (v1.2 - q.2)
       + crossZ (v0 - q) (v1 - q) * (v2.2 - q.2) = 0 := by
@@ -1221,7 +1221,7 @@ positive term. So a point can be on the wrong side of at most `n − 1` edges. -
 lemma exists_crossZ_pos (P : LatticePolygon) (horient : P.PositivelyOriented) (q : Pt) :
     ∃ j, 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q) := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hp := sum_crossZ_pos P horient q
   have hle : (∑ j, crossZ (P.vert j - q) (P.vert (j + 1) - q)) ≤ 0 :=
     Finset.sum_nonpos (fun j _ => h j)
@@ -1293,11 +1293,11 @@ lemma y_straddle_of_winding_one (P : LatticePolygon) (q : Pt) (hw : P.winding (t
     (∃ j, (P.vert j).2 ≤ q.2) ∧ (∃ j, q.2 < (P.vert j).2) := by
   refine ⟨?_, ?_⟩
   · by_contra h
-    push_neg at h
+    push Not at h
     rw [winding_eq_zero_of_below P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
     exact absurd hw (by norm_num)
   · by_contra h
-    push_neg at h
+    push Not at h
     rw [winding_eq_zero_of_above P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
     exact absurd hw (by norm_num)
 
@@ -1308,11 +1308,11 @@ lemma x_straddle_of_winding_one (P : LatticePolygon) (q : Pt) (hw : P.winding (t
     (∃ j, (P.vert j).1 ≤ q.1) ∧ (∃ j, q.1 ≤ (P.vert j).1) := by
   refine ⟨?_, ?_⟩
   · by_contra h
-    push_neg at h
+    push Not at h
     rw [winding_eq_zero_of_left P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
     exact absurd hw (by norm_num)
   · by_contra h
-    push_neg at h
+    push Not at h
     rw [winding_eq_zero_of_right P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
     exact absurd hw (by norm_num)
 
@@ -1326,13 +1326,13 @@ lemma all_crossZ_pos_of_winding_one (P : LatticePolygon) (hn : P.n = 3)
     ∀ j, 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q) := by
   obtain ⟨hlo, hhi⟩ := y_straddle_of_winding_one P q hw
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   obtain ⟨k, hk⟩ := hcon
   have hkneg : crossZ (P.vert k - q) (P.vert (k + 1) - q) < 0 := lt_of_le_of_ne hk (hne k)
   by_cases hother : ∀ j, j ≠ k → 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q)
   · rw [winding_eq_zero_of_one_neg P hn q k hkneg hother hlo hhi] at hw
     exact absurd hw (by norm_num)
-  · push_neg at hother
+  · push Not at hother
     obtain ⟨m, hmk, hm⟩ := hother
     have hmneg : crossZ (P.vert m - q) (P.vert (m + 1) - q) < 0 := lt_of_le_of_ne hm (hne m)
     obtain ⟨c, hc⟩ := exists_crossZ_pos P horient q
@@ -1640,7 +1640,7 @@ lemma exists_crossZ_nonpos_of_not_mem (P : LatticePolygon) (hn : P.n = 3)
     (horient : P.PositivelyOriented) (q : Pt) (hint : q ∉ P.interiorLattice) :
     ∃ k, crossZ (P.vert k - q) (P.vert (k + 1) - q) ≤ 0 := by
   by_contra h
-  push_neg at h
+  push Not at h
   exact hint ((mem_interiorLattice_iff_crossZ_pos P hn horient q).2 h)
 
 /-- **On-edge ⟹ adjacent edge CCW.** A lattice point on edge `j` (not the far vertex)
@@ -2068,20 +2068,20 @@ lemma exists_pos_neg_of_sum_zero {α : Type*} [Fintype α] (f : α → ℤ)
     (hsum : ∑ i, f i = 0) (i₀ : α) (hi : f i₀ ≠ 0) :
     (∃ j, 0 < f j) ∧ (∃ j, f j < 0) := by
   refine ⟨?_, ?_⟩
-  · by_contra h; push_neg at h
+  · by_contra h; push Not at h
     refine hi ?_
     have hneg : (∑ i, -f i) = 0 := by rw [Finset.sum_neg_distrib, hsum]; ring
     have := (Finset.sum_eq_zero_iff_of_nonneg (fun j _ => neg_nonneg.mpr (h j))).mp hneg i₀
       (Finset.mem_univ i₀)
     omega
-  · by_contra h; push_neg at h
+  · by_contra h; push Not at h
     exact hi ((Finset.sum_eq_zero_iff_of_nonneg (fun j _ => h j)).mp hsum i₀ (Finset.mem_univ i₀))
 
 /-- Some x-difference is nonzero: otherwise all vertices share an x-coordinate
 (vertical), making the corner cross `0` and contradicting `crossZ_vertex_pos`. -/
 lemma exists_x_diff_ne (P : LatticePolygon) (hn : P.n = 3) (horient : P.PositivelyOriented) :
     ∃ k, (P.vert (k + 1)).1 - (P.vert k).1 ≠ 0 := by
-  by_contra h; push_neg at h
+  by_contra h; push Not at h
   have hc := crossZ_vertex_pos P hn horient 0
   rw [crossZ] at hc
   simp only [Prod.fst_sub, Prod.snd_sub] at hc
@@ -2190,7 +2190,7 @@ lemma finsum_angleWeight_eq (P : LatticePolygon) (hn : P.n = 3)
     intro q hq
     simp only [Finset.coe_union, Set.Finite.coe_toFinset, Set.mem_union]
     by_contra h
-    push_neg at h
+    push Not at h
     exact hq (angleWeight_eq_zero_of_not_mem P hn horient q h.1 h.2)
   have hdisj : Disjoint (interiorLattice_finite P).toFinset (boundaryLattice_finite P).toFinset := by
     rw [Finset.disjoint_left]
@@ -2214,7 +2214,7 @@ theorem pick_n3 (P : LatticePolygon) (hn : P.n = 3) (hsimple : P.IsSimple)
 lemma simple_imp_three_le_n (P : LatticePolygon) (hsimple : P.IsSimple) : 3 ≤ P.n := by
   rcases P with ⟨n, pos, vert⟩
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   interval_cases n
   · exact hsimple.1 0 rfl
   · have hd := hsimple.2.2 0

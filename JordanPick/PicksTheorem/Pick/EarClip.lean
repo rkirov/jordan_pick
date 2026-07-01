@@ -1139,7 +1139,7 @@ lemma segment_meets_leg_of_cross_base (a b c e0 e1 : ℝ × ℝ)
     -- ¬inTriangle e with f3 e > 0 gives f1 e < 0 ∨ f2 e < 0
     have hβ : f1 e < 0 ∨ f2 e < 0 := by
       by_contra hc
-      push_neg at hc
+      push Not at hc
       exact hnotT ((hinTri e).mpr ⟨hc.1, hc.2, hf3e.le⟩)
     obtain ⟨u, hu0, hule, hv1, hv2, hzero⟩ :=
       first_exit_two_affine (f1 p) (f1 e) (f2 p) (f2 e) hf1p_pos hf2p_pos hβ
@@ -1193,12 +1193,12 @@ lemma segment_meets_leg_of_cross_base (a b c e0 e1 : ℝ × ℝ)
     have hout0 : f1 e0 < 0 ∨ cross (b - a) (c - a) < f1 e0 := by
       rcases lt_or_ge (f1 e0) 0 with h | h
       · exact Or.inl h
-      · right; by_contra hc; push_neg at hc
+      · right; by_contra hc; push Not at hc
         exact he0 ((hinTri e0).mpr ⟨h, by rw [hf2e0]; linarith, le_of_eq hg0.symm⟩)
     have hout1 : f1 e1 < 0 ∨ cross (b - a) (c - a) < f1 e1 := by
       rcases lt_or_ge (f1 e1) 0 with h | h
       · exact Or.inl h
-      · right; by_contra hc; push_neg at hc
+      · right; by_contra hc; push Not at hc
         exact he1 ((hinTri e1).mpr ⟨h, by rw [hf2e1]; linarith, le_of_eq hg1.symm⟩)
     -- f1 p = (1-s) f1 e0 + s f1 e1 ∈ (0, D)
     have hf1plt : f1 p < cross (b - a) (c - a) := by rw [hf1p]; nlinarith [ht1, hD]

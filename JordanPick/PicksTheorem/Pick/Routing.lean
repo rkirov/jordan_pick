@@ -794,7 +794,7 @@ lemma plateau_clear_above_near_vertex (hsimple : P.IsSimple) (p : ZMod P.n) (L :
         nlinarith [hu.1, hu.2, e0, e1]
       linarith
     · -- non-incident edge: excluded by the isolating ball
-      push_neg at hjrun
+      push Not at hjrun
       exact absurd hqj (Set.disjoint_left.mp (hiso t j hjrun hjm1) hqball)
 
 /-- **Discrete IVT coverage of a finite real chain.** For a sequence `f : Fin (L+1) → ℝ`
@@ -1201,7 +1201,7 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
         simpa using this
       linarith
     · -- non-incident edge: contradicts separation from run edge p+t containing (x,w)
-      push_neg at hjrun
+      push Not at hjrun
       have hdist : r ≤ dist ((x, w) : ℝ × ℝ) ((x, z) : ℝ × ℝ) :=
         hseg t j hjrun hjm1 (x, w) hxw_mem (x, z) hqj
       have : dist ((x, w) : ℝ × ℝ) ((x, z) : ℝ × ℝ) < r := by

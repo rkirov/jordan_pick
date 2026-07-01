@@ -935,7 +935,7 @@ lemma pos_of_continuous_ne_zero_Ioo (f : ℝ → ℝ) (a b : ℝ) (hf : Continuo
     (hne : ∀ y ∈ Set.Ioo a b, f y ≠ 0) (y₀ : ℝ) (hy₀ : y₀ ∈ Set.Ioo a b)
     (hpos : 0 < f y₀) (y : ℝ) (hy : y ∈ Set.Ioo a b) : 0 < f y := by
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have hneg : f y < 0 := lt_of_le_of_ne hle (hne y hy)
   have h0 : (0 : ℝ) ∈ Set.uIcc (f y₀) (f y) := by
     rw [Set.uIcc_of_ge (le_of_lt (hneg.trans hpos))]
@@ -951,7 +951,7 @@ lemma pos_of_continuousOn_ne_zero_Ioo (f : ℝ → ℝ) (a b : ℝ)
     (y₀ : ℝ) (hy₀ : y₀ ∈ Set.Ioo a b) (hpos : 0 < f y₀)
     (y : ℝ) (hy : y ∈ Set.Ioo a b) : 0 < f y := by
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have hneg : f y < 0 := lt_of_le_of_ne hle (hne y hy)
   have h0 : (0 : ℝ) ∈ Set.uIcc (f y₀) (f y) := by
     rw [Set.uIcc_of_ge (le_of_lt (hneg.trans hpos))]
@@ -1529,13 +1529,13 @@ theorem windingSupport_bounded (P : LatticePolygon) :
   intro q hw
   have hw : P.winding q ≠ 0 := hw
   have ha : ∃ i, q.2 < ((P.vert i).2 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_above P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_above P q hc)
   have hb : ∃ i, ((P.vert i).2 : ℝ) ≤ q.2 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_below P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_below P q hc)
   have hr : ∃ i, q.1 ≤ ((P.vert i).1 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_right P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_right P q hc)
   have hl : ∃ i, ((P.vert i).1 : ℝ) ≤ q.1 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_left P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_left P q hc)
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   simp only [Set.mem_Icc, Prod.le_def]
@@ -1654,9 +1654,9 @@ lemma crossSection_support_bounded (P : LatticePolygon) (y : ℝ) :
   intro x hw
   have hw : P.winding (x, y) ≠ 0 := hw
   have hr : ∃ i, x ≤ ((P.vert i).1 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_right P (x, y) hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_right P (x, y) hc)
   have hl : ∃ i, ((P.vert i).1 : ℝ) ≤ x := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_left P (x, y) hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_left P (x, y) hc)
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   simp only [Set.mem_Icc]
   exact ⟨le_trans (by exact_mod_cast hxm il) hil, le_trans hir (by exact_mod_cast hxM ir)⟩
@@ -1852,7 +1852,7 @@ lemma integral_Iio_indicator_sub' (a b : ℝ) :
          - (Set.Iio b).indicator (fun _ => (1 : ℝ)) x)) = a - b := by
   by_cases h : b ≤ a
   · exact integral_Iio_indicator_sub a b h
-  · push_neg at h
+  · push Not at h
     rw [show (fun x => (Set.Iio a).indicator (fun _ => (1 : ℝ)) x
           - (Set.Iio b).indicator (fun _ => (1 : ℝ)) x)
           = (fun x => -((Set.Iio b).indicator (fun _ => (1 : ℝ)) x
@@ -1873,7 +1873,7 @@ lemma integrable_Iio_indicator_sub' (a b : ℝ) :
          - (Set.Iio b).indicator (fun _ => (1 : ℝ)) x) := by
   by_cases h : b ≤ a
   · exact integrable_Iio_indicator_sub a b h
-  · push_neg at h
+  · push Not at h
     rw [show (fun x => (Set.Iio a).indicator (fun _ => (1 : ℝ)) x
           - (Set.Iio b).indicator (fun _ => (1 : ℝ)) x)
           = (fun x => -((Set.Iio b).indicator (fun _ => (1 : ℝ)) x
@@ -2163,7 +2163,7 @@ point" hypothesis of the constant-sign engine. -/
 lemma crossSection_pos_somewhere (P : LatticePolygon) (horient : P.PositivelyOriented) :
     ∃ y, 0 < ∫ x, (P.winding (x, y) : ℝ) := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hle : (∫ y, ∫ x, (P.winding (x, y) : ℝ)) ≤ 0 := MeasureTheory.integral_nonpos h
   rw [← winding_integral_fubini'] at hle
   exact absurd hle (not_le.mpr (winding_integral_pos P horient))
@@ -2175,7 +2175,7 @@ range `(L.2, H.2)` for the engine. -/
 lemma crossSection_pos_somewhere_generic (P : LatticePolygon) (horient : P.PositivelyOriented) :
     ∃ y, (∀ i, (toReal (P.vert i)).2 ≠ y) ∧ 0 < ∫ x, (P.winding (x, y) : ℝ) := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hae : ∀ᵐ y ∂MeasureTheory.volume, (∫ x, (P.winding (x, y) : ℝ)) ≤ 0 := by
     rw [MeasureTheory.ae_iff]
     apply MeasureTheory.measure_mono_null _ ((vertexHeights_finite P).measure_zero _)
@@ -2183,7 +2183,7 @@ lemma crossSection_pos_somewhere_generic (P : LatticePolygon) (horient : P.Posit
     rw [Set.mem_setOf_eq] at hy
     by_contra hcon
     rw [Set.mem_setOf_eq] at hcon
-    push_neg at hcon
+    push Not at hcon
     exact hy (h y hcon)
   have hle : (∫ y, ∫ x, (P.winding (x, y) : ℝ)) ≤ 0 :=
     MeasureTheory.integral_nonpos_of_ae hae
@@ -2200,11 +2200,11 @@ lemma winding_nonneg_of_crossSection_pos_triangle (P : LatticePolygon) (hn : P.n
     ∀ x, 0 ≤ P.winding (x, y) := by
   intro x
   by_contra hneg
-  push_neg at hneg
+  push Not at hneg
   have hle : ∀ x', P.winding (x', y) ≤ 0 := by
     intro x'
     by_contra h1
-    push_neg at h1
+    push Not at h1
     rw [winding_eq_upCount_sub_downCount P x y] at hneg
     rw [winding_eq_upCount_sub_downCount P x' y] at h1
     have hUx := upCount_le_one_triangle P hn x y
@@ -2226,7 +2226,7 @@ lemma exists_winding_one_of_crossSection_pos_triangle (P : LatticePolygon) (hn :
     (hc : 0 < ∫ x, (P.winding (x, y) : ℝ)) :
     ∃ x, P.winding (x, y) = 1 := by
   by_contra h
-  push_neg at h
+  push Not at h
   have h0 : ∀ x, P.winding (x, y) = 0 := fun x => by
     have h1 := winding_nonneg_of_crossSection_pos_triangle P hn y hc x
     have h2 := (abs_winding_le_one_triangle P hn x y).2
@@ -2271,11 +2271,11 @@ lemma winding_nonpos_of_crossSection_neg_triangle (P : LatticePolygon) (hn : P.n
     ∀ x, P.winding (x, y) ≤ 0 := by
   intro x
   by_contra hpos
-  push_neg at hpos
+  push Not at hpos
   have hge : ∀ x', 0 ≤ P.winding (x', y) := by
     intro x'
     by_contra h1
-    push_neg at h1
+    push Not at h1
     rw [winding_eq_upCount_sub_downCount P x y] at hpos
     rw [winding_eq_upCount_sub_downCount P x' y] at h1
     have hUx := upCount_le_one_triangle P hn x y
@@ -2657,7 +2657,7 @@ lemma winding_nonneg_ae_triangle_of_crossSection_pos (P : LatticePolygon) (hn : 
   rw [Set.mem_setOf_eq] at hq
   by_contra hc
   rw [Set.mem_setOf_eq] at hc
-  push_neg at hc
+  push Not at hc
   refine hq ?_
   by_cases hsp : (Finset.univ.filter fun i =>
       ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
@@ -2716,7 +2716,7 @@ lemma winding_section_dominated (P : LatticePolygon) :
     · rw [abs_le] at hx
       rw [Set.indicator_of_mem (Set.mem_Icc.mpr hx), mul_one]
       exact abs_winding_real_le P (x, y)
-    · push_neg at hx
+    · push Not at hx
       rw [hR x y hx,
         Set.indicator_of_notMem (fun h => absurd (abs_le.mpr (Set.mem_Icc.mp h)) (not_le.mpr hx))]
       simp
@@ -2907,7 +2907,7 @@ lemma interiorRegion_above_lowest (P : LatticePolygon) :
   obtain ⟨m, hm⟩ := exists_lowest_vertex P
   refine ⟨m, fun q hq => ?_⟩
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   have hw : P.winding q = 0 := by
     have h := winding_zero_of_y_below P q.1 q.2 (fun j => lt_of_lt_of_le hlt (hm j))
     rwa [Prod.mk.eta] at h
@@ -3643,7 +3643,7 @@ lemma winding_eventually_eq_full (P : LatticePolygon) (q₀ : ℝ × ℝ)
       exact Finset.sum_eq_zero fun i _ =>
         edgeWind_eq_zero_of_eq_height _ _ _ (by rw [hallbad i, hallbad (i + 1)])
     filter_upwards with q; rw [hzero q, hzero q₀]
-  · push_neg at hallbad
+  · push Not at hallbad
     obtain ⟨k₀, hk₀⟩ := hallbad
     -- Forward and backward "next non-`bad` vertex" existence.
     have hexF : ∀ j : ZMod P.n, ∃ m : ℕ, ¬ bad (j + (m : ZMod P.n)) := by

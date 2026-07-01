@@ -334,7 +334,7 @@ end Disk
 theorem brouwer_disk (f : C(closedBall (0 : Plane) 1, closedBall (0 : Plane) 1)) :
     ∃ x, f x = x := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hf : ∀ x, (f x : Plane) ≠ (x : Plane) := fun x h => hcon x (Subtype.ext h)
   have hρmem : ∀ x, rhoPt f x ∈ closedBall (0 : Plane) 1 := fun x => by
     rw [mem_closedBall, dist_zero_right, norm_rhoPt f hf x]

@@ -434,16 +434,16 @@ theorem winding_support_finite (P : LatticePolygon) :
   refine Set.Finite.subset (Set.finite_Icc ((xm, ym) : Pt) (xM, yM)) ?_
   intro q hq
   have hr : ∃ i, q.1 ≤ (P.vert i).1 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_right P (toReal q) (fun i => by simpa using hc i))
   have hl : ∃ i, (P.vert i).1 ≤ q.1 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_left P (toReal q) (fun i => by simpa using hc i))
   have ha : ∃ i, q.2 < (P.vert i).2 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_above P (toReal q) (fun i => by simpa using hc i))
   have hb : ∃ i, (P.vert i).2 ≤ q.2 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_below P (toReal q) (fun i => by simpa using hc i))
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
@@ -548,13 +548,13 @@ theorem interiorRegion_bounded (P : LatticePolygon) :
   have hq1 : P.winding q = 1 := hq
   have hw : P.winding q ≠ 0 := by rw [hq1]; exact one_ne_zero
   have ha : ∃ i, q.2 < ((P.vert i).2 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_above P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_above P q hc)
   have hb : ∃ i, ((P.vert i).2 : ℝ) ≤ q.2 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_below P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_below P q hc)
   have hr : ∃ i, q.1 ≤ ((P.vert i).1 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_right P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_right P q hc)
   have hl : ∃ i, ((P.vert i).1 : ℝ) ≤ q.1 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_left P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_left P q hc)
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   simp only [Set.mem_Icc, Prod.le_def]

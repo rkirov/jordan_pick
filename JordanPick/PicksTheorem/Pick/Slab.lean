@@ -141,7 +141,7 @@ lemma inside_nonempty (horient : P.PositivelyOriented) :
   have hle : ∀ x : ℝ, (x, y) ∉ P.boundary → P.winding (x, y) ≤ 0 := by
     intro x hxb
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have : (x, y) ∈ {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0} :=
       ⟨hxb, by omega⟩
     rw [hempty] at this; exact this
@@ -332,7 +332,7 @@ lemma chord_order_preserved_in_slab (hP : P.IsSimple) (y₁ y₂ : ℝ)
     field_simp
   -- `g z := edgeThr z j - edgeThr z i` is affine: `C + D·z`.
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hgaff : ∀ z, (P.edgeThr z j - P.edgeThr z i)
       = ((toReal (P.vert j)).1 - (toReal (P.vert i)).1 - sj*(toReal (P.vert j)).2
           + si*(toReal (P.vert i)).2) + (sj - si)*z := by
@@ -850,7 +850,7 @@ lemma joinedIn_same_height_of_chord_end (hP : P.IsSimple) (y : ℝ)
       have hgap : ∀ i ∈ P.spanningSet y, P.edgeThr y i ≤ a ∨ b ≤ P.edgeThr y i := by
         intro i hi
         by_contra hc
-        push_neg at hc
+        push Not at hc
         -- a < edgeThr (strict, since ≠ a) and edgeThr < b (strict, since ≠ b)
         have hlt1 : a < P.edgeThr y i :=
           lt_of_le_of_ne hc.1.le (Ne.symm (hne_thr a hba i hi))

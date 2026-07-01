@@ -583,7 +583,7 @@ theorem exists_pos_fan_term (P : LatticePolygon) (horient : P.PositivelyOriented
     ∃ i, 0 < cross (toReal (P.vert i) - toReal (P.vert k))
                    (toReal (P.vert (i + 1)) - toReal (P.vert k)) := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hsum : (∑ i, cross (toReal (P.vert i) - toReal (P.vert k))
       (toReal (P.vert (i + 1)) - toReal (P.vert k))) ≤ 0 :=
     Finset.sum_nonpos (fun i _ => hcon i)
@@ -889,7 +889,7 @@ lemma cross_trans_strict_support' (δ : ℝ) (hδ : 0 < δ) (u v w : ℝ × ℝ)
     (hu : 0 < δ * u.1 + u.2) (hv : 0 < δ * v.1 + v.2) (hw : 0 < δ * w.1 + w.2)
     (h1 : 0 < cross u v) (h2 : 0 ≤ cross v w) : 0 < cross u w := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hwu : 0 ≤ cross w u := by have := cross_swap u w; linarith
   have hwv : 0 < cross w v := cross_trans_strict_support δ hδ w u v hw hu hv hwu h1
   have := cross_swap v w; linarith
@@ -966,7 +966,7 @@ lemma cornerCross_pos_of_angular_extremes (P : LatticePolygon) (hS : P.IsSimple)
   have hfan : (∑ i, cross (W i) (W (i + 1))) = 2 * P.shoelace := by
     simp only [hW]; exact two_shoelace_fan_vertex P m
   have hpos : ∃ i, 0 < cross (W i) (W (i + 1)) := by
-    by_contra hcon; push_neg at hcon
+    by_contra hcon; push Not at hcon
     have hle : (∑ i, cross (W i) (W (i + 1))) ≤ 0 := Finset.sum_nonpos (fun i _ => hcon i)
     rw [hfan] at hle; linarith
   obtain ⟨i, hi⟩ := hpos

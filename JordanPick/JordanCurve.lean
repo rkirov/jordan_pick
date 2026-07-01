@@ -58,7 +58,7 @@ theorem crossing (hbr : BrouwerFPT) {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤
     (hv1 : v (-1) 1 = c) (hv2 : v 1 1 = d) :
     ∃ s ∈ Icc (-1:ℝ) 1, ∃ t ∈ Icc (-1:ℝ) 1, h s = v t := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   -- `hcon : ∀ s ∈ Icc (-1) 1, ∀ t ∈ Icc (-1) 1, h s ≠ v t`
   -- The parameter square `Q = [-1,1]²`.
   set Q : Set Plane := {p | p 0 ∈ Icc (-1:ℝ) 1 ∧ p 1 ∈ Icc (-1:ℝ) 1} with hQdef
@@ -347,7 +347,7 @@ theorem unbounded_component_unique (hcont : Continuous r) {x y : Plane}
       ∃ w ∈ E, w ∈ connectedComponentIn (range r)ᶜ z := by
     intro z hz
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     apply hz
     have hsubBall : connectedComponentIn (range r)ᶜ z ⊆ closedBall (0 : Plane) R := by
       intro w hw
@@ -440,7 +440,7 @@ theorem arc_not_separates (hbr : BrouwerFPT) {A : Set Plane}
       ∃ w ∈ E, w ∈ connectedComponentIn Aᶜ z := by
     intro z _ hzu
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     apply hzu
     have hsubBall : connectedComponentIn Aᶜ z ⊆ closedBall (0 : Plane) R0 := by
       intro w hw
@@ -558,7 +558,7 @@ theorem arc_not_separates (hbr : BrouwerFPT) {A : Set Plane}
     rw [hz, norm_zero] at hx0R
     exact absurd hx0R.symm hRpos.ne'
   · -- No bounded component: every point's component equals that of `p`.
-    push_neg at hbdd
+    push Not at hbdd
     have hAeq : Aᶜ ⊆ connectedComponentIn Aᶜ p := by
       intro x hx
       obtain ⟨w, hwE, hwx⟩ := meetsE x hx (hbdd x hx)
@@ -1265,7 +1265,7 @@ theorem ms_meets_Js (hbr : BrouwerFPT)
       (have hc := congrArg (fun p : Plane => p 0) h;
        simp only [hl0, ha0, hb0] at hc; norm_num at hc)
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   -- `hcon : ∀ w ∈ J_s, w 0 = 0 → m 1 < w 1`
   -- three path pieces on `[-1,1]`
   set f1 : ℝ → Plane := fun t => s + ((t + 1) / 2) • (m - s) with hf1def

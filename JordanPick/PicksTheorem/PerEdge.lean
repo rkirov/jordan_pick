@@ -133,13 +133,13 @@ theorem angleWeight_support_finite (P : LatticePolygon) :
   refine Set.Finite.subset (Set.finite_Icc ((xm, ym) : Pt) (xM, yM)) ?_
   intro q hq
   have hr : ∃ i, q.1 ≤ (P.vert i).1 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_right P q hc)
+    by_contra hc; push Not at hc; exact hq (angleWeight_eq_zero_of_far_right P q hc)
   have hl : ∃ i, (P.vert i).1 ≤ q.1 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_left P q hc)
+    by_contra hc; push Not at hc; exact hq (angleWeight_eq_zero_of_far_left P q hc)
   have ha : ∃ i, q.2 ≤ (P.vert i).2 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_up P q hc)
+    by_contra hc; push Not at hc; exact hq (angleWeight_eq_zero_of_far_up P q hc)
   have hb : ∃ i, (P.vert i).2 ≤ q.2 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_down P q hc)
+    by_contra hc; push Not at hc; exact hq (angleWeight_eq_zero_of_far_down P q hc)
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
   simp only [Set.mem_Icc, Prod.le_def]
