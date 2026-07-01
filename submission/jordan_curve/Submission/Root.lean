@@ -1,7 +1,7 @@
 import Mathlib
-import JordanPick.JordanCurve.Arcs
-import JordanPick.JordanCurve.Counting
-import JordanPick.JordanCurve.Brouwer
+import Submission.Arcs
+import Submission.Counting
+import Submission.Brouwer
 
 /-!
 # The (continuous) Jordan Curve Theorem, via Brouwer — Maehara's proof

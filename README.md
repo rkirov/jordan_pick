@@ -91,15 +91,13 @@ Clean-room with respect to proofs, with prior art credited explicitly:
   per-edge identity is proved independently here (a column decomposition rather
   than their four-box partition + reflection involution). See the `Weight.lean`
   header for specifics.
-* The continuous JCT's **Maehara reduction** and the **Brouwer** chain
-  (no-retraction, disk Brouwer, convex-compact) are original to this repo.
-  Their one imported input, **`π₁(S¹) ≅ ℤ`**
-  (`JordanPick/JordanCurve/FundamentalGroupCircle.lean`), is **vendored with
-  attribution** from Mathlib community PR
-  [#36119](https://github.com/leanprover-community/mathlib4/pull/36119) by
-  **Ruize Chen** (Apache-2.0), since that PR is not yet in a Mathlib release we
-  depend on. The copyright header is preserved; if the PR later merges, replace
-  the vendored file with the upstream import.
+* The continuous JCT's **Maehara reduction** and the entire **Brouwer** chain
+  (circle non-nullhomotopy, no-retraction, disk Brouwer, convex-compact) are
+  original to this repo and self-contained against Mathlib. The one non-trivial
+  topological input — that a once-around loop of the circle is not
+  null-homotopic — is proved directly from Mathlib's covering-space path lifting
+  (`AddCircle.isCoveringMap_coe` + `liftPath_apply_one_eq_of_homotopicRel`), so
+  no external `π₁(S¹) ≅ ℤ` development is needed.
 
 ## References
 

@@ -1,0 +1,12 @@
+# For local building of the submission library only. In the real lean-eval
+# workspace this file is TRUSTED and supplied by the harness (do not edit there).
+name = "jordan_curve"
+defaultTargets = ["Submission"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.31.0"
+
+[[lean_lib]]
+name = "Submission"
