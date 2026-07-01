@@ -357,17 +357,6 @@ theorem fixedPoint_transfer {X Y : Type*} [TopologicalSpace X] [TopologicalSpace
   calc f (φ.symm y) = φ.symm (φ (f (φ.symm y))) := (φ.symm_apply_apply _).symm
     _ = φ.symm y := by rw [hfy]
 
-/-- **Phase 4 (nonempty interior).** Brouwer's fixed point theorem for a nonempty
-compact convex set with nonempty interior, via `brouwer_disk` and the gauge
-rescale homeomorphism sending `s` to the closed unit disk. -/
-theorem brouwerFPT_of_interior {s : Set Plane} (hconv : Convex ℝ s)
-    (hcomp : IsCompact s) (hint : (interior s).Nonempty) (f : C(s, s)) : ∃ x, f x = x := by
-  obtain ⟨h, -, himg, -⟩ := exists_homeomorph_image_interior_closure_frontier_eq_unitBall
-    hconv hint hcomp.isBounded
-  rw [hcomp.isClosed.closure_eq] at himg
-  exact fixedPoint_transfer ((h.image s).trans (Homeomorph.setCongr himg))
-    (fun g => brouwer_disk g) f
-
 /-! ### Brouwer on an arbitrary closed ball (by rescaling) -/
 
 /-- Rescaling homeomorphism `closedBall 0 R ≃ₜ closedBall 0 1` (`x ↦ R⁻¹ • x`). -/
