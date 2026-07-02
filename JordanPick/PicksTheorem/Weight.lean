@@ -69,10 +69,6 @@ lemma latWeight_of_crossZ_pos (a b : Pt) (h : 0 < crossZ a b) :
     latWeight a b = (|Int.sign a.1 - Int.sign b.1| : ℚ) / 4 := by
   unfold latWeight; rw [Int.sign_eq_one_of_pos h]; simp
 
-lemma latWeight_of_crossZ_neg (a b : Pt) (h : crossZ a b < 0) :
-    latWeight a b = -(|Int.sign a.1 - Int.sign b.1| : ℚ) / 4 := by
-  unfold latWeight; rw [Int.sign_eq_neg_one_of_neg h]; push_cast; ring
-
 /-- The cross product along an edge is affine in the test point `q`:
 `crossZ (u−q) (v−q) = crossZ u v − q.1·(v.2−u.2) + q.2·(v.1−u.1)`. Its sign as
 `q.2` varies (slope `v.1−u.1`) is what places `q` above or below the edge line. -/
@@ -105,14 +101,6 @@ lemma latWeight_vshift (a b : Pt) :
   push_cast
   ring
 
-/-- The vertical-step change vanishes for an edge whose endpoints lie on the same
-side of the vertical line through `q` (only edges crossing that line contribute
-to the ray-casting). -/
-lemma latWeight_vshift_eq_zero_of_sign_eq (a b : Pt) (h : Int.sign a.1 = Int.sign b.1) :
-    latWeight (a - (0, 1)) (b - (0, 1)) - latWeight a b = 0 := by
-  rw [latWeight_vshift, h]
-  simp only [sub_self, abs_zero, Int.cast_zero, zero_mul, zero_div]
-
 /-- For an edge straddling the vertical line through `q` (opposite nonzero
 `x`-signs), the vertical-step change is `½(sign(crossZ + (b.1−a.1)) − sign crossZ)` —
 a clean `±1`/`0` crossing contribution. -/
@@ -130,12 +118,6 @@ lemma latWeight_vshift_of_opp' (a b : Pt) (ha : 0 < a.1) (hb : b.1 < 0) :
   rw [latWeight_vshift, Int.sign_eq_one_of_pos ha, Int.sign_eq_neg_one_of_neg hb]
   push_cast
   ring
-
-/-- `q` is below the edge line iff `crossZ (u−q) (v−q) < 0` (exact affine
-criterion). For `q.2` low enough this holds, putting `q` in the bottom strip. -/
-lemma crossZ_sub_sub_neg_iff (u v q : Pt) :
-    crossZ (u - q) (v - q) < 0 ↔ q.2 * (v.1 - u.1) < q.1 * (v.2 - u.2) - crossZ u v := by
-  rw [crossZ_sub_sub]; constructor <;> intro h <;> linarith
 
 /-- On the bottom strip (`q.2 ≤ u.2+v.2−r−1`) of an edge whose endpoints lie in
 `Box r` (so `u.2, v.2 ≤ r`), the cross product is negative: `q.2 < u.2` and
@@ -173,13 +155,6 @@ lemma sign_trichotomy (x : ℤ) : Int.sign x = -1 ∨ Int.sign x = 0 ∨ Int.sig
   · subst h; exact Or.inr (Or.inl Int.sign_zero)
   · exact Or.inr (Or.inr (Int.sign_eq_one_of_pos h))
 
-/-- The column weight `|sign a − sign b|` is at most `2` (each edge contributes at
-most `½` to the per-point angle sum) and equals `2` exactly when `a, b` have opposite
-strict signs (a genuine column crossing). -/
-lemma abs_sign_diff_le_two (a b : ℤ) : |Int.sign a - Int.sign b| ≤ 2 := by
-  rcases sign_trichotomy a with h | h | h <;> rcases sign_trichotomy b with h' | h' | h' <;>
-    rw [h, h'] <;> decide
-
 /-- A genuine column crossing (endpoints on strictly opposite sides of the origin's
 `x`) has column weight exactly `2` — the full `±½` contribution. -/
 lemma abs_sign_diff_eq_two_of_opp (a b : ℤ) (h : (a < 0 ∧ 0 < b) ∨ (b < 0 ∧ 0 < a)) :
@@ -187,25 +162,6 @@ lemma abs_sign_diff_eq_two_of_opp (a b : ℤ) (h : (a < 0 ∧ 0 < b) ∨ (b < 0 
   rcases h with ⟨ha, hb⟩ | ⟨hb, ha⟩
   · rw [Int.sign_eq_neg_one_of_neg ha, Int.sign_eq_one_of_pos hb]; decide
   · rw [Int.sign_eq_neg_one_of_neg hb, Int.sign_eq_one_of_pos ha]; decide
-
-/-- No column crossing (endpoints on the same strict side) has column weight `0`. -/
-lemma abs_sign_diff_eq_zero_of_same (a b : ℤ) (h : (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0)) :
-    |Int.sign a - Int.sign b| = 0 := by
-  rcases h with ⟨ha, hb⟩ | ⟨ha, hb⟩
-  · rw [Int.sign_eq_one_of_pos ha, Int.sign_eq_one_of_pos hb]; decide
-  · rw [Int.sign_eq_neg_one_of_neg ha, Int.sign_eq_neg_one_of_neg hb]; decide
-
-/-- A boundary half-crossing (exactly one endpoint on the origin's column) has column
-weight `1` — the `±¼` contribution at a vertex's vertical line. -/
-lemma abs_sign_diff_eq_one_of_half (a b : ℤ) (h : (a = 0 ∧ b ≠ 0) ∨ (a ≠ 0 ∧ b = 0)) :
-    |Int.sign a - Int.sign b| = 1 := by
-  rcases h with ⟨ha, hb⟩ | ⟨ha, hb⟩
-  · subst ha; rcases lt_or_gt_of_ne hb with h | h
-    · rw [Int.sign_eq_neg_one_of_neg h, Int.sign_zero]; decide
-    · rw [Int.sign_eq_one_of_pos h, Int.sign_zero]; decide
-  · subst hb; rcases lt_or_gt_of_ne ha with h | h
-    · rw [Int.sign_eq_neg_one_of_neg h, Int.sign_zero]; decide
-    · rw [Int.sign_eq_one_of_pos h, Int.sign_zero]; decide
 
 /-- **Interior-column combinatorial core.** Three signs in `{-1,0,1}` with both `+1`
 and `−1` present (an interior point's column is straddled by the vertices — possibly
@@ -371,16 +327,6 @@ lemma latWeight_interior_above (u v q : Pt) (h1 : u.1 < q.1) (h2 : q.1 < v.1)
   rw [e1, e2]
   norm_num
 
-/-- **Interior column, unified.** For `q` strictly inside an edge's x-span, the weight
-is `sign(crossZ)/2` — `+½` above the edge line, `−½` below, `0` on it. This is the
-`±½` crossing contribution that sums to the (integer) winding at an interior point. -/
-lemma latWeight_interior_column (u v q : Pt) (h1 : u.1 < q.1) (h2 : q.1 < v.1) :
-    latWeight (u - q) (v - q) = (Int.sign (crossZ (u - q) (v - q)) : ℚ) / 2 := by
-  rcases lt_trichotomy (crossZ (u - q) (v - q)) 0 with h | h | h
-  · rw [latWeight_interior_below u v q h1 h2 h, Int.sign_eq_neg_one_of_neg h]; norm_num
-  · rw [latWeight_eq_zero_of_crossZ_zero _ _ h, h, Int.sign_zero]; norm_num
-  · rw [latWeight_interior_above u v q h1 h2 h, Int.sign_eq_one_of_pos h]; norm_num
-
 /-- The left boundary column (`q.1 = u.1`) below the edge has weight `−¼`. -/
 lemma latWeight_boundary_left_below (u v q : Pt) (h1 : q.1 = u.1) (h2 : u.1 < v.1)
     (h3 : crossZ (u - q) (v - q) < 0) : latWeight (u - q) (v - q) = -(1 / 4) := by
@@ -425,24 +371,6 @@ lemma latWeight_boundary_right_above (u v q : Pt) (h1 : q.1 = v.1) (h2 : u.1 < v
     Int.sign_eq_zero_iff_zero.mpr (by simp only [Prod.fst_sub]; omega)
   rw [e1, e2]; norm_num
 
-/-- **Left boundary column, unified.** For `q.1 = u.1` (the vertical line through the
-edge's left endpoint), the weight is `sign(crossZ)/4` — the half-contribution of a
-crossing that starts on the column. -/
-lemma latWeight_boundary_left_column (u v q : Pt) (h1 : q.1 = u.1) (h2 : u.1 < v.1) :
-    latWeight (u - q) (v - q) = (Int.sign (crossZ (u - q) (v - q)) : ℚ) / 4 := by
-  rcases lt_trichotomy (crossZ (u - q) (v - q)) 0 with h | h | h
-  · rw [latWeight_boundary_left_below u v q h1 h2 h, Int.sign_eq_neg_one_of_neg h]; norm_num
-  · rw [latWeight_eq_zero_of_crossZ_zero _ _ h, h, Int.sign_zero]; norm_num
-  · rw [latWeight_boundary_left_above u v q h1 h2 h, Int.sign_eq_one_of_pos h]; norm_num
-
-/-- **Right boundary column, unified** (`q.1 = v.1`). -/
-lemma latWeight_boundary_right_column (u v q : Pt) (h1 : q.1 = v.1) (h2 : u.1 < v.1) :
-    latWeight (u - q) (v - q) = (Int.sign (crossZ (u - q) (v - q)) : ℚ) / 4 := by
-  rcases lt_trichotomy (crossZ (u - q) (v - q)) 0 with h | h | h
-  · rw [latWeight_boundary_right_below u v q h1 h2 h, Int.sign_eq_neg_one_of_neg h]; norm_num
-  · rw [latWeight_eq_zero_of_crossZ_zero _ _ h, h, Int.sign_zero]; norm_num
-  · rw [latWeight_boundary_right_above u v q h1 h2 h, Int.sign_eq_one_of_pos h]; norm_num
-
 /-- The point-reflection `q ↦ u+v−q` pairs lattice points with opposite weight:
 this is what makes the central "blue box" cancel in the per-edge identity. -/
 lemma latWeight_involution (u v q : Pt) :
@@ -486,24 +414,6 @@ lemma latWeightSum_eq_sum_asymm (u v : Pt) (r : ℕ) :
     exact ⟨hq.2, by rw [hb]; exact hq.1⟩
   unfold latWeightSum
   rw [← Finset.sum_filter_add_sum_filter_not (Box r) (fun q => u + v - q ∈ Box r), hinv, zero_add]
-
-/-- `latWeightSum` reduces to a sum over the middle columns `u.1 ≤ q.1 ≤ v.1`: the left
-and right columns contribute nothing (`latWeight_eq_zero_of_lt_fst`/`_gt_fst`). -/
-lemma latWeightSum_eq_sum_middle (u v : Pt) (r : ℕ) (huv : u.1 < v.1) :
-    latWeightSum u v r =
-      ∑ q ∈ (Box r).filter (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1), latWeight (u - q) (v - q) := by
-  classical
-  have hzero : (∑ q ∈ (Box r).filter (fun q => ¬(u.1 ≤ q.1 ∧ q.1 ≤ v.1)),
-      latWeight (u - q) (v - q)) = 0 := by
-    apply Finset.sum_eq_zero
-    intro q hq
-    rw [Finset.mem_filter] at hq
-    rcases not_and_or.mp hq.2 with h | h
-    · exact latWeight_eq_zero_of_lt_fst u v q (by omega) (by omega)
-    · exact latWeight_eq_zero_of_gt_fst u v q (by omega) (by omega)
-  unfold latWeightSum
-  rw [← Finset.sum_filter_add_sum_filter_not (Box r) (fun q => u.1 ≤ q.1 ∧ q.1 ≤ v.1),
-    hzero, add_zero]
 
 /-- For an edge with endpoints in `Box r` and `u.2+v.2 ≥ 0`, a middle-column
 point is in the asymmetric region (`σq ∉ Box`) iff it is in the bottom strip

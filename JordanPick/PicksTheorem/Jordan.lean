@@ -319,23 +319,6 @@ lemma edgeWind_eq_indicator_down (a b : ℝ × ℝ) (y x : ℝ) (h1 : b.2 < y) (
       have hh : y < b.2 := (edgeWind_eq_one_imp a b (x, y) h).2
       linarith
 
-/-- An edge **crosses** height `y` (strictly, in either direction) exactly when
-its two endpoints lie on opposite sides of the line `{· = y}`. With generic `y`
-(no endpoint at height `y`) this is the basis of the traversal-order alternation:
-each crossing flips the side, so crossings alternate up/down as one goes around. -/
-lemma span_iff_above_ne (a b y : ℝ) (ha : a ≠ y) (hb : b ≠ y) :
-    ((a < y ∧ y < b) ∨ (b < y ∧ y < a)) ↔ ((y < a) ≠ (y < b)) := by
-  constructor
-  · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩) heq <;> rw [eq_iff_iff] at heq
-    · have := heq.mpr h2; linarith
-    · have := heq.mp h2; linarith
-  · intro h
-    rcases lt_or_gt_of_ne ha with ha' | ha' <;> rcases lt_or_gt_of_ne hb with hb' | hb'
-    · exact absurd (by rw [eq_iff_iff]; constructor <;> intro <;> linarith) h
-    · exact Or.inl ⟨ha', hb'⟩
-    · exact Or.inr ⟨hb', ha'⟩
-    · exact absurd (by rw [eq_iff_iff]; constructor <;> intro <;> linarith) h
-
 /-- A point at height `y` lies on the edge's line exactly at `x = x*`: the
 threshold is the unique crossing `x`. -/
 lemma cross_eq_zero_iff_threshold (a b : ℝ × ℝ) (y x : ℝ) (hne : b.2 ≠ a.2) :
@@ -377,12 +360,6 @@ lemma crossThreshold_between (a b : ℝ × ℝ) (y : ℝ) (h1 : a.2 < y) (h2 : y
   · nlinarith [mul_nonneg (mul_nonneg (sq_nonneg (b.1 - a.1))
       (show (0:ℝ) ≤ y - a.2 by linarith)) (show (0:ℝ) ≤ b.2 - y by linarith)]
   · positivity
-
-/-- Down-orientation companion of `crossThreshold_between`. -/
-lemma crossThreshold_between_down (a b : ℝ × ℝ) (y : ℝ) (h1 : b.2 < y) (h2 : y < a.2) :
-    (crossThreshold a b y - a.1) * (crossThreshold a b y - b.1) ≤ 0 := by
-  rw [crossThreshold_comm a b y (by linarith : a.2 ≠ b.2), mul_comm]
-  exact crossThreshold_between b a y h1 h2
 
 /-- Only edges that span height `y` contribute to the winding: a nonzero
 `edgeWind` forces the test height into the edge's `y`-range. -/
@@ -513,25 +490,6 @@ lemma winding_generic_sum (P : LatticePolygon) (x y : ℝ)
   unfold LatticePolygon.winding
   exact Finset.sum_congr rfl fun i _ => edgeWind_generic _ _ x y (hy i) (hy (i + 1))
 
-/-- **Threshold-based local constancy.** At a generic height, the winding is
-unchanged between two `x`-values lying on the same side of every crossing
-threshold — it only changes when `x` passes a threshold. -/
-lemma winding_eq_of_same_side (P : LatticePolygon) (x1 x2 y : ℝ)
-    (hy : ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (hsame : ∀ i, (x1 < crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1))) y) ↔
-                  (x2 < crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1))) y)) :
-    P.winding (x1, y) = P.winding (x2, y) := by
-  rw [winding_generic_sum P x1 y hy, winding_generic_sum P x2 y hy]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  by_cases hsp : ((toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-      ((toReal (P.vert (i + 1))).2 < y ∧ y < (toReal (P.vert i)).2)
-  · rw [if_pos hsp, if_pos hsp]
-    refine congrArg _ ?_
-    by_cases hx : x1 < crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1))) y
-    · rw [if_pos hx, if_pos ((hsame i).mp hx)]
-    · rw [if_neg hx, if_neg (fun h => hx ((hsame i).mpr h))]
-  · rw [if_neg hsp, if_neg hsp]
-
 /-- The winding at a swept point is the up-crossing count minus the down-crossing
 count — both antitone in `x` (`upCount_antitone`, `downCount_antitone`). This is
 the explicit step-function the alternation argument squeezes into `{0,1}`. -/
@@ -561,25 +519,6 @@ lemma card_spanning_eq_two_mul_up (P : LatticePolygon) (y : ℝ) :
     rintro i _ ⟨_, hub⟩ ⟨hdb, _⟩
     linarith
   rw [Finset.filter_or, Finset.card_union_of_disjoint hdisj, ← card_up_eq_card_down, two_mul]
-
-/-- An edge whose endpoints **strictly straddle** `y` lies in the strict spanning
-filter (upward case). Used to pin down the two band-1 spanning edges (those incident
-to the lowest vertex `L`). -/
-lemma mem_strict_spanning_of_lt_up (P : LatticePolygon) (y : ℝ) (i : ZMod P.n)
-    (h1 : (toReal (P.vert i)).2 < y) (h2 : y < (toReal (P.vert (i + 1))).2) :
-    i ∈ Finset.univ.filter fun i =>
-        ((toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-        ((toReal (P.vert (i + 1))).2 < y ∧ y < (toReal (P.vert i)).2) :=
-  Finset.mem_filter.mpr ⟨Finset.mem_univ i, Or.inl ⟨h1, h2⟩⟩
-
-/-- An edge whose endpoints **strictly straddle** `y` (downward case) lies in the
-strict spanning filter. -/
-lemma mem_strict_spanning_of_lt_down (P : LatticePolygon) (y : ℝ) (i : ZMod P.n)
-    (h1 : (toReal (P.vert (i + 1))).2 < y) (h2 : y < (toReal (P.vert i)).2) :
-    i ∈ Finset.univ.filter fun i =>
-        ((toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-        ((toReal (P.vert (i + 1))).2 < y ∧ y < (toReal (P.vert i)).2) :=
-  Finset.mem_filter.mpr ⟨Finset.mem_univ i, Or.inr ⟨h1, h2⟩⟩
 
 /-- **Triangle base case, step 1.** For a triangle (`n = 3`) at any height, the
 ray-line crosses `0` or `2` edges — the count is even (`card_spanning_even`) and
@@ -671,65 +610,6 @@ lemma winding_zero_of_y_below (P : LatticePolygon) (x y : ℝ)
   rintro (⟨h1, _⟩ | ⟨h1, _⟩)
   · exact absurd h1 (not_le.mpr (hy i))
   · exact absurd h1 (not_le.mpr (hy (i + 1)))
-
-/-- A nonzero winding forces the ray-line to cross the polygon: some edge spans
-height `y`. (Contrapositive of `winding_zero_of_no_spanning`.) -/
-lemma exists_spanning_of_winding_ne_zero (P : LatticePolygon) (x y : ℝ)
-    (h : P.winding (x, y) ≠ 0) :
-    (Finset.univ.filter fun i =>
-        ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-        ((toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2)).card ≠ 0 :=
-  fun hc => h (winding_zero_of_no_spanning P x y hc)
-
-/-- The winding is `0` above the whole polygon (every vertex strictly below `y`). -/
-lemma winding_zero_of_y_above (P : LatticePolygon) (x y : ℝ)
-    (hy : ∀ i, (toReal (P.vert i)).2 < y) :
-    P.winding (x, y) = 0 := by
-  apply winding_zero_of_no_spanning
-  rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
-  intro i _
-  rintro (⟨_, h2⟩ | ⟨_, h2⟩)
-  · exact absurd h2 (not_lt.mpr (le_of_lt (hy (i + 1))))
-  · exact absurd h2 (not_lt.mpr (le_of_lt (hy i)))
-
-/-- **Winding parity.** `winding ≡ #up + #down (mod 2)` — the parity of the
-winding equals the parity of the total crossing count (since `−#down ≡ #down`).
-This is the precursor to the Jordan parity argument: crossing-count parity
-determines inside vs. outside. -/
-lemma winding_parity (P : LatticePolygon) (x y : ℝ) :
-    P.winding (x, y) % 2 =
-      (((Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = 1).card : ℤ) +
-        (Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = -1).card) % 2 := by
-  rw [winding_eq_upCount_sub_downCount]
-  omega
-
-/-- General bound: `|winding| ≤ #up-spanning = #spanning/2`. The winding is at
-most half the crossing count — the natural bound before the alternation tightens
-it to `{0,1}`. -/
-lemma abs_winding_le_upCount (P : LatticePolygon) (x y : ℝ) :
-    -((Finset.univ.filter fun i =>
-        (toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2).card : ℤ) ≤ P.winding (x, y) ∧
-    P.winding (x, y) ≤
-      ((Finset.univ.filter fun i =>
-        (toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2).card : ℤ) := by
-  classical
-  have hdc := card_up_eq_card_down P y
-  rw [winding_eq_upCount_sub_downCount]
-  have hu : (Finset.univ.filter fun i =>
-      edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = 1).card ≤
-      (Finset.univ.filter fun i =>
-        (toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2).card := by
-    apply Finset.card_le_card
-    intro i hi; rw [Finset.mem_filter] at hi ⊢; exact ⟨hi.1, edgeWind_eq_one_imp _ _ _ hi.2⟩
-  have hd : (Finset.univ.filter fun i =>
-      edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = -1).card ≤
-      (Finset.univ.filter fun i =>
-        (toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2).card := by
-    apply Finset.card_le_card
-    intro i hi; rw [Finset.mem_filter] at hi ⊢; exact ⟨hi.1, edgeWind_eq_neg_one_imp _ _ _ hi.2⟩
-  omega
 
 /-- **Key bound.** Wherever the ray-line crosses at most two edges, the winding
 is `−1`, `0`, or `1`: it is `#up − #down` with `#up = #down = #spanning/2 ≤ 1`.
@@ -845,18 +725,6 @@ lemma eq_of_continuousAt_eqOn_left (f g : ℝ → ℝ) (a x₀ : ℝ) (hax : a <
     filter_upwards [hmem] with y hy; exact heq y hy
   exact tendsto_nhds_unique hl (Filter.Tendsto.congr' hfg.symm hlg)
 
-/-- A function continuous at `x₀` and positive there is positive somewhere on every
-right-interval `(x₀, b)`. Applied to `c`: `c(M.2) > 0` gives a positive point just
-inside band 2, which the band-assembly then spreads over the whole band. -/
-lemma exists_pos_right_of_continuousAt_pos (f : ℝ → ℝ) (x₀ b : ℝ) (hxb : x₀ < b)
-    (hc : ContinuousAt f x₀) (hpos : 0 < f x₀) : ∃ y ∈ Set.Ioo x₀ b, 0 < f y := by
-  have hev : ∀ᶠ y in nhdsWithin x₀ (Set.Ioi x₀), 0 < f y :=
-    (hc.eventually (eventually_gt_nhds hpos)).filter_mono nhdsWithin_le_nhds
-  have hmem : Set.Ioo x₀ b ∈ nhdsWithin x₀ (Set.Ioi x₀) :=
-    mem_nhdsWithin.mpr ⟨Set.Iio b, isOpen_Iio, hxb, fun z hz => ⟨hz.2, hz.1⟩⟩
-  obtain ⟨y, hfy, hyi⟩ := (hev.and hmem).exists
-  exact ⟨y, hyi, hfy⟩
-
 /-- Right-side mirror of `ge_zero_of_continuousAt_pos_left`: continuous at `x₀` and
 positive on `(x₀, b)` ⟹ nonneg at `x₀`. So `c(M.2) ≥ 0` holds whether the initial
 positive point sits in band 1 (left) or band 2 (right). -/
@@ -869,19 +737,6 @@ lemma ge_zero_of_continuousAt_pos_right (f : ℝ → ℝ) (x₀ b : ℝ) (hxb : 
     mem_nhdsWithin.mpr ⟨Set.Iio b, isOpen_Iio, hxb, fun z hz => ⟨hz.2, hz.1⟩⟩
   filter_upwards [hmem] with y hy
   exact (hpos y hy).le
-
-/-- Combine `≥ 0` (left positivity) with `≠ 0` to get strict positivity at `x₀`. So
-`c(M.2) > 0` from band-1 positivity (`c ≥ 0` at `M.2`) plus `c(M.2) ≠ 0`. -/
-lemma pos_of_continuousAt_pos_left_ne (f : ℝ → ℝ) (a x₀ : ℝ) (hax : a < x₀)
-    (hc : ContinuousAt f x₀) (hpos : ∀ y ∈ Set.Ioo a x₀, 0 < f y) (hne : f x₀ ≠ 0) :
-    0 < f x₀ :=
-  lt_of_le_of_ne (ge_zero_of_continuousAt_pos_left f a x₀ hax hc hpos) (Ne.symm hne)
-
-/-- Right-side mirror: `c(M.2) > 0` from band-2 positivity plus `c(M.2) ≠ 0`. -/
-lemma pos_of_continuousAt_pos_right_ne (f : ℝ → ℝ) (x₀ b : ℝ) (hxb : x₀ < b)
-    (hc : ContinuousAt f x₀) (hpos : ∀ y ∈ Set.Ioo x₀ b, 0 < f y) (hne : f x₀ ≠ 0) :
-    0 < f x₀ :=
-  lt_of_le_of_ne (ge_zero_of_continuousAt_pos_right f x₀ b hxb hc hpos) (Ne.symm hne)
 
 /-- The crossing at the edge's **upper** endpoint height is that endpoint's
 `x`-coordinate (for a non-horizontal edge). Both incident edges of a vertex `M`
@@ -898,14 +753,6 @@ the band-1 spanning edges `L→M`, `L→H` have crossings tending to `M.1` and
 lemma crossThreshold_tendsto_top (a b : ℝ × ℝ) (h : a.2 ≠ b.2) :
     Filter.Tendsto (fun y => crossThreshold a b y) (nhds b.2) (nhds b.1) := by
   rw [← crossThreshold_top a b h]
-  exact (crossThreshold_continuous a b).continuousAt
-
-/-- As `y → a.2`, the crossing of edge `a→b` tends to `a.1` (its bottom endpoint's
-`x`). Mirror of `crossThreshold_tendsto_top` — used when the middle vertex `M` is an
-edge's *first* (lower) endpoint. -/
-lemma crossThreshold_tendsto_bot (a b : ℝ × ℝ) :
-    Filter.Tendsto (fun y => crossThreshold a b y) (nhds a.2) (nhds a.1) := by
-  rw [← crossThreshold_bot a b]
   exact (crossThreshold_continuous a b).continuousAt
 
 /-- The crossing of edge `a→b` at height `c.2` hits exactly `c.1` iff `c` is
@@ -925,23 +772,6 @@ triangle, the opposite edge's crossing thus differs from `M.1`, so `c(M.2) ≠ 0
 lemma crossThreshold_ne_of_cross_ne_zero (a b c : ℝ × ℝ) (h : a.2 ≠ b.2)
     (hc : cross (b - a) (c - a) ≠ 0) : crossThreshold a b c.2 ≠ c.1 :=
   fun heq => hc ((crossThreshold_eq_iff_cross_zero a b c h).mp heq)
-
-/-- **Constant-sign engine (IVT).** A continuous function that is nonzero
-throughout an open interval and positive at one point is positive on the whole
-interval. (If it dipped `≤ 0` it would cross `0` by the intermediate value
-theorem, contradicting nonvanishing.) This turns "`∫ c > 0` + `c ≠ 0`" into
-"`c > 0` pointwise" for the cross-section value. -/
-lemma pos_of_continuous_ne_zero_Ioo (f : ℝ → ℝ) (a b : ℝ) (hf : Continuous f)
-    (hne : ∀ y ∈ Set.Ioo a b, f y ≠ 0) (y₀ : ℝ) (hy₀ : y₀ ∈ Set.Ioo a b)
-    (hpos : 0 < f y₀) (y : ℝ) (hy : y ∈ Set.Ioo a b) : 0 < f y := by
-  by_contra hle
-  push Not at hle
-  have hneg : f y < 0 := lt_of_le_of_ne hle (hne y hy)
-  have h0 : (0 : ℝ) ∈ Set.uIcc (f y₀) (f y) := by
-    rw [Set.uIcc_of_ge (le_of_lt (hneg.trans hpos))]
-    exact ⟨le_of_lt hneg, le_of_lt hpos⟩
-  obtain ⟨z, hz, hfz⟩ := intermediate_value_uIcc hf.continuousOn h0
-  exact hne z ((Set.ordConnected_Ioo).uIcc_subset hy₀ hy hz) hfz
 
 /-- `ContinuousOn` variant of the constant-sign engine: positivity propagates
 across an open interval on which `f` is continuous and nonvanishing. (The
@@ -1248,24 +1078,6 @@ lemma winding_section_ae_continuousAt_passthrough (P : LatticePolygon) (k : ZMod
   · exact hx (winding_section_continuousAt_passthrough_asc P x k hk hp.1 hp.2 hxk hrest)
   · exact hx (winding_section_continuousAt_passthrough_desc P x k hk hp.1 hp.2 hxk hrest)
 
-/-- For a.e. `x`, `winding(x, ·)` is **locally constant** at a pass-through vertex
-height: it equals its value at `(vert k).2` on a whole neighborhood. So the winding
-(hence its sign) propagates across the vertex line from either band. -/
-lemma winding_section_eq_near_passthrough (P : LatticePolygon) (k : ZMod P.n)
-    (hk : k - 1 ≠ k)
-    (hpass : ((toReal (P.vert (k - 1))).2 < (toReal (P.vert k)).2 ∧
-              (toReal (P.vert k)).2 < (toReal (P.vert (k + 1))).2) ∨
-             ((toReal (P.vert (k + 1))).2 < (toReal (P.vert k)).2 ∧
-              (toReal (P.vert k)).2 < (toReal (P.vert (k - 1))).2))
-    (hdist : ∀ i ∈ (Finset.univ.erase (k - 1)).erase k,
-        (toReal (P.vert k)).2 ≠ (toReal (P.vert i)).2 ∧
-        (toReal (P.vert k)).2 ≠ (toReal (P.vert (i + 1))).2) :
-    ∀ᵐ x ∂MeasureTheory.volume,
-      ∀ᶠ y in nhds (toReal (P.vert k)).2,
-        P.winding (x, y) = P.winding (x, (toReal (P.vert k)).2) := by
-  filter_upwards [winding_section_ae_continuousAt_passthrough P k hk hpass hdist] with x hx
-  exact eventually_eq_of_continuousAt_intCast (fun y => P.winding (x, y)) _ hx
-
 /-- **a.e.-continuity at a non-vertex height.** For `y₀` not a vertex height, the
 section `winding(x,·)` is continuous at `y₀` for a.e. `x` — the exceptional `x`
 (the finitely many crossing positions at height `y₀`) form a null set. -/
@@ -1292,16 +1104,6 @@ lemma sum_zmod3 {M : Type*} [AddCommMonoid M] (f : ZMod 3 → M) :
 so the corner cross equals `2·shoelace` (nonzero for positive orientation). -/
 lemma cross_corner_eq (a b c : ℝ × ℝ) :
     cross (b - a) (c - a) = cross a b + cross b c + cross c a := by
-  unfold cross
-  simp only [Prod.fst_sub, Prod.snd_sub]
-  ring
-
-/-- Corner cross is **alternating** under base change: swapping the base vertex
-negates it. With the cyclic version every corner cross of `{a,b,c}` is `±` the
-others, so non-collinearity is permutation-invariant — needed to transfer the
-oriented corner-cross to the height-sorted `L,M,H`. -/
-lemma cross_corner_swap (a b c : ℝ × ℝ) :
-    cross (a - b) (c - b) = -cross (b - a) (c - a) := by
   unfold cross
   simp only [Prod.fst_sub, Prod.snd_sub]
   ring
@@ -1367,15 +1169,6 @@ lemma corner_cross_base_pos (P : LatticePolygon) (hn : P.n = 3)
   rw [corner_cross_base_eq_two_shoelace P hn ℓ]
   exact mul_pos two_pos horient
 
-/-- **Non-degeneracy from positive orientation.** A positively-oriented triangle
-has positive corner cross product, so its three vertices are non-collinear — the
-geometric input the cross-band needs. -/
-lemma corner_cross_pos_triangle (P : LatticePolygon) (hn : P.n = 3)
-    (horient : P.PositivelyOriented) :
-    0 < cross (toReal (P.vert 1) - toReal (P.vert 0)) (toReal (P.vert 2) - toReal (P.vert 0)) := by
-  rw [corner_cross_eq_two_shoelace_triangle P hn]
-  exact mul_pos two_pos horient
-
 /-- The cross product of two lattice points is an integer (cast to `ℝ`). Hence
 corner areas / shoelace contributions are half-integers — the lattice fact behind
 Pick's `/2`. -/
@@ -1400,19 +1193,6 @@ lemma two_shoelace_int (P : LatticePolygon) :
   rw [← sum_cross_eq_two_shoelace, Int.cast_sum]
   exact Finset.sum_congr rfl fun i _ => cross_toReal_int (P.vert i) (P.vert (i + 1))
 
-/-- A positively-oriented lattice polygon has `2·shoelace ≥ 1`, i.e. signed area
-`≥ 1/2`: since `2·shoelace` is a positive integer. This is the minimal
-lattice-polygon area, consistent with Pick (`I=0, B=3` ⟹ area `1/2`). -/
-lemma two_shoelace_ge_one (P : LatticePolygon) (h : P.PositivelyOriented) :
-    1 ≤ 2 * P.shoelace := by
-  have h2 : 0 < 2 * P.shoelace := by unfold LatticePolygon.PositivelyOriented at h; linarith
-  rw [two_shoelace_int] at h2 ⊢
-  have hn : 0 < (∑ i, ((P.vert i).1 * (P.vert (i + 1)).2 - (P.vert i).2 * (P.vert (i + 1)).1) : ℤ) := by
-    exact_mod_cast h2
-  have hn1 : (1 : ℤ) ≤ (∑ i, ((P.vert i).1 * (P.vert (i + 1)).2 - (P.vert i).2 * (P.vert (i + 1)).1)) := by
-    omega
-  exact_mod_cast hn1
-
 /-- The **corner turn** at vertex `i` (the cross product of the incoming and
 outgoing edge vectors) equals twice the signed area of the corner triangle
 `(vᵢ₋₁, vᵢ, vᵢ₊₁)`. Its sign is the convexity/orientation of the corner — the
@@ -1435,18 +1215,6 @@ lemma exists_lowest_vertex (P : LatticePolygon) :
     (fun i => (toReal (P.vert i)).2) ⟨0, Finset.mem_univ 0⟩
   exact ⟨m, fun j => hm j (Finset.mem_univ j)⟩
 
-/-- A **highest vertex** exists (the top endpoint of the spanning range). -/
-lemma exists_highest_vertex (P : LatticePolygon) :
-    ∃ M : ZMod P.n, ∀ j, (toReal (P.vert j)).2 ≤ (toReal (P.vert M)).2 := by
-  obtain ⟨M, _, hM⟩ := Finset.exists_max_image Finset.univ
-    (fun i => (toReal (P.vert i)).2) ⟨0, Finset.mem_univ 0⟩
-  exact ⟨M, fun j => hM j (Finset.mem_univ j)⟩
-
-/-- In `ZMod 3` the **middle** index is forced once lowest `L` and highest `H` are
-fixed: any third index equals `-L-H`. (Used to name the middle vertex `M` of a
-triangle in the instantiation.) -/
-lemma zmod3_third : ∀ L H j : ZMod 3, L ≠ H → j ≠ L → j ≠ H → j = -L - H := by decide
-
 /-- In `ZMod 3`, a vertex differs from its predecessor (`ℓ-1 ≠ ℓ`): the two edges at
 `L` (indices `ℓ-1`, `ℓ`) are distinct, so `{ℓ-1, ℓ}` has card 2. -/
 lemma zmod3_sub_one_ne : ∀ ℓ : ZMod 3, ℓ - 1 ≠ ℓ := by decide
@@ -1456,16 +1224,6 @@ the triangle's vertices are exactly `L` and its two neighbors. Lets the band-edg
 genericity (`y ≠` every vertex height) follow from `y ≠` the three neighbor
 heights. -/
 lemma zmod3_neighbor_cases : ∀ ℓ i : ZMod 3, i = ℓ - 1 ∨ i = ℓ ∨ i = ℓ + 1 := by decide
-
-/-- **Ear-induction, step 2.** At a lowest vertex, both neighbors lie at or above
-it. This is the seed configuration: the corner there opens upward, so it is
-convex (the cross-sign / orientation argument is the next step). -/
-lemma exists_lowest_vertex_neighbors (P : LatticePolygon) :
-    ∃ m : ZMod P.n,
-      (toReal (P.vert m)).2 ≤ (toReal (P.vert (m - 1))).2 ∧
-      (toReal (P.vert m)).2 ≤ (toReal (P.vert (m + 1))).2 := by
-  obtain ⟨m, hm⟩ := exists_lowest_vertex P
-  exact ⟨m, hm (m - 1), hm (m + 1)⟩
 
 /-- **Ear-induction, step 3.** There is a lexicographically-lowest vertex
 (minimal `y`, then minimal `x`). This specific vertex is provably convex (its
@@ -1488,17 +1246,6 @@ lemma boundary_isCompact (P : LatticePolygon) : IsCompact P.boundary := by
 /-- The polygon boundary is closed (a consequence of compactness). -/
 lemma boundary_isClosed (P : LatticePolygon) : IsClosed P.boundary :=
   (boundary_isCompact P).isClosed
-
-/-- Interior lattice points map into the interior region (where `winding = 1`).
-Connects the count side `I` to the area side `interiorRegion`. -/
-lemma interiorLattice_toReal_mem (P : LatticePolygon) {q : Pt}
-    (hq : q ∈ P.interiorLattice) : toReal q ∈ P.interiorRegion :=
-  hq.1
-
-/-- The interior lattice points are exactly the lattice points landing in the
-interior region and off the boundary — the count/area dictionary. -/
-lemma interiorLattice_eq (P : LatticePolygon) :
-    P.interiorLattice = {q | toReal q ∈ P.interiorRegion ∧ toReal q ∉ P.boundary} := rfl
 
 /-- The whole winding support `{winding ≠ 0}` is bounded (not just the `=1`
 level): the four directional far-field lemmas confine it to the vertices' Icc.
@@ -1674,31 +1421,6 @@ lemma measurableSet_winding_section_one (P : LatticePolygon) (y : ℝ) :
   ((measurable_winding P).comp (by fun_prop : Measurable fun x => ((x, y) : ℝ × ℝ)))
     (measurableSet_singleton 1)
 
-/-- **Green's theorem, brick 2.** For fixed `y`, the cross-section `x ↦ winding
-(x,y)` is integrable (bounded by `n`, bounded support, measurable). Needed for the
-inner integral of Fubini. -/
-lemma crossSection_integrable (P : LatticePolygon) (y : ℝ) :
-    MeasureTheory.Integrable (fun x => (P.winding (x, y) : ℝ)) := by
-  have hslice : Measurable (fun x => P.winding (x, y)) :=
-    (measurable_winding P).comp (by fun_prop)
-  have hmeas : Measurable (fun x => (P.winding (x, y) : ℝ)) :=
-    (measurable_winding_real P).comp (by fun_prop)
-  have hS : MeasurableSet {x : ℝ | P.winding (x, y) ≠ 0} :=
-    (hslice (measurableSet_singleton 0)).compl
-  have hSμ : MeasureTheory.volume {x : ℝ | P.winding (x, y) ≠ 0} < ⊤ :=
-    (crossSection_support_bounded P y).measure_lt_top
-  refine MeasureTheory.Integrable.mono'
-    (g := {x : ℝ | P.winding (x, y) ≠ 0}.indicator (fun _ => (P.n : ℝ)))
-    ?_ hmeas.aestronglyMeasurable ?_
-  · rw [MeasureTheory.integrable_indicator_iff hS]
-    haveI : Fact (MeasureTheory.volume {x : ℝ | P.winding (x, y) ≠ 0} < ⊤) := ⟨hSμ⟩
-    exact MeasureTheory.integrable_const _
-  · filter_upwards with x
-    by_cases hx : P.winding (x, y) = 0
-    · simp [hx]
-    · rw [Set.indicator_of_mem hx, Real.norm_eq_abs, ← Int.cast_abs]
-      exact_mod_cast abs_winding_le P (x, y)
-
 /-- **Green's theorem, brick (Fubini).** The 2-D winding integral decomposes into
 iterated cross-section integrals. Reduces `∫∫ winding` to the cross-section value
 `∫_x winding(x,y) dx` integrated over `y`. -/
@@ -1723,19 +1445,6 @@ lemma integral_indicator_Ico (a b : ℝ) (h : b ≤ a) :
     (∫ x, (Set.Ico b a).indicator (fun _ => (1 : ℝ)) x) = a - b := by
   rw [MeasureTheory.integral_indicator_const 1 measurableSet_Ico, smul_eq_mul, mul_one]
   exact Real.volume_real_Ico_of_le h
-
-/-- **Green's theorem, brick (telescope).** The cyclic corner-product terms
-cancel. This is the algebraic step reducing Green's per-edge `y`-integral sum
-`∑ (b.2−a.2)(a.1+b.1)/2` to the shoelace `½ ∑ cross`. -/
-lemma sum_corner_telescope (P : LatticePolygon) :
-    (∑ i, ((toReal (P.vert i)).1 * (toReal (P.vert i)).2
-         - (toReal (P.vert (i + 1))).1 * (toReal (P.vert (i + 1))).2)) = 0 := by
-  rw [Finset.sum_sub_distrib]
-  have reindex : (∑ i, (toReal (P.vert (i + 1))).1 * (toReal (P.vert (i + 1))).2)
-               = ∑ i, (toReal (P.vert i)).1 * (toReal (P.vert i)).2 :=
-    Equiv.sum_comp (Equiv.addRight (1 : ZMod P.n))
-      (fun i => (toReal (P.vert i)).1 * (toReal (P.vert i)).2)
-  rw [reindex, sub_self]
 
 /-- **Green's theorem, brick (per-edge `y`-integral).** Integrating the crossing
 position over the edge's `y`-range gives `(b.2−a.2)(a.1+b.1)/2`. Proven by FTC
@@ -2004,25 +1713,6 @@ lemma edge_term_indicator_down (a b : ℝ × ℝ) (hgt : b.2 < a.2) :
       · exact hy h
     rw [if_neg hneg]
 
-/-- On its (open) spanning interval, an **up-edge**'s cross-section term equals
-`crossThreshold` — continuous there. (Within a band avoiding the edge's vertex
-heights, the term contributes continuously to `c(y)`.) -/
-lemma edge_term_on_Ioo_up (a b : ℝ × ℝ) (hlt : a.2 < b.2) (y : ℝ)
-    (hy : y ∈ Set.Ioo a.2 b.2) :
-    (if ((a.2 < y ∧ y < b.2) ∨ (b.2 < y ∧ y < a.2)) then
-        (if y < b.2 then (1 : ℝ) else -1) * crossThreshold a b y else 0) = crossThreshold a b y := by
-  have h := congrFun (edge_term_indicator_up a b hlt) y
-  rw [h, Set.indicator_of_mem hy]
-
-/-- On its (open) spanning interval, a **down-edge**'s cross-section term equals
-`-crossThreshold` — continuous there. -/
-lemma edge_term_on_Ioo_down (a b : ℝ × ℝ) (hgt : b.2 < a.2) (y : ℝ)
-    (hy : y ∈ Set.Ioo b.2 a.2) :
-    (if ((a.2 < y ∧ y < b.2) ∨ (b.2 < y ∧ y < a.2)) then
-        (if y < b.2 then (1 : ℝ) else -1) * crossThreshold a b y else 0) = -crossThreshold a b y := by
-  have h := congrFun (edge_term_indicator_down a b hgt) y
-  rw [h, Set.indicator_of_mem hy]
-
 /-- **Green's theorem, per-edge `y`-integral (up-edge).** For `a.2 < b.2`, the
 cross-section term integrated over `y` gives the edge's shoelace contribution
 `(b.2−a.2)(a.1+b.1)/2`. -/
@@ -2156,18 +1846,6 @@ lemma winding_integral_pos (P : LatticePolygon) (horient : P.PositivelyOriented)
     0 < ∫ q, (P.winding q : ℝ) := by
   rw [greens_theorem]; exact horient
 
-/-- The cross-section value is **positive at some height** (for positive
-orientation): otherwise it would be `≤ 0` everywhere and integrate to `≤ 0`,
-contradicting `∫∫ winding = shoelace > 0`. This supplies the "positive at one
-point" hypothesis of the constant-sign engine. -/
-lemma crossSection_pos_somewhere (P : LatticePolygon) (horient : P.PositivelyOriented) :
-    ∃ y, 0 < ∫ x, (P.winding (x, y) : ℝ) := by
-  by_contra h
-  push Not at h
-  have hle : (∫ y, ∫ x, (P.winding (x, y) : ℝ)) ≤ 0 := MeasureTheory.integral_nonpos h
-  rw [← winding_integral_fubini'] at hle
-  exact absurd hle (not_le.mpr (winding_integral_pos P horient))
-
 /-- The cross-section value is positive at some **generic** (non-vertex) height —
 the bad set `{c > 0}` would otherwise sit inside the finite vertex heights, leaving
 `c ≤ 0` a.e. and `∫∫ winding ≤ 0`. Gives a positive point strictly inside the open
@@ -2220,24 +1898,6 @@ lemma winding_nonneg_of_crossSection_pos_triangle (P : LatticePolygon) (hn : P.n
     MeasureTheory.integral_nonpos fun x' => Int.cast_nonpos.mpr (hle x')
   linarith
 
-/-- When the cross-section value is positive, the interior slab is nonempty:
-some point on the line has `winding = 1` (else `winding ≡ 0`, giving `∫ = 0`). -/
-lemma exists_winding_one_of_crossSection_pos_triangle (P : LatticePolygon) (hn : P.n = 3) (y : ℝ)
-    (hc : 0 < ∫ x, (P.winding (x, y) : ℝ)) :
-    ∃ x, P.winding (x, y) = 1 := by
-  by_contra h
-  push Not at h
-  have h0 : ∀ x, P.winding (x, y) = 0 := fun x => by
-    have h1 := winding_nonneg_of_crossSection_pos_triangle P hn y hc x
-    have h2 := (abs_winding_le_one_triangle P hn x y).2
-    have h3 := h x
-    omega
-  have hz : (∫ x, (P.winding (x, y) : ℝ)) = 0 := by
-    have he : (fun x => (P.winding (x, y) : ℝ)) = fun _ => 0 := by
-      funext x; rw [h0 x]; simp
-    rw [he, MeasureTheory.integral_zero]
-  linarith
-
 /-- When `c(y) > 0`, the cross-section value equals the **measure of the interior
 slab** `{x | winding (x,y) = 1}` (since `winding ∈ {0,1}` on the line, it is the
 indicator of that slab). In particular the slab has positive measure. -/
@@ -2256,13 +1916,6 @@ lemma crossSection_eq_slab_measure_triangle (P : LatticePolygon) (hn : P.n = 3) 
       rw [Set.indicator_of_notMem (show x ∉ {x : ℝ | P.winding (x, y) = 1} from hx)]; simp [h0]
   rw [hfun, MeasureTheory.integral_indicator_const 1 (measurableSet_winding_section_one P y)]
   simp [MeasureTheory.measureReal_def]
-
-/-- The interior slab has **positive measure** when `c(y) > 0`. -/
-lemma winding_one_slab_pos_volume_triangle (P : LatticePolygon) (hn : P.n = 3) (y : ℝ)
-    (hc : 0 < ∫ x, (P.winding (x, y) : ℝ)) :
-    0 < MeasureTheory.volume {x : ℝ | P.winding (x, y) = 1} := by
-  rw [crossSection_eq_slab_measure_triangle P hn y hc] at hc
-  exact (ENNReal.toReal_pos_iff.mp hc).1
 
 /-- Mirror of the per-line connection: a negative cross-section value forces
 `winding(·,y) ≤ 0` on that line. -/
@@ -2290,11 +1943,6 @@ lemma winding_nonpos_of_crossSection_neg_triangle (P : LatticePolygon) (hn : P.n
   have hf : ∀ x', (0 : ℝ) ≤ (P.winding (x', y) : ℝ) := fun x' => by exact_mod_cast hge x'
   have hint : 0 ≤ (∫ x, (P.winding (x, y) : ℝ)) := MeasureTheory.integral_nonneg hf
   linarith
-
-/-- In `ZMod 3` any two distinct indices are cyclically adjacent. (For a triangle
-the two spanning edges are therefore consecutive, so their crossings are distinct
-by `crossThreshold_ne_of_simple_adj`.) -/
-lemma zmod3_ne_imp_adj : ∀ a b : ZMod 3, a ≠ b → b = a + 1 ∨ a = b + 1 := by decide
 
 /-- At a generic height the strict spanning filter equals the half-open one, so it
 has the cardinality given by `spanning_count_triangle` (`0` or `2`). -/
@@ -2609,38 +2257,6 @@ lemma crossSection_ne_zero_triangle (P : LatticePolygon) (hP : P.IsSimple) (hn :
   intro hc
   split_ifs at hsgn hc <;> exact hne (by linarith)
 
-/-- **Converse direction.** If `winding = 1` at some point of the line and the
-cross-section value is nonzero, then it is positive (a negative value would force
-`winding ≤ 0` there by the mirror per-line). This propagates positivity across the
-middle vertex: a `winding=1` point near `M.2` (carried over from a positive band)
-makes the cross-section positive on the other band. -/
-lemma crossSection_pos_of_winding_one_triangle (P : LatticePolygon) (hn : P.n = 3) (y : ℝ)
-    (x₀ : ℝ) (hw : P.winding (x₀, y) = 1) (hne : (∫ x, (P.winding (x, y) : ℝ)) ≠ 0) :
-    0 < ∫ x, (P.winding (x, y) : ℝ) := by
-  rcases lt_trichotomy (∫ x, (P.winding (x, y) : ℝ)) 0 with h | h | h
-  · have hle := winding_nonpos_of_crossSection_neg_triangle P hn y h x₀
-    omega
-  · exact absurd h hne
-  · exact h
-
-/-- **Triangle `winding ≥ 0` reduces to cross-section positivity.** If the
-cross-section value is positive at every spanning height, the winding is `≥ 0`
-everywhere (non-spanning heights give `winding = 0`). Combined with
-`h01_triangle_of_nonneg`, this reduces triangle `h01` to: `c(y) > 0` on the
-spanning range — to be supplied by the constant-sign engine + width-positivity. -/
-lemma winding_nonneg_triangle_of_crossSection_pos (P : LatticePolygon) (hn : P.n = 3)
-    (hpos : ∀ y, (Finset.univ.filter fun i =>
-        ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-        ((toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2)).card ≠ 0 →
-        0 < ∫ x, (P.winding (x, y) : ℝ)) :
-    ∀ q : ℝ × ℝ, 0 ≤ P.winding q := by
-  rintro ⟨x, y⟩
-  by_cases hsp : (Finset.univ.filter fun i =>
-      ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-      ((toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2)).card = 0
-  · rw [winding_zero_of_no_spanning P x y hsp]
-  · exact winding_nonneg_of_crossSection_pos_triangle P hn y (hpos y hsp) x
-
 /-- **a.e. version of the reduction.** It suffices to have `c(y) > 0` at every
 *generic* spanning height (no vertex at `y`); the non-generic heights form null
 lines, so `winding ≥ 0` holds a.e. (which is all `area = ∫∫ winding` needs). -/
@@ -2753,19 +2369,6 @@ lemma crossSection_continuousOn (P : LatticePolygon) (s : Set ℝ)
     (hs : ∀ y ∈ s, ∀ i, y ≠ (toReal (P.vert i)).2) :
     ContinuousOn (fun y => ∫ x, (P.winding (x, y) : ℝ)) s :=
   fun y hy => (crossSection_continuousAt_of_not_vertex P y (hs y hy)).continuousWithinAt
-
-/-- **Band-assembly.** On an open height-band avoiding all vertex heights and
-everywhere spanning, the cross-section value is positive throughout once positive
-at one point (continuity + width-positivity + the engine). -/
-lemma crossSection_pos_on_band (P : LatticePolygon) (hP : P.IsSimple) (hn : P.n = 3) (a b : ℝ)
-    (hgen : ∀ y ∈ Set.Ioo a b, ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (hsp : ∀ y ∈ Set.Ioo a b, (Finset.univ.filter fun i =>
-        ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
-        ((toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2)).card ≠ 0)
-    (y₀ : ℝ) (hy₀ : y₀ ∈ Set.Ioo a b) (hpos : 0 < ∫ x, (P.winding (x, y₀) : ℝ))
-    (y : ℝ) (hy : y ∈ Set.Ioo a b) : 0 < ∫ x, (P.winding (x, y) : ℝ) :=
-  crossSection_pos_on_Ioo P a b (crossSection_continuousOn P _ fun y hy i => (hgen y hy i).symm)
-    (fun y hy => crossSection_ne_zero_triangle P hP hn y (hgen y hy) (hsp y hy)) y₀ hy₀ hpos y hy
 
 /-- `c(y)` is continuous at a **pass-through vertex height** (combining the a.e.
 section continuity there with the dominated-convergence engine). Together with
@@ -2880,52 +2483,6 @@ lemma spanning_of_crossSection_ne_zero (P : LatticePolygon) (y : ℝ)
         ((toReal (P.vert i)).2 ≤ y ∧ y < (toReal (P.vert (i + 1))).2) ∨
         ((toReal (P.vert (i + 1))).2 ≤ y ∧ y < (toReal (P.vert i)).2)).card ≠ 0 :=
   fun h => hc (crossSection_eq_zero_of_no_spanning P y h)
-
-/-- The interior region as a preimage of `{1}` under the winding map. -/
-lemma interiorRegion_eq_preimage (P : LatticePolygon) :
-    P.interiorRegion = P.winding ⁻¹' {1} := rfl
-
-/-- Every winding level set is measurable — the winding map is measurable. Toward
-the area decomposition `∫∫ winding = Σ k · vol(winding⁻¹{k})`. -/
-lemma measurableSet_winding_preimage (P : LatticePolygon) (k : ℤ) :
-    MeasurableSet (P.winding ⁻¹' {k}) :=
-  measurable_winding P (measurableSet_singleton k)
-
-/-- The winding takes values in the finite range `[-n, n]`: combined with finite
-support, only finitely many levels are nonempty, so the area decomposition is a
-finite sum. -/
-lemma winding_mem_Icc (P : LatticePolygon) (q : ℝ × ℝ) :
-    P.winding q ∈ Finset.Icc (-(P.n : ℤ)) (P.n : ℤ) := by
-  rw [Finset.mem_Icc, ← abs_le]
-  exact abs_winding_le P q
-
-/-- The interior region lies (weakly) above the lowest vertex: below the lowest
-vertex the winding is `0`, so no interior points are there. Bounds the interior's
-`y`-extent below. -/
-lemma interiorRegion_above_lowest (P : LatticePolygon) :
-    ∃ m : ZMod P.n, ∀ q ∈ P.interiorRegion, (toReal (P.vert m)).2 ≤ q.2 := by
-  obtain ⟨m, hm⟩ := exists_lowest_vertex P
-  refine ⟨m, fun q hq => ?_⟩
-  by_contra hlt
-  push Not at hlt
-  have hw : P.winding q = 0 := by
-    have h := winding_zero_of_y_below P q.1 q.2 (fun j => lt_of_lt_of_le hlt (hm j))
-    rwa [Prod.mk.eta] at h
-  simp only [LatticePolygon.interiorRegion, Set.mem_setOf_eq] at hq
-  rw [hw] at hq
-  exact absurd hq (by norm_num)
-
-/-- The corner turn is an integer (cast): each corner triangle of a lattice
-polygon has half-integer area. -/
-lemma turn_int (P : LatticePolygon) (i : ZMod P.n) :
-    cross (toReal (P.vert i) - toReal (P.vert (i - 1)))
-        (toReal (P.vert (i + 1)) - toReal (P.vert i)) =
-      ((((P.vert (i - 1)).1 * (P.vert i).2 - (P.vert (i - 1)).2 * (P.vert i).1) +
-        ((P.vert i).1 * (P.vert (i + 1)).2 - (P.vert i).2 * (P.vert (i + 1)).1) +
-        ((P.vert (i + 1)).1 * (P.vert (i - 1)).2 - (P.vert (i + 1)).2 * (P.vert (i - 1)).1) : ℤ) : ℝ) := by
-  rw [turn_eq_cornerArea, cross_toReal_int, cross_toReal_int, cross_toReal_int]
-  push_cast
-  ring
 
 /-- **Triangle `hpos`, 3-distinct upper-neighbor case.** With `L = vert ℓ` lowest,
 its upper neighbor `M = vert (ℓ+1)` the strict middle, and `H = vert (ℓ-1)` highest,
@@ -3860,26 +3417,6 @@ lemma winding_eventually_eq_full (P : LatticePolygon) (q₀ : ℝ × ℝ)
       unfold LatticePolygon.winding; rw [← Finset.sum_sub_distrib]
     linarith [hwd, hsum]
 
-/-- **`winding` is locally constant on the off-boundary set with no horizontal
-edge at the point's height.** Packaging of `winding_eventually_eq`: on the subtype
-of points `q` that are off the boundary and at a height carrying no horizontal
-edge, `winding` is locally constant. This strictly extends
-`isLocallyConstant_winding_generic` (which excluded *all* vertex heights); here
-only horizontal-edge heights are excluded. -/
-lemma isLocallyConstant_winding_noHoriz (P : LatticePolygon) :
-    IsLocallyConstant
-      (fun q : {q : ℝ × ℝ // q ∉ P.boundary ∧
-          ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2)} =>
-        P.winding q.1) := by
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro q
-  have h := winding_eventually_eq P q.1 q.2.1 q.2.2
-  have hcont : Continuous (Subtype.val :
-      {q : ℝ × ℝ // q ∉ P.boundary ∧
-        ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2)} → ℝ × ℝ) :=
-    continuous_subtype_val
-  exact (hcont.continuousAt.eventually h)
-
 /-- **`winding` is locally constant on the entire off-boundary set.** The clean
 final packaging: on the open set `P.boundaryᶜ` (as a subtype), `winding` is locally
 constant. No height restriction whatsoever — `winding_eventually_eq_full` handles
@@ -3944,18 +3481,6 @@ lemma isOpen_winding_ne_zero (P : LatticePolygon) :
   filter_upwards [hev, hbopen] with p hp hpb
   exact ⟨hpb, by rw [hp]; exact hqw⟩
 
-/-- The interior region `{winding = 1}` is open (and lies off the boundary, since
-boundary points have winding `0`... more precisely: it is the off-boundary points
-with winding `1`). Stated as openness of `{q ∉ boundary ∧ winding q = 1}`. -/
-lemma isOpen_winding_eq_one (P : LatticePolygon) :
-    IsOpen {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q = 1} := by
-  rw [isOpen_iff_eventually]
-  rintro q ⟨hqb, hqw⟩
-  have hev := winding_eventually_eq_full P q hqb
-  have hbopen := (isOpen_compl_boundary P).eventually_mem hqb
-  filter_upwards [hev, hbopen] with p hp hpb
-  exact ⟨hpb, by rw [hp]; exact hqw⟩
-
 /-- **The unbounded component is the exterior.** If `q ∉ boundary` lies in the same
 connected component of `P.boundaryᶜ` as some far-away point `q₀` with `R < ‖q₀‖`
 (`R` the cobounded radius from `winding_zero_on_cobounded`), then `winding q = 0`.
@@ -3969,66 +3494,5 @@ lemma winding_zero_of_joinedIn_far (P : LatticePolygon) {q q₀ : ℝ × ℝ}
   obtain ⟨R, hR, hRq₀⟩ := hfar
   rw [winding_const_of_isPreconnected P hsub hspre hqs hq₀s]
   exact hR q₀ hRq₀
-
-/-- **Path-connectedness of the inside reduces to connectedness.** Since the
-off-boundary winding `≠ 0` set is OPEN (`isOpen_winding_ne_zero`) and `ℝ²` is
-locally path-connected, `IsConnected ⟹ IsPathConnected` for it
-(`IsOpen.isConnected_iff_isPathConnected`). So the remaining content of the
-separation core — the inside is path-connected — is exactly that the off-boundary
-winding `≠ 0` set is **connected** (preconnected + nonempty), i.e. forms a single
-component. This isolates the one hard separation lemma. -/
-lemma inside_isPathConnected_of_isConnected (P : LatticePolygon)
-    (hconn : IsConnected {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0}) :
-    IsPathConnected {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0} :=
-  (isOpen_winding_ne_zero P).isConnected_iff_isPathConnected.mp hconn
-
-/-- **Winding `= 0` when the rightward horizontal ray is clear of the boundary.**
-If no edge is horizontal at height `q.2`, and the whole ray `{(x, q.2) | q.1 ≤ x}`
-avoids the boundary, then `winding q = 0`. The winding is locally constant along
-the ray (`winding_eventually_eq`, valid since the ray is off-boundary and the
-height carries no horizontal edge), the ray `Ici q.1` is preconnected, and the
-winding vanishes far to the right (`winding_eq_zero_of_right`). This is the
-rigorous "`q` is in the unbounded component ⟹ `winding = 0`" for the common case
-where the unbounded component is witnessed by a clear horizontal ray. -/
-theorem winding_eq_zero_of_ray_clear (P : LatticePolygon) (q : ℝ × ℝ)
-    (hnh : ∀ i, ¬ ((toReal (P.vert i)).2 = q.2 ∧ (toReal (P.vert (i + 1))).2 = q.2))
-    (hray : ∀ x : ℝ, q.1 ≤ x → ((x, q.2) : ℝ × ℝ) ∉ P.boundary) :
-    P.winding q = 0 := by
-  classical
-  set H := q.2 with hH
-  -- `g x = winding (x, H)`, locally constant on `Ici q.1` (all off-boundary).
-  set g : ℝ → ℤ := fun x => P.winding (x, H) with hg
-  have hloc : IsLocallyConstant (fun x : ↥(Set.Ici q.1) => g x.1) := by
-    rw [IsLocallyConstant.iff_eventually_eq]
-    intro x
-    have hxb : ((x.1, H) : ℝ × ℝ) ∉ P.boundary := hray x.1 x.2
-    have hev := winding_eventually_eq P (x.1, H) hxb (by simpa [hH] using hnh)
-    have hcont : Continuous (fun x : ↥(Set.Ici q.1) => ((x.1, H) : ℝ × ℝ)) := by
-      fun_prop
-    exact (hcont.continuousAt.eventually hev)
-  -- A far-right point on the ray has winding `0`.
-  have hne : (Finset.univ.image (fun i => (P.vert i).1)).Nonempty :=
-    Finset.univ_nonempty.image _
-  set xM := (Finset.univ.image (fun i => (P.vert i).1)).max' hne with hxM
-  have hxMbound : ∀ i, ((P.vert i).1 : ℝ) < (max q.1 xM + 1 : ℝ) := by
-    intro i
-    have h0 : (P.vert i).1 ≤ xM :=
-      Finset.le_max' _ ((P.vert i).1)
-        (Finset.mem_image_of_mem (fun j => (P.vert j).1) (Finset.mem_univ i))
-    have h1 : ((P.vert i).1 : ℝ) ≤ (xM : ℝ) := by exact_mod_cast h0
-    have h2 : ((P.vert i).1 : ℝ) ≤ max q.1 (xM : ℝ) := le_trans h1 (le_max_right _ _)
-    linarith
-  set x₁ : ℝ := max q.1 xM + 1 with hx1
-  have hx1ge : q.1 ≤ x₁ := by rw [hx1]; have := le_max_left q.1 xM; linarith
-  have hzero : g x₁ = 0 := by
-    rw [hg]; exact winding_eq_zero_of_right P (x₁, H) (fun i => hxMbound i)
-  -- Transport along the preconnected ray `Ici q.1`.
-  haveI : PreconnectedSpace ↥(Set.Ici q.1) :=
-    isPreconnected_iff_preconnectedSpace.mp isPreconnected_Ici
-  have key := hloc.apply_eq_of_preconnectedSpace
-    (⟨q.1, le_refl q.1⟩ : ↥(Set.Ici q.1)) (⟨x₁, hx1ge⟩ : ↥(Set.Ici q.1))
-  simp only at key
-  have hqg : P.winding q = g q.1 := by rw [hg, hH]
-  rw [hqg, key, hzero]
 
 end Pick

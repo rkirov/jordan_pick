@@ -423,69 +423,6 @@ lemma joinedIn_consecutive_gap_in_slab (hP : P.IsSimple) (y₁ y₂ : ℝ)
     (toReal (P.vert iR)) (toReal (P.vert (iR+1))) y₁ y₂ hdL hdR hclear
     ⟨hp.1.1, hp.1.2, hp.2.1, hp.2.2⟩ ⟨hq.1.1, hq.1.2, hq.2.1, hq.2.2⟩
 
-/-- **A non-incident edge keeps its spanning status across a single vertex level.**
-If every vertex height strictly between `y` and `y'` equals the single level `w`
-(`hbetween`), then any edge `k` *not* incident to a vertex at height `w` (`hk, hk1`:
-neither endpoint sits at `w`) spans `y` iff it spans `y'`. Only the edges with an
-endpoint exactly at height `w` can change spanning status as the line sweeps past
-`w`. This is the combinatorial backbone of the gap-merge step
-(`route_around_chord_end`): just across a vertex level the only thresholds that
-appear/disappear are those of the edges incident to that vertex. -/
-lemma spanning_invariant_across_vertex_level (w y y' : ℝ) (k : ZMod P.n)
-    (hyw : y < w) (hwy' : w < y')
-    (hygen : ∀ t, (toReal (P.vert t)).2 ≠ y) (hy'gen : ∀ t, (toReal (P.vert t)).2 ≠ y')
-    (hk : (toReal (P.vert k)).2 ≠ w) (hk1 : (toReal (P.vert (k+1))).2 ≠ w)
-    (hbetween : ∀ t : ZMod P.n, (toReal (P.vert t)).2 ≠ w →
-      ¬ (y < (toReal (P.vert t)).2 ∧ (toReal (P.vert t)).2 < y')) :
-    (k ∈ P.spanningSet y) ↔ (k ∈ P.spanningSet y') := by
-  have hyy' : y < y' := lt_trans hyw hwy'
-  have hk_out : (toReal (P.vert k)).2 < y ∨ y' < (toReal (P.vert k)).2 := by
-    have h := hbetween k hk; rw [not_and_or, not_lt, not_lt] at h
-    rcases h with h | h
-    · exact Or.inl (lt_of_le_of_ne h (hygen k))
-    · exact Or.inr (lt_of_le_of_ne h (Ne.symm (hy'gen k)))
-  have hk1_out : (toReal (P.vert (k+1))).2 < y ∨ y' < (toReal (P.vert (k+1))).2 := by
-    have h := hbetween (k+1) hk1; rw [not_and_or, not_lt, not_lt] at h
-    rcases h with h | h
-    · exact Or.inl (lt_of_le_of_ne h (hygen (k+1)))
-    · exact Or.inr (lt_of_le_of_ne h (Ne.symm (hy'gen (k+1))))
-  simp only [LatticePolygon.spanningSet, Finset.mem_filter, Finset.mem_univ, true_and]
-  constructor <;> rintro (⟨h1,h2⟩ | ⟨h1,h2⟩) <;>
-    rcases hk_out with hko | hko <;> rcases hk1_out with hk1o | hk1o <;>
-    first
-    | exact Or.inl ⟨by linarith, by linarith⟩
-    | exact Or.inr ⟨by linarith, by linarith⟩
-
-/-- **An edge whose top endpoint is at the nearest level `w` leaves the spanning set
-above `w`.** If edge `k` spans the generic height `y`, and the *upper* of its two
-endpoints sits exactly at height `w` (the nearest vertex height above `y`), then `k`
-does not span any `y' > w`: its upper endpoint is now at or below `y' ` while its
-lower endpoint is below `y < w < y'`, so both lie below `y'`. This is the
-"chord ends here" half of the gap-merge: past level `w` the edge `k` is gone from
-the threshold list. -/
-lemma edge_leaves_spanning_above_top (y w : ℝ) (k : ZMod P.n)
-    (hk : k ∈ P.spanningSet y)
-    (htop : (toReal (P.vert k)).2 = w ∨ (toReal (P.vert (k+1))).2 = w)
-    (hbot : (toReal (P.vert k)).2 < y ∨ (toReal (P.vert (k+1))).2 < y)
-    {y' : ℝ} (hyw : y < w) (hwy' : w < y') :
-    k ∉ P.spanningSet y' := by
-  simp only [LatticePolygon.spanningSet, Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
-  -- both endpoints lie strictly below `y'`
-  have hkbelow : (toReal (P.vert k)).2 < y' := by
-    rcases htop with h | h
-    · rw [h]; exact hwy'
-    · rcases hbot with hb | hb
-      · linarith
-      · -- vert k is the lower endpoint? No: hk says k spans y. derive vert k < y' via hb if it is the bottom
-        rcases hk with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> linarith
-  have hk1below : (toReal (P.vert (k+1))).2 < y' := by
-    rcases htop with h | h
-    · rcases hbot with hb | hb
-      · rcases hk with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> linarith
-      · linarith
-    · rw [h]; exact hwy'
-  rintro (⟨h1, h2⟩ | ⟨h1, h2⟩) <;> linarith
-
 /-- **Two points of a clear axis-aligned open rectangle are `JoinedIn boundaryᶜ`.**
 An open rectangle `(x₁,x₂)×(y₁,y₂)` is convex, hence path-connected; if it is
 disjoint from the boundary the connecting path stays in `P.boundaryᶜ`. A reusable
@@ -556,23 +493,6 @@ lemma exists_generic_abscissa_mem_Ioo (a b : ℝ) (hab : a < b) :
   obtain ⟨x, hx, hxab⟩ := hdense.exists_mem_open isOpen_Ioo (Set.nonempty_Ioo.mpr hab)
   exact ⟨x, hxab.1, hxab.2, fun i hi => hx.2 ((Set.Finite.mem_toFinset hfin).mpr ⟨i, hi⟩)⟩
 
-/-- **Nearest vertex height above `y`.** If some vertex lies strictly above height
-`y`, there is a vertex height `w > y` that is the least such — every vertex above
-`y` has height `≥ w`. The first slab boundary encountered moving upward from a
-generic `y`. (`Finset.min'` over the vertex heights exceeding `y`.) -/
-lemma exists_nearest_vertex_height_above (y : ℝ)
-    (hex : ∃ i, y < (toReal (P.vert i)).2) :
-    ∃ w, (∃ i, (toReal (P.vert i)).2 = w) ∧ y < w ∧
-      ∀ i, y < (toReal (P.vert i)).2 → w ≤ (toReal (P.vert i)).2 := by
-  classical
-  obtain ⟨i0, hi0⟩ := hex
-  set S := Finset.univ.filter (fun i => y < (toReal (P.vert i)).2) with hS
-  have hSne : S.Nonempty := ⟨i0, by rw [hS, Finset.mem_filter]; exact ⟨Finset.mem_univ _, hi0⟩⟩
-  obtain ⟨m, hmS, hmin⟩ := S.exists_min_image (fun i => (toReal (P.vert i)).2) hSne
-  rw [hS, Finset.mem_filter] at hmS
-  exact ⟨(toReal (P.vert m)).2, ⟨m, rfl⟩, hmS.2,
-    fun i hi => hmin i (by rw [hS, Finset.mem_filter]; exact ⟨Finset.mem_univ _, hi⟩)⟩
-
 /-- **Open a vertex-free slab downward below a generic height.** If `y` is generic
 and the open slab `(y, w)` contains no vertex height, then there is `y₀ < y` such
 that the larger slab `(y₀, w)` *still* contains no vertex height. The largest vertex
@@ -615,18 +535,6 @@ lemma joinedIn_to_generic_height {p : ℝ × ℝ} (hp : p ∈ P.boundaryᶜ) :
   obtain ⟨y', hy'1, hy'2, hgen⟩ := exists_generic_height_mem_Ioo P y₁ y₂ (lt_trans hy1 hy2)
   exact ⟨y', hgen, joinedIn_of_no_boundary_in_rect P x₁ x₂ y₁ y₂ hdisj
     ⟨⟨hx1, hx2⟩, ⟨hy1, hy2⟩⟩ ⟨⟨hx1, hx2⟩, ⟨hy'1, hy'2⟩⟩⟩
-
-/-- **Drop an interior point onto a generic vertical line.** Vertical mirror of
-`joinedIn_to_generic_height`: every off-boundary point `p` is `JoinedIn boundaryᶜ`
-to `(x', p.2)` on a generic abscissa line (`x'` hit by no vertex, so
-`vertLineBoundary_finite` applies there). -/
-lemma joinedIn_to_generic_abscissa {p : ℝ × ℝ} (hp : p ∈ P.boundaryᶜ) :
-    ∃ x', (∀ i, (toReal (P.vert i)).1 ≠ x') ∧ JoinedIn P.boundaryᶜ p (x', p.2) := by
-  obtain ⟨x₁, x₂, y₁, y₂, hpmem, hdisj⟩ := exists_clear_rect_at P hp
-  obtain ⟨⟨hx1, hx2⟩, ⟨hy1, hy2⟩⟩ := hpmem
-  obtain ⟨x', hx'1, hx'2, hgen⟩ := exists_generic_abscissa_mem_Ioo P x₁ x₂ (lt_trans hx1 hx2)
-  exact ⟨x', hgen, joinedIn_of_no_boundary_in_rect P x₁ x₂ y₁ y₂ hdisj
-    ⟨⟨hx1, hx2⟩, ⟨hy1, hy2⟩⟩ ⟨⟨hx'1, hx'2⟩, ⟨hy1, hy2⟩⟩⟩
 
 /-- **A `boundaryᶜ`-path from an inside point stays inside.** Because winding is
 locally constant on `P.boundaryᶜ` (`winding_const_of_isPreconnected`), any path
@@ -771,31 +679,6 @@ lemma spanningSet_empty_above (Y : ℝ) (hY : ∀ i, (toReal (P.vert i)).2 < Y) 
   rcases hi with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · exact absurd (hY (i+1)) (not_lt.mpr h2.le)
   · exact absurd (hY i) (not_lt.mpr h2.le)
-
-/-- **A generic height strictly above all vertices.** There is a height `Y` that is
-strictly larger than every vertex `y`-coordinate (hence generic, and with empty
-spanning set by `spanningSet_empty_above`). -/
-lemma exists_generic_height_above_all :
-    ∃ Y, (∀ i, (toReal (P.vert i)).2 < Y) ∧ (∀ i, (toReal (P.vert i)).2 ≠ Y) := by
-  classical
-  obtain ⟨M, hM⟩ := (Finset.univ.image (fun i => (toReal (P.vert i)).2)).exists_le
-  refine ⟨M + 1, fun i => ?_, fun i => ?_⟩
-  · have := hM ((toReal (P.vert i)).2) (Finset.mem_image.mpr ⟨i, Finset.mem_univ _, rfl⟩)
-    linarith
-  · have := hM ((toReal (P.vert i)).2) (Finset.mem_image.mpr ⟨i, Finset.mem_univ _, rfl⟩)
-    linarith
-
-/-- **The whole horizontal line above the polygon is boundary-free.** At a generic
-height `Y` above every vertex the spanning set is empty, so *every* point `(x, Y)`
-is off the boundary, and any two such points are `JoinedIn boundaryᶜ`. -/
-lemma joinedIn_above_all (Y : ℝ) (hY : ∀ i, (toReal (P.vert i)).2 < Y)
-    (hgen : ∀ i, (toReal (P.vert i)).2 ≠ Y) (a b : ℝ) :
-    JoinedIn P.boundaryᶜ (a, Y) (b, Y) := by
-  have hempty := spanningSet_empty_above P Y hY
-  refine joinedIn_horizontal P Y a b (fun x _ => ?_)
-  refine notMem_boundary_of_between_thresholds P Y hgen x (x - 1) (x + 1)
-    ⟨by linarith, by linarith⟩ ?_
-  intro i hi; rw [hempty] at hi; exact absurd hi (Finset.notMem_empty _)
 
 /-- **Same-height routing reduction (skeleton).** Given the single-chord crossing
 move `route_around_chord_end` — phrased as: two off-boundary points `(a,y)`, `(c,y)`
@@ -958,40 +841,6 @@ lemma joinedIn_same_height_of_chord_end (hP : P.IsSimple) (y : ℝ)
           exact ⟨hi.1, lt_trans hac hi.2.1, hi.2.2⟩
       exact ih (N c b) hcard_cb c b hcb.le hcboff hbb rfl
 
-/-- **Horizontal slide across a threshold-free interval.** At a generic height `y`,
-two off-boundary points `(a, y)`, `(b, y)` (`a ≤ b`) whose open abscissa interval
-`(a, b)` contains *no* spanning threshold are `JoinedIn boundaryᶜ`. This is the
-`no-threshold-strictly-between` packaging of `joinedIn_horizontal_of_endpoints`
-(via `notMem_boundary_of_between_thresholds`): the precise form the apex-crossing
-routing supplies when sliding a point within a single gap of the generic line. -/
-lemma joinedIn_no_threshold_between (y : ℝ) (hgen : ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (a b : ℝ) (hab : a ≤ b)
-    (hba : ((a, y) : ℝ × ℝ) ∉ P.boundary) (hbb : ((b, y) : ℝ × ℝ) ∉ P.boundary)
-    (hmid : ∀ i ∈ P.spanningSet y, ¬ (a < P.edgeThr y i ∧ P.edgeThr y i < b)) :
-    JoinedIn P.boundaryᶜ (a, y) (b, y) := by
-  refine joinedIn_horizontal_of_endpoints P y a b hab hba hbb (fun x hxa hxb => ?_)
-  refine notMem_boundary_of_between_thresholds P y hgen x a b ⟨hxa, hxb⟩ ?_
-  intro i hi
-  rcases not_and_or.mp (hmid i hi) with h | h
-  · exact Or.inl (not_lt.mp h)
-  · exact Or.inr (not_lt.mp h)
-
-/-- **`inside_isConnected` reduced to pure `boundaryᶜ`-routing.** This is the
-capstone reduction: the inside set (`q ∉ boundary ∧ winding q ≠ 0`) is connected
-**provided** there is a fixed inside reference `p₀` to which every inside point is
-joined *within `P.boundaryᶜ`* (a path that need only avoid the boundary — the
-winding-constancy bridge `joinedIn_inside_of_joinedIn_boundaryCompl` automatically
-promotes it to a path inside).  Combined with `inside_nonempty` (positive
-orientation), the *only* remaining geometric content of the polygonal Jordan curve
-theorem is this `routing` hypothesis: a staircase from each interior point to a
-fixed interior reference avoiding the finitely many edge segments. -/
-theorem inside_isConnected_of_routing
-    {p₀ : ℝ × ℝ} (hp₀ : p₀ ∉ P.boundary ∧ P.winding p₀ ≠ 0)
-    (routing : ∀ p, p ∉ P.boundary → P.winding p ≠ 0 → JoinedIn P.boundaryᶜ p p₀) :
-    IsConnected {q : ℝ × ℝ | q ∉ P.boundary ∧ P.winding q ≠ 0} :=
-  inside_isConnected_of_joinedIn_ref P hp₀ fun p hb hw =>
-    joinedIn_inside_of_joinedIn_boundaryCompl P hw (routing p hb hw)
-
 
 /-- **Winding `= 1` witness at a convex lowest corner.** At the lex-lowest vertex
 `m` whose two neighbours lie strictly above it and whose corner is convex
@@ -1089,24 +938,6 @@ lemma exists_winding_eq_one_of_cornerCross (hS : P.IsSimple)
       · rintro ⟨hne, hiS⟩; exact ⟨hiS, hxwR i hiS hne⟩
     rw [hset, Finset.sum_erase_eq_sub hm1S, sum_edgeSign_spanning_eq_zero P y hgen', hsign]
     ring
-
-/-- **The winding `= 1` witness (Task A), modulo lowest-corner convexity.** For a
-simple polygon possessing a *convex* lex-lowest vertex — i.e. some `m` that is
-lexicographically lowest, has both neighbours strictly above it, and turns left
-(`0 < cornerCross P m`) — there is an off-boundary point with `winding = 1`. The
-hypothesis `hconvex` is exactly the classical "the bottom-left vertex of a
-counter-clockwise simple polygon is a strict convex corner" fact; once supplied
-(from `horient`), this discharges the value-pinning witness for the connectivity
-route to `winding ∈ {0,1}`. -/
-lemma exists_winding_eq_one_of_convexLowest (hS : P.IsSimple)
-    (hconvex : ∃ m : ZMod P.n,
-      (∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1)) ∧
-      (toReal (P.vert m)).2 < (toReal (P.vert (m - 1))).2 ∧
-      (toReal (P.vert m)).2 < (toReal (P.vert (m + 1))).2 ∧
-      0 < cornerCross P m) :
-    ∃ q : ℝ × ℝ, q ∉ P.boundary ∧ P.winding q = 1 := by
-  obtain ⟨m, hlex, hba, hbc, hcc⟩ := hconvex
-  exact exists_winding_eq_one_of_cornerCross P hS m hlex hba hbc hcc
 
 /-- A nondegenerate segment in the plane is Lebesgue-null: it lies in the affine
 span of its two distinct endpoints, a line (a proper affine subspace of `ℝ²`). -/

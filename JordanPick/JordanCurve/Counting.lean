@@ -53,14 +53,4 @@ theorem connectedComponents_subtype_eq_iff {S : Set X} {x y : X}
     (image_injective.mpr Subtype.coe_injective).eq_iff,
     ← ConnectedComponents.coe_eq_coe]
 
-/-- A convenient `mem`-flavoured restatement of the bridge: the classes agree iff
-`y` lies in `connectedComponentIn S x`. -/
-theorem connectedComponents_subtype_eq_iff_mem {S : Set X} {x y : X}
-    (hx : x ∈ S) (hy : y ∈ S) :
-    ConnectedComponents.mk (⟨x, hx⟩ : S) = ConnectedComponents.mk (⟨y, hy⟩ : S)
-      ↔ y ∈ connectedComponentIn S x := by
-  rw [connectedComponents_subtype_eq_iff hx hy]
-  exact ⟨fun h => h.symm ▸ mem_connectedComponentIn hy,
-    fun h => connectedComponentIn_eq h⟩
-
 end JordanCurve.Counting

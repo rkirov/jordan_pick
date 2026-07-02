@@ -20,92 +20,6 @@ open LatticePolygon
 
 variable (P : LatticePolygon)
 
-/-- **The `chord_end` / `route_around_chord_end` hypothesis is REFUTABLE.**
-This sorry-free lemma derives `False` from the *exact* statement that was the stated
-target `route_around_chord_end` (the `chord_end` hypothesis of
-`joinedIn_same_height_of_chord_end`): two off-boundary points `(a,y)`, `(c,y)` on a
-generic line with `a < c` and **exactly one** spanning threshold strictly inside
-`(a,c)` are *not* `JoinedIn P.boundaryᶜ`.
-
-The reason is a parity obstruction. By `winding_eq_sum_spanning`,
-`winding (a,y) − winding (c,y) = edgeSign y e` where `e` is the single threshold in
-`(a,c)`, and `edgeSign` is `±1` (`edgeSign_eq_one_or_neg_one`). Hence
-`winding (a,y) ≠ winding (c,y)`. But `winding` is **constant along any path inside
-`P.boundaryᶜ`** (`winding_const_of_isPreconnected`), so a `JoinedIn P.boundaryᶜ`
-path between them would force equal winding — contradiction.
-
-Consequence: the single-threshold peeling reduction in
-`joinedIn_same_height_of_chord_end` cannot be discharged by any
-`route_around_chord_end` of this signature; the apex-crossing move connects across
-**two** incident thresholds (same parity), so the correct routing primitive must peel
-a *pair* of thresholds at once (or equivalently the driver must connect same-parity
-endpoints), not one. -/
-theorem chord_end_hypothesis_is_false
-    (y : ℝ) (hgen : ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (a c : ℝ) (hac : a < c)
-    (hbb : ((c, y) : ℝ × ℝ) ∉ P.boundary)
-    (hcard : ((P.spanningSet y).filter (fun i => a < P.edgeThr y i ∧ P.edgeThr y i < c)).card = 1)
-    (hjoin : JoinedIn P.boundaryᶜ ((a, y) : ℝ × ℝ) (c, y)) : False := by
-  classical
-  -- winding difference equals sum of edgeSign over thresholds in (a,c)
-  have hwa := winding_eq_sum_spanning P a y hgen
-  have hwc := winding_eq_sum_spanning P c y hgen
-  -- winding a − winding c = sum over {a < thr < c} edgeSign, which has card 1 and ±1 entries
-  have hne : P.winding (a, y) ≠ P.winding (c, y) := by
-    rw [hwa, hwc]
-    -- no spanning threshold equals c (since (c,y) ∉ boundary)
-    have hcne : ∀ i ∈ P.spanningSet y, P.edgeThr y i ≠ c := by
-      intro i hi heq
-      apply hbb
-      simp only [LatticePolygon.spanningSet, Finset.mem_filter, Finset.mem_univ, true_and] at hi
-      have hmem : (c, y) ∈ P.edgeSeg i := by
-        rw [← heq]
-        rcases hi with ⟨h1, h2⟩ | ⟨h1, h2⟩
-        · exact crossThreshold_mem_segment _ _ y h1 h2
-        · exact crossThreshold_mem_segment_down _ _ y h1 h2
-      exact Set.mem_iUnion.mpr ⟨i, hmem⟩
-    -- difference of the two sums = sum over the (a,c) filter
-    rw [Finset.sum_filter, Finset.sum_filter]
-    intro hcontra
-    -- rewrite as a single nonzero sum
-    have hkey : ∑ i ∈ P.spanningSet y,
-        (if a < P.edgeThr y i ∧ P.edgeThr y i < c then P.edgeSign y i else 0) = 0 := by
-      have : ∀ i ∈ P.spanningSet y,
-          (if a < P.edgeThr y i then P.edgeSign y i else 0)
-            - (if c < P.edgeThr y i then P.edgeSign y i else 0)
-          = (if a < P.edgeThr y i ∧ P.edgeThr y i < c then P.edgeSign y i else 0) := by
-        intro i hi
-        by_cases h1 : a < P.edgeThr y i
-        · by_cases h2 : c < P.edgeThr y i
-          · -- a<thr and c<thr ⟹ not (a<thr ∧ thr<c)
-            rw [if_pos h1, if_pos h2, if_neg]
-            · ring
-            · rintro ⟨-, hlt⟩; exact absurd hlt (not_lt.mpr h2.le)
-          · -- a<thr and ¬c<thr ⟹ thr≤c, and thr≠c ⟹ thr<c
-            rw [if_pos h1, if_neg h2, if_pos]
-            · ring
-            · exact ⟨h1, lt_of_le_of_ne (not_lt.mp h2) (hcne i hi)⟩
-        · -- ¬a<thr ⟹ ¬c<thr (since a<c) and ¬(a<thr∧…)
-          have h2 : ¬ c < P.edgeThr y i := fun hh => h1 (lt_trans hac hh)
-          rw [if_neg h1, if_neg h2, if_neg]
-          · ring
-          · rintro ⟨h, -⟩; exact h1 h
-      rw [← Finset.sum_congr rfl this, Finset.sum_sub_distrib, hcontra, sub_self]
-    -- but the (a,c)-filter sum is ±1 (card 1), contradiction
-    rw [← Finset.sum_filter] at hkey
-    obtain ⟨j, hj⟩ := Finset.card_eq_one.mp hcard
-    rw [hj, Finset.sum_singleton] at hkey
-    rcases edgeSign_eq_one_or_neg_one P y j with h | h <;> rw [h] at hkey <;> norm_num at hkey
-  -- but JoinedIn boundaryᶜ forces equality
-  obtain ⟨γ, hγ⟩ := hjoin
-  have hpre : IsPreconnected (Set.range γ) := isPreconnected_range γ.continuous
-  have hsubrange : Set.range γ ⊆ P.boundaryᶜ := by rintro z ⟨s, rfl⟩; exact hγ s
-  have heq : P.winding (a, y) = P.winding (c, y) := by
-    have h := winding_const_of_isPreconnected P (s := Set.range γ) hsubrange hpre
-      (p := γ 0) (q := γ 1) ⟨0, rfl⟩ ⟨1, rfl⟩
-    rwa [γ.source, γ.target] at h
-  exact hne heq
-
 end ChordEndUnsound
 
 /-- **`ValidEarLast` reduction from an ear at the last vertex.** This packages the
@@ -193,43 +107,6 @@ theorem pick_of_earExistence (hee : EarExistence) (P : LatticePolygon)
     (hsimple : P.IsSimple) (horient : P.PositivelyOriented) :
     P.area = (P.I : ℝ) + (P.B : ℝ) / 2 - 1 :=
   pick_of_provider (earProvider_of_earExistence hee) P hsimple horient
-
-/-- **The lex-lowest vertex is a vertex of the convex hull** (genuinely non-circular
-orientation input). The vertex `vₘ` minimising the lexicographic key `(y, x)` is not a
-convex combination of the *other* vertices: it lies strictly on one side of the
-supporting line cut out by the functional `f w = δ·w.1 + w.2` (with `δ` from
-`lex_lowest_strict_support`), which is `> f vₘ` at every other vertex. Since
-`{w | f vₘ < f w}` is a convex half-space containing all the other vertices, it
-contains their convex hull, so `vₘ` (where `f vₘ = f vₘ`, not `<`) is outside it.
-This is the convex-hull/exposed-point fact underlying the orientation of the lowest
-corner. -/
-lemma lex_lowest_notMem_convexHull_others (P : LatticePolygon) (hS : P.IsSimple) (m : ZMod P.n)
-    (hlex : ∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1)) :
-    toReal (P.vert m) ∉
-      convexHull ℝ (Set.range (fun j : {j : ZMod P.n // j ≠ m} => toReal (P.vert j.1))) := by
-  obtain ⟨δ, hδ, hδ1, hsupp⟩ := lex_lowest_strict_support P hS m hlex
-  set f : ℝ × ℝ → ℝ := fun w => δ * w.1 + w.2 with hf
-  have hlin : IsLinearMap ℝ f := by
-    refine ⟨fun x y => ?_, fun c x => ?_⟩
-    · simp only [hf, Prod.fst_add, Prod.snd_add]; ring
-    · simp only [hf, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-  set r : ℝ := f (toReal (P.vert m)) with hr
-  -- every other vertex has f > r
-  have hgt : ∀ j : {j : ZMod P.n // j ≠ m}, toReal (P.vert j.1) ∈ {w | r < f w} := by
-    rintro ⟨j, hj⟩
-    have := hsupp j hj
-    simp only [Set.mem_setOf_eq, hf, hr, Prod.fst_sub, Prod.snd_sub] at *
-    nlinarith [this]
-  -- the half-space is convex and contains the range, hence the hull
-  have hsub : Set.range (fun j : {j : ZMod P.n // j ≠ m} => toReal (P.vert j.1)) ⊆ {w | r < f w} := by
-    rintro _ ⟨j, rfl⟩; exact hgt j
-  have hhull : convexHull ℝ (Set.range (fun j : {j : ZMod P.n // j ≠ m} => toReal (P.vert j.1)))
-      ⊆ {w | r < f w} :=
-    convexHull_min hsub (convex_halfSpace_gt hlin r)
-  intro hmem
-  have : r < f (toReal (P.vert m)) := hhull hmem
-  rw [← hr] at this
-  exact lt_irrefl r this
 
 /-! ### Clip simplicity: `deleteLast` of an ear is simple
 
@@ -409,7 +286,7 @@ lemma deleteLast_edge_pre_diag (R : LatticePolygon) (m : ℕ) (_hm : R.n = m + 2
       = segment ℝ (toReal (R.vert (((m - 1 : ℕ)) : ZMod R.n))) (toReal (R.vert (m : ZMod R.n))) := by
   rw [LatticePolygon.edgeSeg]
   congr 2
-  rw [Nat.cast_sub hm1]; push_cast; ring
+  rw [Nat.cast_sub hm1]; push_cast; ring_nf
 
 /-- **The clip's R-edge `0` is the segment `v_0 → v_1`.** -/
 lemma deleteLast_edge_zero (R : LatticePolygon) (m : ℕ) (_hm : R.n = m + 2) :
@@ -556,18 +433,6 @@ lemma deleteLast_positivelyOriented_iff (R : LatticePolygon) (h2 : 2 ≤ R.n) (m
   have hadd := shoelace_eq_deleteLast_add_earTri R h2 m hm
   unfold LatticePolygon.PositivelyOriented
   constructor <;> intro h <;> linarith
-
-/-- **Clip-orientation from the area comparison (conjunct 2, forward form).** If the
-clipped ear's signed area is strictly less than `R`'s, then `deleteLast R` is
-positively oriented. The remaining geometric obligation is exactly the strict
-inequality `earTri.shoelace < R.shoelace` (equivalently, by
-`cornerCross_clip_eq_shoelace_drop`, `0 < (deleteLast R).shoelace`); it follows
-from the ear lying inside `R` (so its signed area is dominated), the genuine
-content delegated to the empty-ear/containment step. -/
-lemma deleteLast_positivelyOriented_of_lt (R : LatticePolygon) (h2 : 2 ≤ R.n) (m : ℕ)
-    (hm : R.n = m + 2) (hlt : (earTri R m hm).shoelace < R.shoelace) :
-    (deleteLast R h2).PositivelyOriented :=
-  (deleteLast_positivelyOriented_iff R h2 m hm).mpr hlt
 
 /-! ### Empty-ear diagonal validity: the two turn intersections (`hAdjPrev`, `hAdjNext`)
 

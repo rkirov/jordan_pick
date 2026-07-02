@@ -527,20 +527,6 @@ lemma reverseP_shoelace (P : LatticePolygon) :
   rw [hsum, neg_div]
   rfl
 
-/-- **Reversal negates the corner cross.** The corner at vertex `−j` of `reverseP P`
-is the negation of the corner at `vⱼ` of `P`: `cornerCross (reverseP P) (−j) =
-− cornerCross P j`. (The incoming and outgoing edges swap roles and reverse sign;
-`cross` antisymmetry collects the overall `−`.) -/
-lemma reverseP_cornerCross (P : LatticePolygon) (j : ZMod P.n) :
-    cornerCross (reverseP P) (-j) = - cornerCross P j := by
-  unfold cornerCross reverseP
-  simp only
-  have e1 : -(-j - 1) = j + 1 := by ring
-  have e2 : -(-j + 1) = j - 1 := by ring
-  have e3 : -(-j) = j := by ring
-  rw [e1, e2, e3]
-  unfold cross; simp only [Prod.fst_sub, Prod.snd_sub]; ring
-
 /-- **The fan / signed-area identity (apex translation invariance).** For *any*
 fixed apex `o`, twice the shoelace equals the sum over edges of the signed area of
 the fan triangle `(o, vᵢ, vᵢ₊₁)`:
@@ -617,14 +603,6 @@ the half-plane sign constraints) and **totality** (immediate from
 `cross v u = - cross u v`). These are the reusable backbone of the convex-corner
 argument: the fan vectors at the lex-lowest apex all lie in `{y ≥ 0}`, hence are
 angularly sortable, and the chain endpoints `vₘ₋₁, vₘ₊₁` inherit the order. -/
-
-/-- **Plücker / Grassmann identity** relating the three pairwise cross products of
-`u, v, w` to two dot products, scaled by `‖v‖²`. The algebraic hinge of the
-upper-half-plane angular transitivity. -/
-lemma cross_plucker (u v w : ℝ × ℝ) :
-    cross u w * (v.1 * v.1 + v.2 * v.2)
-      = cross u v * (v.1 * w.1 + v.2 * w.2) + cross v w * (v.1 * u.1 + v.2 * u.2) := by
-  simp only [cross]; ring
 
 /-- **`cross` is antisymmetric.** `cross v u = - cross u v`; hence the angular
 relation `0 ≤ cross · ·` is total on any set of vectors. -/
@@ -730,24 +708,6 @@ lemma cornerCross_clip_eq_shoelace_drop (P : LatticePolygon) (h : 2 ≤ P.n) (m 
   have hadd := shoelace_eq_deleteLast_add_earTri P h m hm
   rw [earTri_shoelace_eq_cornerCross P m hm] at hadd
   linarith
-
-/-- **STEP 3 (capstone reduction).** The corner at the lex-lowest vertex `m` is a
-strict left turn **provided** the local band-threshold order holds: at some height
-`y` in the lowest unit band, the incoming down-edge `(m−1)` crosses strictly left
-of the outgoing up-edge `m`. This packages Steps 1–2 into the single remaining
-geometric input `hgap` (the "leftmost crossing at the lowest vertex is the
-incoming one"). It is stated for the *strict* lex-lowest configuration where both
-neighbours of `m` lie strictly above `vₘ` (no horizontal bottom edge at `m`); in
-the horizontal-bottom-edge case the lex-lowest vertex need **not** be convex
-(`cornerCross` can be `≤ 0`), so that case must be excluded — exactly the
-hypotheses `hba, hbc`. -/
-theorem cornerCross_pos_lex_lowest (P : LatticePolygon) (m : ZMod P.n)
-    (hba : (toReal (P.vert m)).2 < (toReal (P.vert (m - 1))).2)
-    (hbc : (toReal (P.vert m)).2 < (toReal (P.vert (m + 1))).2)
-    (hgap : ∃ y : ℝ, (toReal (P.vert m)).2 < y ∧ P.edgeThr y (m - 1) < P.edgeThr y m) :
-    0 < cornerCross P m := by
-  obtain ⟨y, hby, hthr⟩ := hgap
-  exact (cornerCross_pos_iff_threshold_order P m y hba hbc hby).mpr hthr
 
 /-- **Unique-lowest spanning set.** If `m` is lex-lowest, is the **unique**
 minimum-height vertex, and both neighbours lie strictly above `vₘ`, then at any
@@ -923,81 +883,6 @@ lemma lex_lowest_fan_upper_open (P : LatticePolygon) (hS : P.IsSimple) (m : ZMod
   obtain ⟨δ, hδ, _, hsupp⟩ := lex_lowest_strict_support P hS m hlex
   exact ⟨δ, hδ, hsupp, fun u v => cross_shear_invariant δ u v⟩
 
-/-- **STEP 2b (CONVEX-CASE sufficient condition) — angular extremality forces the
-convex corner.** Suppose, at the lex-lowest apex `vₘ`, the outgoing fan vector
-`w₍ₘ₊₁₎ := vₘ₊₁ − vₘ` is the angular **minimum** (`0 ≤ cross w₍ₘ₊₁₎ wⱼ` for every
-other `j`) and the incoming fan vector `w₍ₘ₋₁₎ := vₘ₋₁ − vₘ` is the angular
-**maximum** (`0 ≤ cross wⱼ w₍ₘ₋₁₎` for every other `j`). Then with positive signed
-area the corner is a strict left turn: `0 < cornerCross P m`. Proof:
-`2·shoelace = ∑ⱼ cross(wⱼ, wⱼ₊₁) > 0` (incident terms vanish since `wₘ = 0`), so some
-fan edge `cross(wᵢ, wᵢ₊₁) > 0` with `i ≠ m`, `i+1 ≠ m`. Chaining minimality
-`0 ≤ cross w₍ₘ₊₁₎ wᵢ` with the strict step (`cross_trans_strict_support`) gives
-`0 < cross w₍ₘ₊₁₎ w₍ᵢ₊₁₎`; chaining that with maximality `0 ≤ cross w₍ᵢ₊₁₎ w₍ₘ₋₁₎`
-(`cross_trans_strict_support'`) gives `0 < cross w₍ₘ₊₁₎ w₍ₘ₋₁₎ = cornerCross P m`.
-
-⚠️ **Scope caveat (verified by exhaustive numeric search).** The hypotheses
-`hmin`/`hmax` say `w₍ₘ₊₁₎`/`w₍ₘ₋₁₎` are the *global* angular extremes of the fan.
-This is **NOT** satisfiable for a general non-convex simple polygon: the boundary
-chain may dip angularly below the outgoing edge before swinging back (e.g.
-`[(0,0),(1,3),(3,1),(4,4),(-2,2)]`, simple, CCW, lex-lowest at `0`, yet
-`cross w₍ₘ₊₁₎ w₂ = -8 < 0`). So this lemma alone proves the lowest corner convex
-only for the *convex/extreme* case. The general goal is still TRUE (exhaustive
-search over strongly-simple CCW polygons found no strict-reflex lowest corner), but
-its proof needs the **net-turning** positivity (discrete Umlaufsatz), not global
-angular extremality. See the report for the exact remaining statement. -/
-lemma cornerCross_pos_of_angular_extremes (P : LatticePolygon) (hS : P.IsSimple)
-    (horient : 0 < P.shoelace) (m : ZMod P.n)
-    (hlex : ∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1))
-    (hmin : ∀ j, j ≠ m → 0 ≤ cross (toReal (P.vert (m + 1)) - toReal (P.vert m))
-                                   (toReal (P.vert j) - toReal (P.vert m)))
-    (hmax : ∀ j, j ≠ m → 0 ≤ cross (toReal (P.vert j) - toReal (P.vert m))
-                                   (toReal (P.vert (m - 1)) - toReal (P.vert m))) :
-    0 < cornerCross P m := by
-  set W := fun j => toReal (P.vert j) - toReal (P.vert m) with hW
-  have hcc : cornerCross P m = cross (W (m + 1)) (W (m - 1)) := by
-    simp only [hW]; unfold cornerCross cross; simp only [Prod.fst_sub, Prod.snd_sub]; ring
-  rw [hcc]
-  obtain ⟨δ, hδ, hδ1, hsupp⟩ := lex_lowest_strict_support P hS m hlex
-  -- rephrase the support functional in terms of W
-  have hsupp' : ∀ j, j ≠ m → 0 < δ * (W j).1 + (W j).2 := by
-    intro j hj; simpa only [hW] using hsupp j hj
-  have hWm : W m = 0 := by simp only [hW]; simp
-  -- fan sum positive
-  have hfan : (∑ i, cross (W i) (W (i + 1))) = 2 * P.shoelace := by
-    simp only [hW]; exact two_shoelace_fan_vertex P m
-  have hpos : ∃ i, 0 < cross (W i) (W (i + 1)) := by
-    by_contra hcon; push Not at hcon
-    have hle : (∑ i, cross (W i) (W (i + 1))) ≤ 0 := Finset.sum_nonpos (fun i _ => hcon i)
-    rw [hfan] at hle; linarith
-  obtain ⟨i, hi⟩ := hpos
-  -- both endpoints of the positive fan edge differ from m
-  have him : i ≠ m := by
-    rintro rfl; rw [hWm] at hi; simp [cross] at hi
-  have hi1m : i + 1 ≠ m := by
-    intro h; rw [h, hWm] at hi; simp [cross] at hi
-  -- m±1 ≠ m (n ≥ 3)
-  have h3 : 3 ≤ P.n := simple_imp_three_le_n P hS
-  haveI : Fact (1 < P.n) := ⟨by omega⟩
-  have hm1m : m + 1 ≠ m := by
-    intro h; exact one_ne_zero (show (1 : ZMod P.n) = 0 by linear_combination h)
-  have hmm1 : m - 1 ≠ m := by
-    intro h; exact one_ne_zero (show (1 : ZMod P.n) = 0 by linear_combination -h)
-  -- support membership of the four relevant vectors
-  have hsmp1 : 0 < δ * (W (m + 1)).1 + (W (m + 1)).2 := hsupp' (m + 1) hm1m
-  have hsmpi : 0 < δ * (W i).1 + (W i).2 := hsupp' i him
-  have hsmpi1 : 0 < δ * (W (i + 1)).1 + (W (i + 1)).2 := hsupp' (i + 1) hi1m
-  have hsmpm1 : 0 < δ * (W (m - 1)).1 + (W (m - 1)).2 := hsupp' (m - 1) hmm1
-  -- minimality of W (m+1) at i; maximality of W (m-1) at i+1
-  have hmini : 0 ≤ cross (W (m + 1)) (W i) := hmin i him
-  have hmaxi1 : 0 ≤ cross (W (i + 1)) (W (m - 1)) := hmax (i + 1) hi1m
-  -- chain: 0 < cross (W (m+1)) (W (i+1))
-  have hstep1 : 0 < cross (W (m + 1)) (W (i + 1)) :=
-    cross_trans_strict_support δ hδ (W (m + 1)) (W i) (W (i + 1))
-      hsmp1 hsmpi hsmpi1 hmini hi
-  -- chain: 0 < cross (W (m+1)) (W (m-1))
-  exact cross_trans_strict_support' δ hδ (W (m + 1)) (W (i + 1)) (W (m - 1))
-    hsmp1 hsmpi1 hsmpm1 hstep1 hmaxi1
-
 /-- **The `cornerCross` at the apex *is* the chain-endpoint cross product.** Writing
 the fan vectors `wⱼ := vⱼ − vₘ`, the corner cross at the lex-lowest apex equals
 `cross (w₍ₘ₊₁₎) (w₍ₘ₋₁₎)` — the cross product of the *first* fan vector
@@ -1048,18 +933,6 @@ def FanSignWeak : Prop :=
     (∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1)) →
     0 ≤ cornerCross P m
 
-/-- **Lowest-vertex orientation theorem, assembled from `FanSignWeak`.** Combining
-the weak `fan_sign` content with the strict-from-weak upgrade
-(`cornerCross_pos_of_weak`): at the lex-lowest vertex of a simple,
-positively-oriented polygon the corner is a strict left turn, `0 < cornerCross P m`.
-This is the FINAL orientation/area-sign statement at the lowest vertex modulo the
-single isolated input `FanSignWeak`. -/
-theorem cornerCross_pos_lex_lowest_final (hfan : FanSignWeak) (P : LatticePolygon)
-    (hS : P.IsSimple) (hO : P.PositivelyOriented) (m : ZMod P.n)
-    (hlex : ∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1)) :
-    0 < cornerCross P m :=
-  cornerCross_pos_of_weak P hS m hlex (hfan P hS hO m hlex)
-
 /-- **Unique-lowest cross-section value.** In the unique-min-height configuration,
 at a generic height `y` in the lowest band the cross-section value
 `∫ winding(·,y)` is exactly the **signed gap** `edgeThr y m − edgeThr y (m-1)`
@@ -1092,30 +965,6 @@ lemma crossSection_unique_lowest (P : LatticePolygon) (m : ZMod P.n)
   rw [if_neg hsign1, if_pos hsign2]
   simp only [LatticePolygon.edgeThr, sub_add_cancel]
   ring
-
-/-- **Lowest corner sign from lowest-band cross-section positivity** (non-circular
-reduction). In the unique-min-height configuration, if at *some* generic height `y`
-in the lowest unit band the cross-section `∫ winding(·, y)` is strictly positive,
-then the lex-lowest corner is convex: `0 < cornerCross P m`. Proof: by
-`crossSection_unique_lowest` that integral equals the signed threshold gap
-`edgeThr y m − edgeThr y (m−1)`, so positivity is exactly the band threshold order
-`edgeThr y (m−1) < edgeThr y m`, which `cornerCross_pos_iff_threshold_order` turns
-into the corner sign. This isolates the *only* remaining analytic input for the
-SIGN at the lowest vertex: positivity of one lowest-band cross-section. (It does not
-itself prove that positivity — that is the deep orientation/Jordan content.) -/
-lemma cornerCross_pos_of_lowest_band_pos (P : LatticePolygon) (m : ZMod P.n)
-    (hlex : ∀ j, toLex ((P.vert m).2, (P.vert m).1) ≤ toLex ((P.vert j).2, (P.vert j).1))
-    (huniq : ∀ j, (toReal (P.vert j)).2 = (toReal (P.vert m)).2 → j = m)
-    (hba : (toReal (P.vert m)).2 < (toReal (P.vert (m - 1))).2)
-    (hbc : (toReal (P.vert m)).2 < (toReal (P.vert (m + 1))).2)
-    (y : ℝ) (hlo : (toReal (P.vert m)).2 < y) (hhi : y < (toReal (P.vert m)).2 + 1)
-    (hgen : ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (hpos : 0 < ∫ x, (P.winding (x, y) : ℝ)) :
-    0 < cornerCross P m := by
-  have hcs := crossSection_unique_lowest P m hlex huniq hba hbc y hlo hhi hgen
-  rw [hcs] at hpos
-  have hthr : P.edgeThr y (m - 1) < P.edgeThr y m := by linarith
-  exact (cornerCross_pos_iff_threshold_order P m y hba hbc hlo).mpr hthr
 
 /-- **Above the floor means at least a unit above.** At the lex-lowest vertex `m`,
 any vertex `k` not at the floor height `yₘ` has height `≥ yₘ + 1` (integer heights,

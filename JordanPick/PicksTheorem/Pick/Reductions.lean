@@ -263,31 +263,6 @@ lemma angleWeight_edge_triangle (P : LatticePolygon) (hn : P.n = 3) (q : Pt) (j 
   rw [Finset.sum_erase_eq_sub (Finset.mem_univ j), hsum4, hcwj]
   norm_num
 
-/-- **Exterior classification (triangle).** If `q` is on the wrong side of edge `k`
-(`crossZ_k < 0`, a column crossing there) but sees the other two edges CCW, with a
-straddled column, then `angleWeight P q = 0`. The wrong-side term contributes `−2`,
-the rest `+2`: `(4 − 2·2)/4 = 0`. This is the (near) exterior contribution of
-`hcount`. -/
-lemma angleWeight_exterior_triangle (P : LatticePolygon) (hn : P.n = 3) (q : Pt) (k : ZMod P.n)
-    (hk : crossZ (P.vert k - q) (P.vert (k + 1) - q) < 0)
-    (hi : ∀ i, i ≠ k → 0 < crossZ (P.vert i - q) (P.vert (i + 1) - q))
-    (hcwk : |Int.sign (P.vert k - q).1 - Int.sign (P.vert (k + 1) - q).1| = 2)
-    (hsp : ∃ i, 0 < (P.vert i - q).1) (hsn : ∃ i, (P.vert i - q).1 < 0) :
-    angleWeight P q = 0 := by
-  have hsum4 := triangle_columnWeight_sum P hn q hsp hsn
-  rw [angleWeight_eq_sum,
-    ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ k), Int.sign_eq_neg_one_of_neg hk]
-  have step : ∀ i ∈ Finset.univ.erase k,
-      (Int.sign (crossZ (P.vert i - q) (P.vert (i + 1) - q)) : ℚ)
-        * (|Int.sign (P.vert i - q).1 - Int.sign (P.vert (i + 1) - q).1| : ℚ)
-      = (|Int.sign (P.vert i - q).1 - Int.sign (P.vert (i + 1) - q).1| : ℚ) := fun i hmem => by
-    rw [Int.sign_eq_one_of_pos (hi i (Finset.ne_of_mem_erase hmem)), Int.cast_one, one_mul]
-  rw [Finset.sum_congr rfl step]
-  simp only [← Int.cast_sub, ← Int.cast_abs, ← Int.cast_sum]
-  rw [Finset.sum_erase_eq_sub (Finset.mem_univ k), hsum4, hcwk]
-  push_cast
-  norm_num
-
 /-- **Exterior, two-negative case.** On the wrong side of two edges (only edge `c` CCW),
 with `cW_c = 2` and an x-straddle, `angleWeight = 0`: `(2·2 − 4)/4 = 0`. -/
 lemma angleWeight_eq_zero_of_two_neg (P : LatticePolygon) (hn : P.n = 3) (q : Pt) (c : ZMod P.n)
@@ -309,18 +284,6 @@ lemma angleWeight_eq_zero_of_two_neg (P : LatticePolygon) (hn : P.n = 3) (q : Pt
   rw [Finset.sum_erase_eq_sub (Finset.mem_univ c), hsum4, hcwc]
   push_cast
   norm_num
-
-/-- **Exterior, non-straddled.** If all vertices share the same x-side of `q` (constant
-`Int.sign (vᵢ−q).1`), every column-weight `|sign diff|` is `0`, so `angleWeight = 0`. This
-covers the in-box exterior points whose column is not straddled. -/
-lemma angleWeight_eq_zero_of_fst_sign_const (P : LatticePolygon) (q : Pt) (s : ℤ)
-    (h : ∀ i, Int.sign (P.vert i - q).1 = s) : angleWeight P q = 0 := by
-  rw [angleWeight_eq_sum]
-  have hz : ∀ i, (Int.sign (crossZ (P.vert i - q) (P.vert (i + 1) - q)) : ℚ)
-      * (|Int.sign (P.vert i - q).1 - Int.sign (P.vert (i + 1) - q).1| : ℚ) = 0 := by
-    intro i
-    simp only [h i, h (i + 1), sub_self, abs_zero, mul_zero]
-  rw [Finset.sum_congr rfl (fun i _ => hz i), Finset.sum_const_zero]; simp
 
 /-- A lattice point on edge `k`'s segment is collinear with its endpoints, so the
 corner-cross vanishes. This ties `Defs.boundaryLattice` (membership in some `edgeSeg`)
@@ -432,15 +395,6 @@ lemma not_mem_boundary_of_crossZ_ne (P : LatticePolygon) (q : Pt)
   push Not
   intro k hmem
   exact hne k (crossZ_eq_zero_of_mem_edgeSeg P q k hmem)
-
-/-- **Corner-cross = half-plane test.** `crossZ(vⱼ−q, vⱼ₊₁−q) = crossZ(vⱼ₊₁−vⱼ, q−vⱼ)`,
-the signed area of the directed edge `j` against `q`. So `crossZ_j > 0` ⟺ `q` lies
-strictly left of directed edge `j`; `= 0` ⟺ `q` is on edge `j`'s line; `< 0` ⟺ right.
-This is the bridge from the per-point `crossZ` hypotheses to `q`'s geometric position. -/
-lemma corner_cross_eq_edge_cross (P : LatticePolygon) (q : Pt) (j : ZMod P.n) :
-    crossZ (P.vert j - q) (P.vert (j + 1) - q)
-      = crossZ (P.vert (j + 1) - P.vert j) (q - P.vert j) := by
-  simp only [crossZ, Prod.fst_sub, Prod.snd_sub]; ring
 
 /-- The real `cross` used inside `edgeWind` for edge `j` equals the integer corner-cross
 `crossZ(vⱼ−q, vⱼ₊₁−q)`. Hence `winding`'s sign test for each edge is exactly the
@@ -998,15 +952,6 @@ lemma winding_eq_one_of_crossZ_pos' (P : LatticePolygon) (hn : P.n = 3) (q : Pt)
     · exact ⟨1, ha⟩
     · exact ⟨2, ha⟩
 
-/-- **Interior unification.** At a point seeing all edges CCW, the rational angle-weight
-equals the integer winding (both `1`) — the per-point identity `angleWeight = winding`
-on the interior, used by the regrouping. -/
-lemma angleWeight_eq_winding_of_crossZ_pos (P : LatticePolygon) (hn : P.n = 3) (q : Pt)
-    (h : ∀ j, 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q)) :
-    angleWeight P q = (P.winding (toReal q) : ℚ) := by
-  rw [angleWeight_eq_one_of_crossZ_pos P hn q h, winding_eq_one_of_crossZ_pos' P hn q h]
-  norm_num
-
 /-- **Translation invariance of total corner-cross.** `∑ᵢ crossZ(vᵢ−q, vᵢ₊₁−q)` is
 independent of `q` (it equals `∑ᵢ crossZ(vᵢ, vᵢ₊₁) = 2·shoelace`). For a positively
 oriented polygon this total is strictly positive at *every* point — the global
@@ -1047,13 +992,6 @@ lemma third_above_of_neg_edge (q v0 v1 v2 : Pt)
     q.2 < v2.2 := by
   nlinarith [barycentric_y q v0 v1 v2, mul_pos h1 (sub_pos.2 ha0), mul_pos h2 (sub_pos.2 ha1), h0]
 
-/-- Mirror: both endpoints below forces the third below. -/
-lemma third_below_of_neg_edge (q v0 v1 v2 : Pt)
-    (h0 : crossZ (v0 - q) (v1 - q) < 0) (h1 : 0 < crossZ (v1 - q) (v2 - q))
-    (h2 : 0 < crossZ (v2 - q) (v0 - q)) (ha0 : v0.2 < q.2) (ha1 : v1.2 < q.2) :
-    v2.2 < q.2 := by
-  nlinarith [barycentric_y q v0 v1 v2, mul_pos h1 (sub_pos.2 ha0), mul_pos h2 (sub_pos.2 ha1), h0]
-
 /-- x-analog: both endpoints right of `q` forces the third right (via `barycentric_x`). -/
 lemma third_right_of_neg_edge (q v0 v1 v2 : Pt)
     (h0 : crossZ (v0 - q) (v1 - q) < 0) (h1 : 0 < crossZ (v1 - q) (v2 - q))
@@ -1084,58 +1022,6 @@ lemma third_left_of_pos_edge (q v0 v1 v2 : Pt)
     v2.1 < q.1 := by
   nlinarith [barycentric_x q v0 v1 v2, mul_pos_of_neg_of_neg h1 (by linarith : v0.1 - q.1 < 0),
     mul_pos_of_neg_of_neg h2 (by linarith : v1.1 - q.1 < 0), h0]
-
-/-- The negative edge is a column crossing: its endpoints lie strictly on opposite sides
-of `q.1`, so its column weight is `2` (generic `q`, with an x-straddle). -/
-lemma neg_edge_column_opp (q v0 v1 v2 : Pt)
-    (h0 : crossZ (v0 - q) (v1 - q) < 0) (h1 : 0 < crossZ (v1 - q) (v2 - q))
-    (h2 : 0 < crossZ (v2 - q) (v0 - q)) (hg0 : v0.1 ≠ q.1) (hg1 : v1.1 ≠ q.1)
-    (hlo : v0.1 < q.1 ∨ v1.1 < q.1 ∨ v2.1 < q.1)
-    (hhi : q.1 < v0.1 ∨ q.1 < v1.1 ∨ q.1 < v2.1) :
-    |Int.sign (v0.1 - q.1) - Int.sign (v1.1 - q.1)| = 2 := by
-  have hnab : ¬ (q.1 < v0.1 ∧ q.1 < v1.1) := fun ⟨hb0, hb1⟩ => by
-    have := third_right_of_neg_edge q v0 v1 v2 h0 h1 h2 hb0 hb1
-    rcases hlo with h | h | h <;> linarith
-  have hnbe : ¬ (v0.1 < q.1 ∧ v1.1 < q.1) := fun ⟨hb0, hb1⟩ => by
-    have := third_left_of_neg_edge q v0 v1 v2 h0 h1 h2 hb0 hb1
-    rcases hhi with h | h | h <;> linarith
-  apply abs_sign_diff_eq_two_of_opp
-  rcases lt_trichotomy v0.1 q.1 with ha | ha | ha
-  · rcases lt_trichotomy v1.1 q.1 with hb | hb | hb
-    · exact absurd ⟨ha, hb⟩ hnbe
-    · exact absurd hb hg1
-    · exact Or.inl ⟨by linarith, by linarith⟩
-  · exact absurd ha hg0
-  · rcases lt_trichotomy v1.1 q.1 with hb | hb | hb
-    · exact Or.inr ⟨by linarith, by linarith⟩
-    · exact absurd hb hg1
-    · exact absurd ⟨ha, hb⟩ hnab
-
-/-- For the two-negative case: the lone CCW edge's endpoints lie on opposite sides of
-`q.1`, so its column weight is `2`. -/
-lemma pos_edge_column_opp (q v0 v1 v2 : Pt)
-    (h0 : 0 < crossZ (v0 - q) (v1 - q)) (h1 : crossZ (v1 - q) (v2 - q) < 0)
-    (h2 : crossZ (v2 - q) (v0 - q) < 0) (hg0 : v0.1 ≠ q.1) (hg1 : v1.1 ≠ q.1)
-    (hlo : v0.1 < q.1 ∨ v1.1 < q.1 ∨ v2.1 < q.1)
-    (hhi : q.1 < v0.1 ∨ q.1 < v1.1 ∨ q.1 < v2.1) :
-    |Int.sign (v0.1 - q.1) - Int.sign (v1.1 - q.1)| = 2 := by
-  have hnab : ¬ (q.1 < v0.1 ∧ q.1 < v1.1) := fun ⟨hb0, hb1⟩ => by
-    have := third_right_of_pos_edge q v0 v1 v2 h0 h1 h2 hb0 hb1
-    rcases hlo with h | h | h <;> linarith
-  have hnbe : ¬ (v0.1 < q.1 ∧ v1.1 < q.1) := fun ⟨hb0, hb1⟩ => by
-    have := third_left_of_pos_edge q v0 v1 v2 h0 h1 h2 hb0 hb1
-    rcases hhi with h | h | h <;> linarith
-  apply abs_sign_diff_eq_two_of_opp
-  rcases lt_trichotomy v0.1 q.1 with ha | ha | ha
-  · rcases lt_trichotomy v1.1 q.1 with hb | hb | hb
-    · exact absurd ⟨ha, hb⟩ hnbe
-    · exact absurd hb hg1
-    · exact Or.inl ⟨by linarith, by linarith⟩
-  · exact absurd ha hg0
-  · rcases lt_trichotomy v1.1 q.1 with hb | hb | hb
-    · exact Or.inr ⟨by linarith, by linarith⟩
-    · exact absurd hb hg1
-    · exact absurd ⟨ha, hb⟩ hnab
 
 /-- `≤` version: both endpoints weakly below forces the third weakly below. -/
 lemma third_le_of_neg_edge (q v0 v1 v2 : Pt)
@@ -1227,16 +1113,6 @@ lemma exists_crossZ_pos (P : LatticePolygon) (horient : P.PositivelyOriented) (q
     Finset.sum_nonpos (fun j _ => h j)
   linarith
 
-/-- If edge `k` is on `q`'s line, some *other* edge is seen CCW. -/
-lemma exists_other_crossZ_pos (P : LatticePolygon) (horient : P.PositivelyOriented) (q : Pt)
-    (k : ZMod P.n) (h0 : crossZ (P.vert k - q) (P.vert (k + 1) - q) = 0) :
-    ∃ j, j ≠ k ∧ 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q) := by
-  obtain ⟨j, hj⟩ := exists_crossZ_pos P horient q
-  refine ⟨j, ?_, hj⟩
-  rintro rfl
-  rw [h0] at hj
-  exact absurd hj (lt_irrefl 0)
-
 /-- **Converse, one-negative case.** If `q` is on the wrong side of exactly edge `k`
 (others CCW) with a vertically straddled column, `winding = 0` (≠ 1): the negative edge
 brackets `q.2`, so `winding = 1 − 1 = 0`. -/
@@ -1299,21 +1175,6 @@ lemma y_straddle_of_winding_one (P : LatticePolygon) (q : Pt) (hw : P.winding (t
   · by_contra h
     push Not at h
     rw [winding_eq_zero_of_above P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
-    exact absurd hw (by norm_num)
-
-/-- The horizontal analog: a `winding = 1` point is horizontally straddled (some vertex
-weakly left, some weakly right). With `y_straddle_of_winding_one`, interior lattice
-points lie in the vertex bounding box, hence form a finite set. -/
-lemma x_straddle_of_winding_one (P : LatticePolygon) (q : Pt) (hw : P.winding (toReal q) = 1) :
-    (∃ j, (P.vert j).1 ≤ q.1) ∧ (∃ j, q.1 ≤ (P.vert j).1) := by
-  refine ⟨?_, ?_⟩
-  · by_contra h
-    push Not at h
-    rw [winding_eq_zero_of_left P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
-    exact absurd hw (by norm_num)
-  · by_contra h
-    push Not at h
-    rw [winding_eq_zero_of_right P (toReal q) (fun i => by simp only [toReal]; exact_mod_cast h i)] at hw
     exact absurd hw (by norm_num)
 
 /-- **Converse.** A `winding = 1` point off every edge line (`all crossZ ≠ 0`) sees all
@@ -1410,30 +1271,6 @@ lemma winding_of_crossZ_zero (P : LatticePolygon) (q : Pt) (k : ZMod P.n)
             ∧ crossZ (P.vert j - q) (P.vert (j + 1) - q) < 0 then -1 else 0) := by
   rw [winding_toReal_eq, ← Finset.add_sum_erase _ _ (Finset.mem_univ k),
     wind_term_eq_zero P q k h0, zero_add]
-
-/-- An interior point (`winding = 1`) on edge `k`'s line does not up-bracket edge `k`:
-otherwise `winding ≤ 1 − 1 = 0`. -/
-lemma not_up_of_winding_crossZ_zero (P : LatticePolygon) (hn : P.n = 3) (q : Pt) (k : ZMod P.n)
-    (hw : P.winding (toReal q) = 1) (h0 : crossZ (P.vert k - q) (P.vert (k + 1) - q) = 0)
-    (hlo : ∃ j, (P.vert j).2 ≤ q.2) (hhi : ∃ j, q.2 < (P.vert j).2) :
-    ¬ ((P.vert k).2 ≤ q.2 ∧ q.2 < (P.vert (k + 1)).2) := by
-  have hup : (∑ j, (if (P.vert j).2 ≤ q.2 ∧ q.2 < (P.vert (j + 1)).2 then (1 : ℤ) else 0)) = 1 := by
-    have htot := sum_crossing_eq_two P hn q hlo hhi
-    have hbal := sum_upward_eq_downward P q
-    rw [Finset.sum_add_distrib, ← hbal] at htot
-    omega
-  have hub : P.winding (toReal q)
-      ≤ 1 - (if (P.vert k).2 ≤ q.2 ∧ q.2 < (P.vert (k + 1)).2 then (1 : ℤ) else 0) := by
-    rw [winding_of_crossZ_zero P q k h0]
-    have key : (∑ j ∈ Finset.univ.erase k,
-          (if (P.vert j).2 ≤ q.2 ∧ q.2 < (P.vert (j + 1)).2 then (1 : ℤ) else 0))
-        = 1 - (if (P.vert k).2 ≤ q.2 ∧ q.2 < (P.vert (k + 1)).2 then (1 : ℤ) else 0) := by
-      rw [Finset.sum_erase_eq_sub (Finset.mem_univ k), hup]
-    rw [← key]
-    exact Finset.sum_le_sum (fun j _ => wind_term_le_up P q j)
-  intro hbr
-  rw [hw, if_pos hbr] at hub
-  linarith
 
 /-- Winding value when edge `k` is on the line, edge `k+1` is CCW, and edge `k+2` is
 non-CCW: the upward crossing of `k+1` minus the downward crossing of `k+2`. -/
@@ -1564,15 +1401,6 @@ lemma crossZ_ne_zero_of_mem_interiorLattice (P : LatticePolygon) (hn : P.n = 3)
       exact hbdry (Set.mem_iUnion.2 ⟨k, by rw [hqv]; exact left_mem_segment ℝ _ _⟩)
     · exact not_crossZ_zero_others_pos P q k hbdry h0 hc1 hc2
 
-/-- An edge seen non-CCW (`crossZ ≤ 0`) contributes at most `0` to the winding. -/
-lemma wind_term_le_zero (P : LatticePolygon) (q : Pt) (j : ZMod P.n)
-    (h : crossZ (P.vert j - q) (P.vert (j + 1) - q) ≤ 0) :
-    (if (P.vert j).2 ≤ q.2 ∧ q.2 < (P.vert (j + 1)).2
-          ∧ 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q) then (1 : ℤ)
-        else if (P.vert (j + 1)).2 ≤ q.2 ∧ q.2 < (P.vert j).2
-          ∧ crossZ (P.vert j - q) (P.vert (j + 1) - q) < 0 then -1 else 0) ≤ 0 := by
-  split_ifs <;> omega
-
 /-- The winding number is at most `1` at a vertically straddled point: each edge's signed
 contribution is at most its upward-crossing indicator, and those sum to `1`. -/
 lemma winding_le_one (P : LatticePolygon) (hn : P.n = 3) (q : Pt)
@@ -1620,20 +1448,6 @@ lemma mem_interiorLattice_iff_crossZ_pos (P : LatticePolygon) (hn : P.n = 3)
     q ∈ P.interiorLattice ↔ ∀ k, 0 < crossZ (P.vert k - q) (P.vert (k + 1) - q) :=
   ⟨fun hq k => crossZ_pos_of_mem_interiorLattice P hn horient q hq k,
     mem_interiorLattice_of_crossZ_pos P hn q⟩
-
-/-- If the three triangle edges are all CCW (`crossZ > 0` at edges `0,1,2`), `q` is an
-interior lattice point. -/
-lemma mem_interiorLattice_of_three_pos (P : LatticePolygon) (hn : P.n = 3) (q : Pt)
-    (h0 : 0 < crossZ (P.vert 0 - q) (P.vert 1 - q))
-    (h1 : 0 < crossZ (P.vert 1 - q) (P.vert 2 - q))
-    (h2 : 0 < crossZ (P.vert 2 - q) (P.vert 0 - q)) :
-    q ∈ P.interiorLattice := by
-  obtain ⟨ea, eb, ec, _, _, _⟩ := zmodPn_idx P hn
-  refine mem_interiorLattice_of_crossZ_pos P hn q (fun k => ?_)
-  rcases zmodPn_cases P hn k with rfl | rfl | rfl
-  · rw [ea]; exact h0
-  · rw [eb]; exact h1
-  · rw [ec]; exact h2
 
 /-- A non-interior lattice point sees some edge non-CCW (`crossZ ≤ 0`). -/
 lemma exists_crossZ_nonpos_of_not_mem (P : LatticePolygon) (hn : P.n = 3)
@@ -1703,19 +1517,6 @@ lemma crossZ_prev_pos_of_mem_edgeSeg (P : LatticePolygon) (hn : P.n = 3)
   · exact h
   · exact absurd (eq_vertex_of_adjacent_crossZ_zero q (P.vert (j + 2)) (P.vert j) (P.vert (j + 1))
       h.symm hj (corner_crossZ_ne2 P hn horient j)) hne
-
-/-- **On-edge ⟹ all other edges CCW.** An edge-interior lattice point (`q` on edge `j`,
-not a vertex) sees every other edge counterclockwise — the all-others-CCW hypothesis of
-`angleWeight_edge_triangle`. -/
-lemma others_crossZ_pos_of_mem_edgeSeg (P : LatticePolygon) (hn : P.n = 3)
-    (horient : P.PositivelyOriented) (q : Pt) (j : ZMod P.n)
-    (hmem : toReal q ∈ P.edgeSeg j) (hne0 : q ≠ P.vert j) (hne1 : q ≠ P.vert (j + 1))
-    (i : ZMod P.n) (hij : i ≠ j) :
-    0 < crossZ (P.vert i - q) (P.vert (i + 1) - q) := by
-  obtain ⟨ek, _, _, ek12⟩ := zmodPn_krel P hn j
-  rcases zmodPn_ne_cases P hn i j hij with h | h
-  · subst h; rw [ek12]; exact crossZ_next_pos_of_mem_edgeSeg P hn horient q j hmem hne1
-  · subst h; rw [ek]; exact crossZ_prev_pos_of_mem_edgeSeg P hn horient q j hmem hne0
 
 /-- An edge-interior lattice point (`q` on edge `j`, distinct from both endpoints) is a
 *strict* convex combination of the endpoints (`t ∈ (0,1)`). -/
@@ -1992,15 +1793,6 @@ lemma mem_boundary_of_adjacent_zero (P : LatticePolygon) (hn : P.n = 3)
   rw [hq]
   exact vert_mem_boundaryLattice P (k + 1)
 
-/-- **Off-line interior characterization.** Among points off every edge line, the
-interior lattice points are exactly those seeing all edges CCW. -/
-lemma mem_interiorLattice_iff_of_crossZ_ne (P : LatticePolygon) (hn : P.n = 3)
-    (horient : P.PositivelyOriented) (q : Pt)
-    (hne : ∀ j, crossZ (P.vert j - q) (P.vert (j + 1) - q) ≠ 0) :
-    q ∈ P.interiorLattice ↔ ∀ j, 0 < crossZ (P.vert j - q) (P.vert (j + 1) - q) :=
-  ⟨fun hq => all_crossZ_pos_of_mem_interiorLattice P hn horient q hq hne,
-    mem_interiorLattice_of_crossZ_pos P hn q⟩
-
 /-- **Exterior vanishing (unified).** A lattice point that is neither interior nor on the
 boundary has `angleWeight = 0`. Working from a non-CCW edge `k` (abstract index, so the
 classification lemmas apply at `k` cleanly), the three edge-sign trichotomy dispatches to
@@ -2045,15 +1837,6 @@ lemma sum_interiorLattice_angleWeight (P : LatticePolygon) (hn : P.n = 3)
     angleWeight_eq_one_of_mem_interiorLattice P hn horient q
       ((interiorLattice_finite P).mem_toFinset.mp hq)]
   simp only [Finset.sum_const, nsmul_eq_mul, mul_one, hcard]
-
-/-- The signed column-crossings telescope to `0` around the closed polygon: each edge
-contributes `sign((vₖ₊₁−q).1) − sign((vₖ−q).1)`, summing to `0`. (The per-point
-`angleWeight` sum uses this to pair `+½` and `−½` column crossings.) -/
-lemma sum_sign_x_diff_zero (P : LatticePolygon) (q : Pt) :
-    (∑ k, (Int.sign ((P.vert (k + 1) - q).1) - Int.sign ((P.vert k - q).1))) = 0 := by
-  rw [Finset.sum_sub_distrib, sub_eq_zero]
-  exact Fintype.sum_equiv (Equiv.addRight (1 : ZMod P.n))
-    (fun k => Int.sign ((P.vert (k + 1) - q).1)) (fun k => Int.sign ((P.vert k - q).1)) (fun _ => rfl)
 
 /-- A finite zero-sum of integers with a nonzero term has both a strictly positive and
 a strictly negative term. (Applied to the `dₖ`: gives a `+1` and a `−1` sign.) -/
@@ -2231,14 +2014,6 @@ lemma edgeWind_antisymm (a b q : ℝ × ℝ) :
   simp only [LatticePolygon.edgeWind, hc]
   split_ifs <;> first | omega | (exfalso; simp_all <;> linarith)
 
-/-- A degenerate edge (both endpoints equal) contributes nothing to the winding. -/
-lemma edgeWind_self (a q : ℝ × ℝ) : LatticePolygon.edgeWind a a q = 0 := by
-  unfold LatticePolygon.edgeWind
-  split_ifs with h1 h2
-  · exact absurd h1.2.1 (not_lt.2 h1.1)
-  · exact absurd h2.2.1 (not_lt.2 h2.1)
-  · rfl
-
 /-- **Rotation invariance of winding.** Cyclically relabeling the vertices (start at `+c`)
 leaves the winding unchanged — the sum over `ZMod n` is shift-invariant. Lets ear-clipping
 place the ear at vertex `0` without loss of generality. -/
@@ -2257,11 +2032,6 @@ lemma interiorRegion_rotate (P : LatticePolygon) (c : ZMod P.n) :
   ext q
   simp only [LatticePolygon.interiorRegion, Set.mem_setOf_eq]
   rw [winding_rotate]
-
-/-- The enclosed area is rotation-invariant. -/
-lemma area_rotate (P : LatticePolygon) (c : ZMod P.n) :
-    (⟨P.n, P.pos, fun i => P.vert (i + c)⟩ : LatticePolygon).area = P.area := by
-  rw [LatticePolygon.area, LatticePolygon.area, interiorRegion_rotate]
 
 /-- Rotated edge `i` is the original edge `i + c`. -/
 lemma edgeSeg_rotate (P : LatticePolygon) (c i : ZMod P.n) :
@@ -2749,10 +2519,6 @@ lemma rotateP_I (P : LatticePolygon) (c : ZMod P.n) : (rotateP P c).I = P.I := I
 
 lemma rotateP_B (P : LatticePolygon) (c : ZMod P.n) : (rotateP P c).B = P.B := B_rotate P c
 
-/-- Rotated edge `i` is the original edge `i + c`. -/
-lemma rotateP_edgeSeg (P : LatticePolygon) (c i : ZMod P.n) :
-    (rotateP P c).edgeSeg i = P.edgeSeg (i + c) := edgeSeg_rotate P c i
-
 /-- Rotation preserves positive orientation, since the shoelace is rotation-invariant. -/
 lemma positivelyOriented_rotateP (P : LatticePolygon) (c : ZMod P.n)
     (hO : P.PositivelyOriented) : (rotateP P c).PositivelyOriented := by
@@ -3084,34 +2850,5 @@ lemma winding_mem_zero_one_of_count (P : LatticePolygon) (x y : ℝ)
         edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = 1).card) :
     P.winding (x, y) = 0 ∨ P.winding (x, y) = 1 := by
   rw [winding_eq_upCount_sub_downCount]; omega
-
-/-- **A.e. reduction.** If the interleaving count inequalities hold at every
-non-vertex height (the generic heights, whose complement is null by
-`vertexHeights_finite`), then `winding ∈ {0,1}` almost everywhere. This is the
-exact bridge from the geometric interleaving to the measure-theoretic `{0,1}`
-statement consumed downstream (the non-generic heights form a null set). -/
-lemma winding_ae_mem_zero_one_of_count (P : LatticePolygon)
-    (hcount : ∀ x y : ℝ, (∀ i, (toReal (P.vert i)).2 ≠ y) →
-      ((Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = 1).card
-        ≤ (Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = -1).card + 1) ∧
-      ((Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = -1).card
-        ≤ (Finset.univ.filter fun i =>
-          edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) (x, y) = 1).card)) :
-    ∀ᵐ q : ℝ × ℝ, P.winding q = 0 ∨ P.winding q = 1 := by
-  have hnull : MeasureTheory.volume {q : ℝ × ℝ | ∃ i, (toReal (P.vert i)).2 = q.2} = 0 :=
-    Pick.vertexHeight_lines_null P
-  rw [MeasureTheory.ae_iff]
-  refine MeasureTheory.measure_mono_null ?_ hnull
-  intro q hq
-  by_contra hgen
-  simp only [Set.mem_setOf_eq, not_exists] at hgen
-  apply hq
-  have hgen' : ∀ i, (toReal (P.vert i)).2 ≠ q.2 := fun i => hgen i
-  obtain ⟨hu, hd⟩ := hcount q.1 q.2 hgen'
-  have := winding_mem_zero_one_of_count P q.1 q.2 hu hd
-  simpa using this
 
 end Pick
