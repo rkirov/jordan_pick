@@ -102,6 +102,11 @@ Clean-room with respect to proofs, with prior art credited explicitly:
   (`AddCircle.isCoveringMap_coe` + `liftPath_apply_one_eq_of_homotopicRel`), so
   no external `π₁(S¹) ≅ ℤ` development is needed.
 
+## License
+
+[Apache-2.0](LICENSE). Machine-readable project metadata (sources, status,
+axiom surface, automation) lives in [`formalization.yaml`](formalization.yaml).
+
 ## References
 
 **Targets and tooling**

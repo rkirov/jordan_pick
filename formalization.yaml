@@ -1,0 +1,192 @@
+# formalization.yaml (v0.3): repo-root metadata for formalization projects.
+# Schema: https://github.com/mathlib-initiative/formalization.yaml
+version: "v0.3"
+
+project:
+  name: "jordan_pick — Pick's theorem + the Jordan curve theorem (Lean 4 / Mathlib)"
+  authors:
+    - "Rado Kirov"                      # human director; the formalization itself is agent-produced — see `automation`
+  license: "Apache-2.0"
+
+sources:
+  - title: "lean-eval Pick problem (LeanEval/Geometry/PicksTheorem.lean)"
+    authors: ["Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/pick/ — the exact target statement, proved verbatim in EvalBridgeMain.lean"
+    type: "specification / eval problem"
+    license: "Apache-2.0"
+    author_contacted: "no"
+    prior_work: ""
+  - title: "lean-eval Jordan curve problem (jordan_curve)"
+    authors: ["Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/jordan_curve/ — the exact target statement, proved verbatim in JordanPick/JordanCurve.lean"
+    type: "specification / eval problem"
+    license: "Apache-2.0"
+    author_contacted: "no"
+    prior_work: ""
+  - title: "Formalizing Pick's Theorem, efficiently"
+    authors: ["Michael Eisermann", "Roland Zumkeller", "et al."]
+    id: "arXiv:2603.23095 (2026)"
+    type: "paper / prior Lean formalization (partial)"
+    license: ""
+    author_contacted: "no"
+    prior_work: >
+      Clean-room with respect to proofs. Their development proves the algebraic count identity but
+      leaves the geometric half (a winding/Umlaufsatz argument) unproved (sorry). The count side
+      here (latWeight / latWeightSum in Weight.lean) follows their discrete-angle-weight device
+      (dang / Welp); the per-edge identity is proved independently (a column decomposition rather
+      than their four-box partition + reflection involution) — see the Weight.lean header.
+  - title: "The Jordan curve theorem via the Brouwer fixed point theorem"
+    authors: ["Ryuji Maehara"]
+    id: "Amer. Math. Monthly 91 (1984), 641-643; doi:10.2307/2323369"
+    type: "paper"
+    license: ""
+    author_contacted: "n/a"
+    prior_work: ""
+  - title: "Polygons Have Ears"
+    authors: ["Gary H. Meisters"]
+    id: "Amer. Math. Monthly 82(6) (1975), 648-651; doi:10.2307/2319703"
+    type: "paper (the two-ears theorem behind the ear-clipping reduction)"
+    license: ""
+    author_contacted: "n/a"
+    prior_work: ""
+  - title: "A formal proof of Pick's theorem"
+    authors: ["John Harrison"]
+    id: "Math. Struct. Comput. Sci. (2011)"
+    type: "prior formalization (HOL Light)"
+    license: ""
+    author_contacted: "n/a"
+    prior_work: "consulted as prior art only; no code ported"
+  - title: "Formalizing Pick's Theorem in Isabelle/HOL"
+    authors: ["Sage Binder", "Katherine Kosaian"]
+    id: "CICM 2024; arXiv:2405.01793; AFP entry Picks_Theorem"
+    type: "prior formalization (Isabelle/HOL)"
+    license: ""
+    author_contacted: "n/a"
+    prior_work: "consulted as prior art only; no code ported"
+
+status:
+  scope: >
+    COMPLETE (2026-07-01). Pick's theorem (Freek's Formalizing 100 Theorems #92) for simple lattice
+    polygons with area as genuine Lebesgue measure (area = I + B/2 − 1), the polygonal Jordan curve
+    theorem (winding ∈ {0,1}, complement has at most two components), the full continuous Jordan
+    curve theorem (a continuous injection S¹ → ℝ² has a complement with exactly two connected
+    components), and the 2-D Brouwer fixed point theorem — all missing from Mathlib. Both lean-eval
+    problems (pick, jordan_curve) are proved in their exact harness statements against the harness's
+    pinned toolchain (Lean v4.32.0-rc1, Mathlib 360da6f).
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms:                               # the complete axiom surface of every declaration in the repo
+    - "propext"
+    - "Classical.choice"
+    - "Quot.sound"
+  main_results:
+    - declaration: "LeanEval.Geometry.PicksTheorem.pick"
+      file: "JordanPick/PicksTheorem/EvalBridgeMain.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "submission/pick/config.json"
+      literature_dependencies: []
+    - declaration: "JordanCurve.jordan_curve"
+      file: "JordanPick/JordanCurve.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "submission/jordan_curve/config.json"
+      literature_dependencies: []
+    - declaration: "Pick.pick"
+      file: "JordanPick/PicksTheorem/Pick.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+    - declaration: "Pick.LatticePolygon.compl_boundary_atMost_two"
+      file: "JordanPick/PicksTheorem/Pick.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+    - declaration: "JordanCurve.Brouwer.brouwerFPT"
+      file: "JordanPick/JordanCurve/Brouwer.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+
+automation:
+  methods:
+    - method: "autonomous"              # agentic formalization: high-level human prompts; Claude Code drives end-to-end
+      models: ["claude-fable-5", "claude-opus-4-8"]
+      framework: "Claude Code"
+      tool_setup: >
+        Claude Code with background sub-agent orchestration; soundness gate: every claimed close is
+        independently kernel-verified via `#print axioms` (sorryAx must be absent) before being
+        trusted; each commit is `lake build`-green. Heartbeat/performance passes are profiler-driven
+        (`#count_heartbeats` with Elab.async off, `set_option diagnostics true`).
+      cost:
+        wall_time: "assembled repo history 2026-06-26 to 2026-07-02 (development predates the assembled history)"
+        spend_usd: "subscription-based usage, $100/month subscription"
+        hardware: "single 4-core / ~8 GB laptop; API-only model access"
+      prompting_notes: >
+        Steered with terse high-level directives; discipline encoded in project memory: connect
+        already-proven pieces bottom-up, verify every agent commit by kernel axiom checks, flag
+        (don't fake) false-as-stated statements.
+  spend_usd: "subscription-based usage"
+  notes: >
+    ~22.6k lines of Lean code across 24 files, sorry-free, zero custom axioms, zero compiler
+    warnings, and no maxHeartbeats overrides (every proof fits the default 200k budget).
+
+fidelity:
+  divergences: >
+    Area in Pick's theorem is the genuine Lebesgue measure of the winding interior — NOT
+    shoelace-as-definition; the shoelace identity is proved (Green: area = ∫∫ winding = shoelace).
+    The spine is the winding number as a per-edge signed ray-crossing sum (pure integer arithmetic —
+    no transcendental angles, no general topology); the polygonal JCT follows a crossing-alternation
+    route; the area identity reduces to triangles by ear-clipping induction (Meisters two-ears via a
+    deepest-contained-vertex diagonal split). The continuous JCT is a separate development
+    (independent of the polygonal one): Maehara's Brouwer-based proof, with Brouwer built from the
+    ground up (covering-space path lifting for the circle, no-retraction, ray-retraction on the
+    disk, nearest-point projection for convex compacts). The lean-eval bridge matches the harness
+    statements verbatim (Mathlib Polygon, topological interior, no orientation hypothesis).
+
+review:
+  status: "self-assessed"
+  reviewers: []
+  notes: >
+    Verification is by Lean's kernel: `#print axioms` on every main result (all report
+    [propext, Classical.choice, Quot.sound], no sorryAx), the full `lake build` (green, ~8.6k jobs,
+    zero warnings), and the repo-wide zero-sorry sweep. No external peer review yet; expert review
+    is welcome.
+
+alignment:
+  namespace: "Pick (Pick's theorem + polygonal JCT), JordanCurve (continuous JCT + Brouwer), LeanEval.Geometry.PicksTheorem (eval bridge)"
+  statements:
+    - source: "lean-eval pick — https://lean-lang.org/eval/problems/pick/"
+      lean: "LeanEval.Geometry.PicksTheorem.pick"
+      module: "JordanPick/PicksTheorem/EvalBridgeMain.lean"
+      status: "proved"
+      note: "exact harness statement (Mathlib Polygon, topological interior, no orientation hypothesis), bridged to Pick.pick"
+    - source: "lean-eval jordan_curve — https://lean-lang.org/eval/problems/jordan_curve/"
+      lean: "JordanCurve.jordan_curve"
+      module: "JordanPick/JordanCurve.lean"
+      status: "proved"
+      note: "exact harness statement: Nat.card (ConnectedComponents (range r)ᶜ) = 2 for a continuous injection r : sphere 0 1 → ℝ²"
+    - source: "Freek Wiedijk, Formalizing 100 Theorems #92 (Pick's theorem)"
+      lean: "Pick.pick"
+      module: "JordanPick/PicksTheorem/Pick.lean"
+      status: "proved"
+      note: "area = I + B/2 − 1 with area the Lebesgue measure of the winding interior"
+    - source: "Polygonal Jordan curve theorem"
+      lean: "Pick.LatticePolygon.compl_boundary_atMost_two"
+      module: "JordanPick/PicksTheorem/Pick.lean"
+      status: "proved"
+      note: "complement of a simple polygon's boundary has at most two components; winding locally constant ∈ {0,1}"
+    - source: "Brouwer fixed point theorem (2-D, convex compact)"
+      lean: "JordanCurve.Brouwer.brouwerFPT"
+      module: "JordanPick/JordanCurve/Brouwer.lean"
+      status: "proved"
+      note: "self-contained against Mathlib: covering-space path lifting → no-retraction → disk → convex compact"
+
+acknowledgements: >
+  Built on Mathlib (Lean 4, pin 360da6f). The count-side discrete-angle-weight device follows
+  Eisermann & Zumkeller (arXiv:2603.23095); everything else is clean-room, with prior
+  formalizations (Harrison HOL Light 2011, Binder-Kosaian Isabelle/HOL 2024) credited as prior
+  art. Eval problem statements by the Lean FRO (leanprover/lean-eval).

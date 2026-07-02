@@ -22,9 +22,9 @@ Mathlib — PR #36770 is landing Brouwer — or built separately). The reduction
   `l,m,p,q` on a vertical segment, show `ℝ²∖J` has exactly one bounded component;
   with the unique unbounded component that gives exactly two.
 
-This file is **not** imported by the top-level `JordanPick` module (it is a
-work-in-progress with `sorry`s); build it explicitly with
-`lake build JordanPick.JordanCurve`.
+This file is imported by the top-level `JordanPick` module and is complete:
+sorry-free, with `#print axioms JordanCurve.jordan_curve` reporting only
+`[propext, Classical.choice, Quot.sound]`.
 -/
 
 namespace JordanCurve
