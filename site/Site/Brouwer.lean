@@ -1,4 +1,5 @@
 import VersoManual
+import Site.Figures
 
 open Verso.Genre Manual
 
@@ -28,3 +29,12 @@ The whole chain is original to this repository and self-contained against Mathli
 * No retraction of the disk onto its boundary (from the circle non-nullhomotopy).
 * Brouwer on the disk, via a ray-retraction argument.
 * The general convex-compact case, via nearest-point projection.
+
+The disk case is the classical ray retraction: a fixed-point-free `f` sends
+each `x` along the ray from `f x` through `x` to a boundary point `r x`,
+producing a retraction of the disk onto the circle — which the
+non-nullhomotopy of the once-around loop forbids:
+
+```diagram (cssWidth := "16em")
+Site.Figures.brouwerFigure
+```

@@ -1,4 +1,5 @@
 import VersoManual
+import Site.Figures
 
 open Verso.Genre Manual
 
@@ -26,6 +27,25 @@ the **Brouwer fixed point theorem**. The two supporting lemmas are a crossing le
 for transversal paths in a rectangle, and the fact that each component has the curve
 as its boundary. A farthest-pair normalization and the `l, m, p, q, z₀`
 construction then pin down exactly one bounded component, giving the count of two.
+
+After normalizing the farthest pair to `a = (−1,0)`, `b = (1,0)`, the curve
+splits into two arcs `Jₙ` (blue) and `Jₛ` (red) inside the rectangle
+`[−1,1] × [−2,2]`. The vertical axis meets them at the labelled points, and the
+midpoint `z₀` of `p` and `m` lies off the curve. If its component were
+unbounded, an escaping path would exit the rectangle at some `w`, and the green
+concatenation `s → w → z₀ → m → l → n` would join the bottom wall to the top
+wall while *missing* `Jₛ` — contradicting the crossing lemma:
+
+```diagram (cssWidth := "24em")
+Site.Figures.maeharaFigure
+```
+
+The **crossing lemma** — two continuous paths crossing the rectangle
+transversally must meet — is exactly where Brouwer enters:
+
+```diagram (cssWidth := "18em")
+Site.Figures.crossingFigure
+```
 
 The Brouwer chain underneath is built from the ground up against Mathlib (see the
 Brouwer fixed point theorem page).
