@@ -93,7 +93,11 @@ Submission workspace: `submission/rado_riemannSurface/`
 | `Rado/Complex/Dirichlet.lean` | step 1 packaging: `poissonExtension`, MVP ⟺ harmonic, comparison | ✅ |
 | `Rado/Complex/PlanarConnected.lean` | ball minus two closed disks is connected (config: unit disks at `±4` in `B(0,8)`) | ✅ |
 | `Rado/Surface/Charts.lean` | holomorphic transitions from C¹; identity theorem; instances | ✅ |
-| `Rado/Surface/Core.lean` | steps 3–6 + 8 (surface harmonic/subharmonic, replacement, Perron, barriers, conjugate germs, étale space, assembly) — split into modules deferred | ✅ |
+| `Rado/Surface/Harmonic.lean` | step 3: chartwise sub/harmonic functions; `SubMeanLocalOn` local-to-global bridge | ✅ |
+| `Rado/Surface/Perron.lean` | step 4: harmonic replacement (T2 counterexample recorded), Harnack, Perron's principle | ✅ |
+| `Rado/Surface/Barriers.lean` | step 5: two-disk configuration, log-barriers, witness values | ✅ |
+| `Rado/Surface/Germs.lean` | step 6: conjugates (`Re F = u`), rigidity, étale space, discrete-fiber evaluation | ✅ |
+| `Rado/Surface/Assembly.lean` | step 8: Poincaré–Volterra application, descent, final cover | ✅ |
 | `Rado/Main.lean` | the exact eval statement | ✅ |
 
 Noteworthy proof facts discovered during formalization:

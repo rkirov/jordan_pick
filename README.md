@@ -24,7 +24,7 @@ All proved **sorry-free**; `#print axioms` shows only the three standard axioms
 | **Radó's theorem** | `rado_riemannSurface` (`Rado/Main.lean`) | the exact statement of <https://lean-lang.org/eval/problems/rado_riemannSurface/>: a connected Hausdorff `ChartedSpace ℂ` with `IsManifold 𝓘(ℂ) 1` is `SecondCountableTopology` |
 | **Poincaré–Volterra lemma** | `Rado.poincare_volterra` (`Rado/Topology/PoincareVolterra.lean`) | a connected Hausdorff, locally compact, locally connected, locally second-countable space with a continuous discrete-fiber map to a second-countable Hausdorff space is second countable |
 | **Dirichlet problem on a disk** | `Rado.exists_harmonic_extension` (`Rado/Complex/Poisson.lean`) | continuous boundary data on a circle extends continuously to the closed disk, harmonically inside |
-| **Perron's principle** | `Rado.IsPerronFamily.surfaceHarmonicOn_perronSup` (`Rado/Surface/Core.lean`) | the upper envelope of a Perron family on a Riemann surface is harmonic |
+| **Perron's principle** | `Rado.IsPerronFamily.surfaceHarmonicOn_perronSup` (`Rado/Surface/Perron.lean`) | the upper envelope of a Perron family on a Riemann surface is harmonic |
 
 The **Radó development** (`Rado/`, separate `lean_lib`) is a distinct project
 from Pick/Jordan: Perron's method on an explicit two-disk configuration

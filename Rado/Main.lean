@@ -1,4 +1,4 @@
-import Rado.Surface.Core
+import Rado.Surface.Assembly
 
 /-!
 # Radó's theorem: Riemann surfaces are second countable

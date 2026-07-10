@@ -5,5 +5,9 @@ import Rado.Complex.Poisson
 import Rado.Complex.Dirichlet
 import Rado.Complex.PlanarConnected
 import Rado.Surface.Charts
-import Rado.Surface.Core
+import Rado.Surface.Harmonic
+import Rado.Surface.Perron
+import Rado.Surface.Barriers
+import Rado.Surface.Germs
+import Rado.Surface.Assembly
 import Rado.Main

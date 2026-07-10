@@ -1,4 +1,4 @@
-import Submission.Surface.Core
+import Submission.Surface.Assembly
 
 /-!
 # lean-eval `rado_riemannSurface` — solver submission
@@ -7,7 +7,7 @@ import Submission.Surface.Core
 
 The full, self-contained proof lives in the re-rooted development under
 `Submission/`, culminating in `Rado.secondCountableTopology_of_riemannSurface`
-(`Submission/Surface/Core.lean`).
+(`Submission/Surface/Assembly.lean`).
 Route: Perron's method on an explicit two-disk configuration (Schwarz/Poisson
 solution of the Dirichlet problem, chartwise subharmonic functions, explicit
 log-barriers) produces a nonconstant harmonic function; the étale space of its

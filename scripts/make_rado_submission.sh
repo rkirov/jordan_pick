@@ -11,8 +11,7 @@
 #       Topology/SecondCountable.lean   re-rooted: module prefix `Rado.` -> `Submission.`
 #       Topology/PoincareVolterra.lean  (the Lean *namespace* `Rado` inside the files
 #       Complex/{SubMean,Poisson,Dirichlet,PlanarConnected}.lean   is untouched)
-#       Surface/{Charts,Core}.lean
-#       Main.lean
+#       Surface/{Charts,Harmonic,Perron,Barriers,Germs,Assembly}.lean
 #
 # The trusted workspace files (Challenge.lean, Solution.lean, config.json,
 # holes.json, WorkspaceTest.lean, README.md, lakefile.toml, lean-toolchain) come
@@ -62,17 +61,18 @@ rewrite() { sed -e 's/^import Rado\./import Submission./'; }
 # NOTE: Rado/Main.lean is deliberately NOT bundled — it declares the theorem at
 # root level under the exact eval name, which would collide with the trusted
 # Solution.lean in the same workspace. The shim below proves the Submission-
-# namespace statement directly from the assembly theorem in Surface/Core.
+# namespace statement directly from the assembly theorem in Surface/Assembly.
 for f in Topology/SecondCountable Topology/PoincareVolterra \
          Complex/SubMean Complex/Poisson Complex/Dirichlet Complex/PlanarConnected \
-         Surface/Charts Surface/Core; do
+         Surface/Charts Surface/Harmonic Surface/Perron Surface/Barriers \
+         Surface/Germs Surface/Assembly; do
   rewrite < "$SRC/$f.lean" > "$LIB/$f.lean"
 done
 
 # The Submission.lean shim: restate the benchmark theorem in the `Submission`
 # namespace (matching Challenge.lean exactly) and delegate to the proven theorem.
 cat > "$OUT/Submission.lean" <<'SHIM'
-import Submission.Surface.Core
+import Submission.Surface.Assembly
 
 /-!
 # lean-eval `rado_riemannSurface` — solver submission
@@ -81,7 +81,7 @@ import Submission.Surface.Core
 
 The full, self-contained proof lives in the re-rooted development under
 `Submission/`, culminating in `Rado.secondCountableTopology_of_riemannSurface`
-(`Submission/Surface/Core.lean`).
+(`Submission/Surface/Assembly.lean`).
 Route: Perron's method on an explicit two-disk configuration (Schwarz/Poisson
 solution of the Dirichlet problem, chartwise subharmonic functions, explicit
 log-barriers) produces a nonconstant harmonic function; the étale space of its
