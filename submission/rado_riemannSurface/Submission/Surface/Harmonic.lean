@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Submission.Complex.Dirichlet
 import Submission.Surface.Charts
 
@@ -15,7 +20,6 @@ comparison with the Poisson extension.
 
 open Set Topology Metric MeasureTheory InnerProductSpace Complex Filter
 
-set_option linter.unusedSectionVars false
 set_option autoImplicit false
 
 namespace Rado
@@ -27,23 +31,28 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 def chartImage (e : OpenPartialHomeomorph X ℂ) (s : Set X) : Set ℂ :=
   e '' (s ∩ e.source)
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem isOpen_chartImage (e : OpenPartialHomeomorph X ℂ) {s : Set X} (hs : IsOpen s) :
     IsOpen (chartImage e s) :=
   e.isOpen_image_of_subset_source (hs.inter e.open_source) inter_subset_right
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem chartImage_subset_target (e : OpenPartialHomeomorph X ℂ) (s : Set X) :
-    chartImage e s ⊆ e.target := fun _ ⟨_, hx, hex⟩ => hex ▸ e.map_source hx.2
+    chartImage e s ⊆ e.target := fun _ ⟨_, hx, hex⟩ ↦ hex ▸ e.map_source hx.2
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem mem_chartImage_of_mem {e : OpenPartialHomeomorph X ℂ} {s : Set X} {x : X}
     (hx : x ∈ s) (hxe : x ∈ e.source) : e x ∈ chartImage e s :=
   ⟨x, ⟨hx, hxe⟩, rfl⟩
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem mapsTo_symm_chartImage {e : OpenPartialHomeomorph X ℂ} {s : Set X} :
     MapsTo e.symm (chartImage e s) s := by
   rintro w ⟨x, ⟨hxs, hxe⟩, rfl⟩
   rw [e.left_inv hxe]
   exact hxs
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- A continuous function on `s` reads as continuous through any chart. -/
 theorem continuousOn_comp_chart_symm {g : X → ℝ} (e : OpenPartialHomeomorph X ℂ) {s : Set X}
     (hg : ContinuousOn g s) : ContinuousOn (g ∘ e.symm) (chartImage e s) :=
@@ -65,7 +74,7 @@ namespace SurfaceHarmonicOn
 
 variable {u v : X → ℝ} {s : Set X}
 
-theorem continuousOn (hu : SurfaceHarmonicOn u s) (_hs : IsOpen s) : ContinuousOn u s := by
+theorem continuousOn (hu : SurfaceHarmonicOn u s) : ContinuousOn u s := by
   intro x hx
   have h1 : ContinuousAt (u ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) :=
     (hu _ (chartAt_mem_riemannAtlas x) _
@@ -76,13 +85,15 @@ theorem continuousOn (hu : SurfaceHarmonicOn u s) (_hs : IsOpen s) : ContinuousO
   filter_upwards [(chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x)] with z hz
   simp [(chartAt ℂ x).left_inv hz]
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem mono (hu : SurfaceHarmonicOn u s) {t : Set X} (hts : t ⊆ s) :
-    SurfaceHarmonicOn u t := fun e he z hz =>
+    SurfaceHarmonicOn u t := fun e he z hz ↦
   hu e he z (image_mono (inter_subset_inter_left _ hts) hz)
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- To be harmonic it suffices to be harmonic in one maximal-atlas chart around
 each point (chart invariance, via `HarmonicOnNhd.comp_analytic`). -/
-theorem of_chartwise (_hs : IsOpen s)
+theorem of_chartwise
     (h : ∀ x ∈ s, ∃ e ∈ riemannAtlas X, x ∈ e.source ∧ HarmonicAt (u ∘ e.symm) (e x)) :
     SurfaceHarmonicOn u s := by
   rintro e' he' z ⟨x, ⟨hxs, hxe'⟩, rfl⟩
@@ -108,22 +119,23 @@ theorem of_chartwise (_hs : IsOpen s)
   obtain ⟨δ, hδpos, hδball⟩ := Metric.nhds_basis_ball.mem_iff.mp hnhds
   -- harmonicity of the composition on that ball
   have hcomp : HarmonicOnNhd ((u ∘ e.symm) ∘ (e ∘ e'.symm)) (ball (e' x) δ) := by
-    refine HarmonicOnNhd.comp_analytic (fun y hy => hball y hy) isOpen_ball
-      isOpen_ball (fun w hw => (hδball hw).2.2) fun w hw => (hδball hw).2.1
+    refine HarmonicOnNhd.comp_analytic (fun y hy ↦ hball y hy) isOpen_ball
+      (fun w hw ↦ (hδball hw).2.2) fun w hw ↦ (hδball hw).2.1
   -- transfer along the congruence
   have hcongr : u ∘ e'.symm =ᶠ[𝓝 (e' x)] (u ∘ e.symm) ∘ (e ∘ e'.symm) := by
     filter_upwards [hWopen.mem_nhds hxW] with w hw
     simp [Function.comp, e.left_inv hw.2]
   exact (harmonicAt_congr_nhds hcongr).mpr (hcomp _ (mem_ball_self hδpos))
 
-theorem surfaceSubharmonicOn (hu : SurfaceHarmonicOn u s) (hs : IsOpen s) :
+theorem surfaceSubharmonicOn (hu : SurfaceHarmonicOn u s) :
     SurfaceSubharmonicOn u s where
-  continuousOn := hu.continuousOn hs
+  continuousOn := hu.continuousOn
   subMeanOn e he :=
-    (HarmonicOnNhd.meanEqOn (isOpen_chartImage e hs) (hu e he)).subMeanOn
+    (HarmonicOnNhd.meanEqOn (hu e he)).subMeanOn
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem neg (hu : SurfaceHarmonicOn u s) : SurfaceHarmonicOn (-u) s :=
-  fun e he z hz => (hu e he z hz).neg
+  fun e he z hz ↦ (hu e he z hz).neg
 
 end SurfaceHarmonicOn
 
@@ -131,13 +143,15 @@ namespace SurfaceSubharmonicOn
 
 variable {g g₁ g₂ : X → ℝ} {s : Set X}
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem mono (hg : SurfaceSubharmonicOn g s) {t : Set X} (hts : t ⊆ s) :
     SurfaceSubharmonicOn g t where
   continuousOn := hg.continuousOn.mono hts
   subMeanOn e he := (hg.subMeanOn e he).mono (image_mono (inter_subset_inter_left _ hts))
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem max (h₁ : SurfaceSubharmonicOn g₁ s) (h₂ : SurfaceSubharmonicOn g₂ s) :
-    SurfaceSubharmonicOn (fun x => Max.max (g₁ x) (g₂ x)) s where
+    SurfaceSubharmonicOn (fun x ↦ Max.max (g₁ x) (g₂ x)) s where
   continuousOn := ContinuousOn.sup h₁.continuousOn h₂.continuousOn
   subMeanOn e he := (h₁.subMeanOn e he).max (h₂.subMeanOn e he)
 
@@ -162,7 +176,7 @@ structure SubMeanLocalOn (g : ℂ → ℝ) (s : Set ℂ) : Prop where
 
 theorem SubMeanLocalOn.mono {g : ℂ → ℝ} {s t : Set ℂ} (hg : SubMeanLocalOn g s) (hts : t ⊆ s) :
     SubMeanLocalOn g t :=
-  ⟨hg.continuousOn.mono hts, fun z hz => hg.submean_small z (hts hz)⟩
+  ⟨hg.continuousOn.mono hts, fun z hz ↦ hg.submean_small z (hts hz)⟩
 
 /-- If a continuous function is at most `M` on a sphere of positive radius while its
 circle average is at least `M`, then it equals `M` everywhere on the sphere. -/
@@ -182,13 +196,13 @@ private lemma eqOn_sphere_of_le_of_circleAverage_ge {g : ℂ → ℝ} {a : ℂ} 
     rw [← self_sub_toIocDiv_zsmul Real.two_pi_pos 0 θ, (periodic_circleMap a r).sub_zsmul_eq]
     exact hθ
   -- strict inequality of interval integrals
-  have hcont : Continuous fun θ => g (circleMap a r θ) :=
-    hc.comp_continuous (continuous_circleMap a r) fun θ => circleMap_mem_sphere a hr.le θ
+  have hcont : Continuous fun θ ↦ g (circleMap a r θ) :=
+    hc.comp_continuous (continuous_circleMap a r) fun θ ↦ circleMap_mem_sphere a hr.le θ
   have hint : (∫ θ in (0:ℝ)..2 * Real.pi, g (circleMap a r θ))
       < ∫ _ in (0:ℝ)..2 * Real.pi, M := by
     refine intervalIntegral.integral_lt_integral_of_continuousOn_of_le_of_exists_lt
       Real.two_pi_pos hcont.continuousOn continuousOn_const
-      (fun x _ => hle _ (circleMap_mem_sphere a hr.le x)) ?_
+      (fun x _ ↦ hle _ (circleMap_mem_sphere a hr.le x)) ?_
     exact ⟨toIocMod Real.two_pi_pos 0 θ, Set.Ioc_subset_Icc_self hmem, by rw [hθ₀]; exact hzlt⟩
   have hlt : Real.circleAverage g a r < M := by
     rw [Real.circleAverage_def, smul_eq_mul]
@@ -203,7 +217,7 @@ private lemma eqOn_sphere_of_le_of_circleAverage_ge {g : ℂ → ℝ} {a : ℂ} 
 /-- Small circles suffice for the strong maximum principle. -/
 theorem SubMeanLocalOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs : IsOpen s)
     (hsc : IsPreconnected s) (hg : SubMeanLocalOn g s) {x₀ : ℂ} (hx₀ : x₀ ∈ s)
-    (hmax : IsMaxOn g s x₀) : EqOn g (fun _ => g x₀) s := by
+    (hmax : IsMaxOn g s x₀) : EqOn g (fun _ ↦ g x₀) s := by
   set M := g x₀ with hM
   set A : Set ℂ := {x ∈ s | g x = M} with hA
   set B : Set ℂ := {x ∈ s | g x ≠ M} with hB
@@ -214,8 +228,8 @@ theorem SubMeanLocalOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs
     obtain ⟨ε, hε, hballs⟩ := Metric.isOpen_iff.mp hs a has
     obtain ⟨ρ, hρ, hsmall⟩ : ∃ ρ > (0:ℝ), ∀ r ∈ Ioo (0:ℝ) ρ, g a ≤ Real.circleAverage g a r := by
       obtain ⟨u, hu, huss⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp (hg.submean_small a has)
-      exact ⟨u, hu, fun r hr => huss hr⟩
-    refine ⟨min ε ρ, lt_min hε hρ, fun y hy => ?_⟩
+      exact ⟨u, hu, fun r hr ↦ huss hr⟩
+    refine ⟨min ε ρ, lt_min hε hρ, fun y hy ↦ ?_⟩
     have hylt : dist y a < min ε ρ := mem_ball.mp hy
     rcases eq_or_ne y a with rfl | hne
     · exact ⟨has, hga⟩
@@ -223,7 +237,7 @@ theorem SubMeanLocalOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs
       have hcb : closedBall a (dist y a) ⊆ s :=
         (closedBall_subset_ball (hylt.trans_le (min_le_left _ _))).trans hballs
       have hsph : sphere a (dist y a) ⊆ s := sphere_subset_closedBall.trans hcb
-      have h1 : ∀ z ∈ sphere a (dist y a), g z ≤ M := fun z hz => hmax (hsph hz)
+      have h1 : ∀ z ∈ sphere a (dist y a), g z ≤ M := fun z hz ↦ hmax (hsph hz)
       have h2 : M ≤ Real.circleAverage g a (dist y a) := by
         rw [← hga]
         exact hsmall _ ⟨hrpos, hylt.trans_le (min_le_right _ _)⟩
@@ -242,7 +256,7 @@ theorem SubMeanLocalOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs
     rw [Set.disjoint_left]
     rintro x ⟨_, hxM⟩ ⟨_, hxM'⟩
     exact hxM' hxM
-  have hcover : s ⊆ A ∪ B := fun x hx => by
+  have hcover : s ⊆ A ∪ B := fun x hx ↦ by
     by_cases h : g x = M
     · exact Or.inl ⟨hx, h⟩
     · exact Or.inr ⟨hx, h⟩
@@ -265,14 +279,14 @@ theorem SubMeanLocalOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : I
     have hCopen : IsOpen (connectedComponentIn U z) := hU.connectedComponentIn
     have hCU : connectedComponentIn U z ⊆ U := connectedComponentIn_subset U z
     have hzC : z ∈ connectedComponentIn U z := mem_connectedComponentIn hzU
-    have hmaxC : IsMaxOn g (connectedComponentIn U z) z := fun y hy =>
+    have hmaxC : IsMaxOn g (connectedComponentIn U z) z := fun y hy ↦
       hzmax (subset_closure (hCU hy))
-    have heq : EqOn g (fun _ => g z) (connectedComponentIn U z) :=
+    have heq : EqOn g (fun _ ↦ g z) (connectedComponentIn U z) :=
       (hg.mono hCU).eqOn_const_of_isMaxOn hCopen isPreconnected_connectedComponentIn hzC hmaxC
     -- the component has nonempty frontier since it is bounded and nonempty
     have hfr : (frontier (connectedComponentIn U z)).Nonempty := by
       rw [nonempty_frontier_iff]
-      refine ⟨⟨z, hzC⟩, fun huniv => ?_⟩
+      refine ⟨⟨z, hzC⟩, fun huniv ↦ ?_⟩
       have hCb : Bornology.IsBounded (connectedComponentIn U z) := hUb.subset hCU
       rw [huniv] at hCb
       exact NormedSpace.unbounded_univ ℝ ℂ hCb
@@ -287,13 +301,13 @@ theorem SubMeanLocalOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : I
         mem_closure_iff_nhdsWithin_neBot.mp hbC
       have h2 : Filter.Tendsto g (𝓝[connectedComponentIn U z] b) (𝓝 (g z)) :=
         Filter.Tendsto.congr'
-          (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun y hy => (heq hy).symm)
+          (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun y hy ↦ (heq hy).symm)
           tendsto_const_nhds
       exact tendsto_nhds_unique h1 h2
     -- `b` lies on the frontier of `U`
     have hbfr : b ∈ frontier U := by
       rw [hU.frontier_eq]
-      refine ⟨hbU, fun hbU' => ?_⟩
+      refine ⟨hbU, fun hbU' ↦ ?_⟩
       have hCb' : connectedComponentIn U b ∈ 𝓝 b :=
         (hU.connectedComponentIn).mem_nhds (mem_connectedComponentIn hbU')
       obtain ⟨y, hyt, hyC⟩ := mem_closure_iff_nhds.mp hbC _ hCb'
@@ -311,9 +325,9 @@ theorem SubMeanLocalOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : I
 /-- The bridge: on an open set, the sub-mean-value inequality on small circles
 implies it on all circles (compare with the Poisson extension on any legal
 closed disk). -/
-theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ} (_hs : IsOpen s)
+theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ}
     (hg : SubMeanLocalOn g s) : SubMeanOn g s := by
-  refine ⟨hg.continuousOn, fun c R hR hsub => ?_⟩
+  refine ⟨hg.continuousOn, fun c R hR hsub ↦ ?_⟩
   have hgs : ContinuousOn g (sphere c R) :=
     hg.continuousOn.mono (sphere_subset_closedBall.trans hsub)
   have hPc : ContinuousOn (poissonExtension g c R) (closedBall c R) :=
@@ -321,9 +335,9 @@ theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ} (_hs : IsOpen s
   have hPh : HarmonicOnNhd (poissonExtension g c R) (ball c R) :=
     poissonExtension_harmonicOnNhd hR hgs
   have hPm : MeanEqOn (poissonExtension g c R) (ball c R) :=
-    HarmonicOnNhd.meanEqOn isOpen_ball hPh
+    HarmonicOnNhd.meanEqOn hPh
   -- `g - P` satisfies the small-circle sub-mean inequality on the open ball
-  have hloc : SubMeanLocalOn (fun z => g z - poissonExtension g c R z) (ball c R) := by
+  have hloc : SubMeanLocalOn (fun z ↦ g z - poissonExtension g c R z) (ball c R) := by
     constructor
     · exact (hg.continuousOn.mono (ball_subset_closedBall.trans hsub)).sub
         (hPc.mono ball_subset_closedBall)
@@ -344,11 +358,11 @@ theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ} (_hs : IsOpen s
         (hg.continuousOn.mono hsph_s).circleIntegrable hrpos.le
       have hiP : CircleIntegrable (poissonExtension g c R) z r :=
         (hPc.mono hsph_cb).circleIntegrable hrpos.le
-      have havg : Real.circleAverage (fun w => g w - poissonExtension g c R w) z r
+      have havg : Real.circleAverage (fun w ↦ g w - poissonExtension g c R w) z r
           = Real.circleAverage g z r - Real.circleAverage (poissonExtension g c R) z r :=
         Real.circleAverage_fun_sub hig hiP
       show g z - poissonExtension g c R z
-          ≤ Real.circleAverage (fun w => g w - poissonExtension g c R w) z r
+          ≤ Real.circleAverage (fun w ↦ g w - poissonExtension g c R w) z r
       rw [havg, hPm.mean_eq z r hrpos hr2]
       exact sub_le_sub_right hr1 _
   -- comparison on the closed ball
@@ -375,16 +389,17 @@ theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ} (_hs : IsOpen s
     _ = Real.circleAverage (poissonExtension g c R) c R := hPcirc.symm
     _ = Real.circleAverage g c R := hcongr
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- Subharmonicity is local. -/
-theorem SurfaceSubharmonicOn.of_locally {g : X → ℝ} {s : Set X} (hs : IsOpen s)
+theorem SurfaceSubharmonicOn.of_locally {g : X → ℝ} {s : Set X}
     (h : ∀ x ∈ s, ∃ V, IsOpen V ∧ x ∈ V ∧ V ⊆ s ∧ SurfaceSubharmonicOn g V) :
     SurfaceSubharmonicOn g s := by
   have hcont : ContinuousOn g s := by
     intro x hx
     obtain ⟨V, hVo, hxV, hVs, hgV⟩ := h x hx
     exact (hgV.continuousOn.continuousAt (hVo.mem_nhds hxV)).continuousWithinAt
-  refine ⟨hcont, fun e he => ?_⟩
-  refine SubMeanLocalOn.subMeanOn (isOpen_chartImage e hs) ?_
+  refine ⟨hcont, fun e he ↦ ?_⟩
+  refine SubMeanLocalOn.subMeanOn ?_
   refine ⟨continuousOn_comp_chart_symm e hcont, ?_⟩
   rintro w ⟨x, ⟨hxs, hxe⟩, rfl⟩
   obtain ⟨V, hVo, hxV, hVs, hgV⟩ := h x hxs

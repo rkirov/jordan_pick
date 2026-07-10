@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Submission.Surface.Barriers
 import Submission.Surface.Germs
 import Submission.Topology.PoincareVolterra
@@ -16,7 +21,6 @@ ball (`secondCountableTopology_of_riemannSurface`).
 
 open Set Topology Metric MeasureTheory InnerProductSpace Complex Filter
 
-set_option linter.unusedSectionVars false
 set_option autoImplicit false
 
 namespace Rado
@@ -30,6 +34,7 @@ section Assembly
 
 variable [T2Space X] [ConnectedSpace X]
 
+omit [T2Space X] [ConnectedSpace X] in
 /-- Some maximal-atlas chart has target containing the standard configuration
 ball (affine renormalization of any chart,
 `Rado.affine_trans_mem_riemannAtlas`). -/
@@ -72,7 +77,7 @@ theorem exists_config_chart [Nonempty X] :
 
 /-- Transfer of local second countability to an open subspace. -/
 theorem locally_secondCountable_subtype {Z : Type*} [TopologicalSpace Z] {C : Set Z}
-    (_hC : IsOpen C) (h : ∀ z ∈ C, ∃ U : Set Z, z ∈ U ∧ IsOpen U ∧ SecondCountableTopology U)
+    (h : ∀ z ∈ C, ∃ U : Set Z, z ∈ U ∧ IsOpen U ∧ SecondCountableTopology U)
     (q : C) : ∃ W : Set C, q ∈ W ∧ IsOpen W ∧ SecondCountableTopology W := by
   obtain ⟨U, hqU, hUo, hUsc⟩ := h q.1 q.2
   refine ⟨Subtype.val ⁻¹' U, hqU, hUo.preimage continuous_subtype_val, ?_⟩
@@ -86,13 +91,13 @@ theorem secondCountable_configY {e : OpenPartialHomeomorph X ℂ}
     SecondCountableTopology (configY e) := by
   classical
   set Y : Set X := configY e with hY_def
-  have hYo : IsOpen Y := isOpen_configY he hb
-  have hYc : IsPreconnected Y := (isConnected_configY he hb).isPreconnected
+  have hYo : IsOpen Y := isOpen_configY hb
+  have hYc : IsPreconnected Y := (isConnected_configY hb).isPreconnected
   set u : X → ℝ := perronSup (configFamily e) with hu_def
   have hu : SurfaceHarmonicOn u Y :=
-    (isPerronFamily_configFamily he hb).surfaceHarmonicOn_perronSup hYo
+    (isPerronFamily_configFamily hb).surfaceHarmonicOn_perronSup hYo
   -- the two witness points and nonconstancy of the Perron envelope
-  obtain ⟨hwp, hwm⟩ := witness_mem_configY he hb
+  obtain ⟨hwp, hwm⟩ := witness_mem_configY hb
   have hne : u (e.symm (-4 + (2 : ℂ) ^ ((1 : ℂ) / 4)))
       ≠ u (e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) := by
     have h1 := perronSup_le_witness he hb
@@ -105,8 +110,8 @@ theorem secondCountable_configY {e : OpenPartialHomeomorph X ℂ}
   haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
   haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   haveI : T2Space (ConjEtale u Y) := ConjEtale.t2Space
-  haveI : LocallyCompactSpace (ConjEtale u Y) := ConjEtale.locallyCompactSpace hu hYo
-  haveI : LocallyConnectedSpace (ConjEtale u Y) := ConjEtale.locallyConnectedSpace hu hYo
+  haveI : LocallyCompactSpace (ConjEtale u Y) := ConjEtale.locallyCompactSpace
+  haveI : LocallyConnectedSpace (ConjEtale u Y) := ConjEtale.locallyConnectedSpace
   -- a germ over the witness point and its connected component
   obtain ⟨q₀, hq₀⟩ := ConjEtale.exists_mk hu hYo hwm
   set C : Set (ConjEtale u Y) := connectedComponent q₀ with hC_def
@@ -117,18 +122,18 @@ theorem secondCountable_configY {e : OpenPartialHomeomorph X ℂ}
   -- Poincaré–Volterra for the evaluation on the component
   haveI hCsc : SecondCountableTopology C := by
     refine poincare_volterra
-      (locally_secondCountable_subtype hCopen fun z _ =>
-        ConjEtale.locally_secondCountable hu hYo z)
-      (f := fun q : C => ConjEtale.eval q.1)
-      ((ConjEtale.continuous_eval hu hYo).comp continuous_subtype_val) ?_
+      (locally_secondCountable_subtype fun z _ ↦
+        ConjEtale.locally_secondCountable z)
+      (f := fun q : C ↦ ConjEtale.eval q.1)
+      (ConjEtale.continuous_eval.comp continuous_subtype_val) ?_
     intro q
     obtain ⟨U, hU, hUdisc⟩ := ConjEtale.eval_discrete_fibers hu hYo hYc hwm hwp hne q.1
     refine ⟨Subtype.val ⁻¹' U, continuous_subtype_val.continuousAt.preimage_mem_nhds hU, ?_⟩
     intro w hw heval
     exact Subtype.ext (hUdisc w.1 hw heval)
   -- descend along the restricted projection
-  have hCY : ∀ q : C, ConjEtale.proj q.1 ∈ Y := fun q => q.1.2.1
-  set g : C → Y := fun q => ⟨ConjEtale.proj q.1, hCY q⟩ with hg_def
+  have hCY : ∀ q : C, ConjEtale.proj q.1 ∈ Y := fun q ↦ q.1.2.1
+  set g : C → Y := fun q ↦ ⟨ConjEtale.proj q.1, hCY q⟩ with hg_def
   have hgcont : Continuous g :=
     Continuous.subtype_mk
       ((ConjEtale.continuous_proj).comp continuous_subtype_val) hCY
@@ -158,8 +163,8 @@ theorem secondCountableTopology_of_riemannSurface : SecondCountableTopology X :=
   rcases isEmpty_or_nonempty X with hX | hX
   · -- the empty surface: empty cover
     refine Rado.secondCountableTopology_of_countable_setCover (𝒰 := ∅) countable_empty
-      (fun U hU => absurd hU (notMem_empty U))
-      (fun U hU => absurd hU (notMem_empty U)) ?_
+      (fun U hU ↦ absurd hU (notMem_empty U))
+      (fun U hU ↦ absurd hU (notMem_empty U)) ?_
     rw [sUnion_empty]
     exact (univ_eq_empty_iff.mpr hX).symm
   · obtain ⟨e, he, hb⟩ := exists_config_chart (X := X)
@@ -175,7 +180,7 @@ theorem secondCountableTopology_of_riemannSurface : SecondCountableTopology X :=
       (𝒰 := {configY e, e.symm '' ball (0 : ℂ) 8}) ((countable_singleton _).insert _)
       ?_ ?_ ?_
     · rintro U (rfl | rfl)
-      · exact isOpen_configY he hb
+      · exact isOpen_configY hb
       · exact hopen₂
     · rintro U (rfl | rfl)
       · exact secondCountable_configY he hb

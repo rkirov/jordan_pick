@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Mathlib
 
 /-!
@@ -28,8 +33,8 @@ theorem IsCompact.secondCountableTopology {Z : Type*} [TopologicalSpace Z] {K : 
     (hK : IsCompact K)
     (hloc : ∀ z ∈ K, ∃ U : Set Z, z ∈ U ∧ IsOpen U ∧ SecondCountableTopology U) :
     SecondCountableTopology K := by
-  choose U hzU hUo hUsc using fun z : K => hloc z z.2
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover U hUo fun x hx =>
+  choose U hzU hUo hUsc using fun z : K ↦ hloc z z.2
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover U hUo fun x hx ↦
     mem_iUnion.2 ⟨⟨x, hx⟩, hzU ⟨x, hx⟩⟩
   -- cover the subtype `↥K` by the preimages of the finitely many `U i`, `i ∈ t`
   haveI : ∀ i : t, SecondCountableTopology
@@ -39,8 +44,8 @@ theorem IsCompact.secondCountableTopology {Z : Type*} [TopologicalSpace Z] {K : 
     exact (Topology.IsEmbedding.subtypeVal.restrictPreimage
       (U i.1)).secondCountableTopology
   refine TopologicalSpace.secondCountableTopology_of_countable_cover
-    (U := fun i : t => (Subtype.val ⁻¹' U i.1 : Set K))
-    (fun i => (hUo i.1).preimage continuous_subtype_val) ?_
+    (U := fun i : t ↦ (Subtype.val ⁻¹' U i.1 : Set K))
+    (fun i ↦ (hUo i.1).preimage continuous_subtype_val) ?_
   ext x
   simp only [mem_iUnion, mem_preimage, mem_univ, iff_true]
   obtain ⟨i, hit, hxi⟩ := mem_iUnion₂.1 (ht x.2)
@@ -53,11 +58,11 @@ theorem secondCountableTopology_of_countable_setCover {Z : Type*} [TopologicalSp
     (hsc : ∀ U ∈ 𝒰, SecondCountableTopology U) (hcov : ⋃₀ 𝒰 = univ) :
     SecondCountableTopology Z := by
   haveI : Countable ↥𝒰 := hct.to_subtype
-  haveI : ∀ U : ↥𝒰, SecondCountableTopology U.1 := fun U => hsc U.1 U.2
+  haveI : ∀ U : ↥𝒰, SecondCountableTopology U.1 := fun U ↦ hsc U.1 U.2
   have hcov' : ⋃ U : ↥𝒰, (U : Set Z) = univ := by
     rw [← sUnion_eq_iUnion, hcov]
   exact TopologicalSpace.secondCountableTopology_of_countable_cover
-    (U := fun U : ↥𝒰 => U.1) (fun U => ho U.1 U.2) hcov'
+    (U := fun U : ↥𝒰 ↦ U.1) (fun U ↦ ho U.1 U.2) hcov'
 
 /-- ccc: in a second-countable space, every pairwise-disjoint family of nonempty
 open sets is countable. -/
@@ -66,7 +71,7 @@ theorem countable_of_pairwiseDisjoint_isOpen {Z : Type*} [TopologicalSpace Z]
     (hne : ∀ U ∈ 𝒰, U.Nonempty) (hdisj : 𝒰.PairwiseDisjoint id) :
     𝒰.Countable := by
   obtain ⟨T, hTc, hT𝒰, hTU⟩ := TopologicalSpace.isOpen_sUnion_countable 𝒰 ho
-  refine hTc.mono fun U hU => ?_
+  refine hTc.mono fun U hU ↦ ?_
   obtain ⟨x, hxU⟩ := hne U hU
   have hx : x ∈ ⋃₀ T := by rw [hTU]; exact ⟨U, hU, hxU⟩
   obtain ⟨V, hVT, hxV⟩ := hx
@@ -94,8 +99,8 @@ theorem countable_setOf_reflTransGen {α : Type*} {r : α → α → Prop} (a₀
     | zero => exact countable_singleton a₀
     | succ n ih =>
       rw [reachLevel_succ]
-      exact ih.biUnion fun a _ => h a
-  refine (countable_iUnion hS).mono fun b hb => ?_
+      exact ih.biUnion fun a _ ↦ h a
+  refine (countable_iUnion hS).mono fun b hb ↦ ?_
   simp only [mem_setOf_eq] at hb
   induction hb with
   | refl => exact mem_iUnion.2 ⟨0, mem_singleton a₀⟩

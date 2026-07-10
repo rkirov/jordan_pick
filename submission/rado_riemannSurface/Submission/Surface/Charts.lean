@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Submission.Topology.SecondCountable
 
 /-!
@@ -78,12 +83,11 @@ theorem continuousOn (hF : HolomorphicOn F s) : ContinuousOn F s := by
 
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem mono (hF : HolomorphicOn F s) {t : Set X} (hts : t ⊆ s) : HolomorphicOn F t :=
-  fun x hx => hF x (hts hx)
+  fun x hx ↦ hF x (hts hx)
 
-set_option linter.unusedVariables false in
 /-- Chart independence: a chartwise-holomorphic map reads as analytic through
 every maximal-atlas chart. -/
-theorem analyticAt_comp_symm (hF : HolomorphicOn F s) (hs : IsOpen s)
+theorem analyticAt_comp_symm (hF : HolomorphicOn F s)
     {e : OpenPartialHomeomorph X ℂ} (he : e ∈ riemannAtlas X) {x : X}
     (hx : x ∈ s ∩ e.source) : AnalyticAt ℂ (F ∘ e.symm) (e x) := by
   obtain ⟨hxs, hxe⟩ := hx
@@ -101,14 +105,13 @@ theorem analyticAt_comp_symm (hF : HolomorphicOn F s) (hs : IsOpen s)
     refine ⟨e.map_source hxe, ?_⟩
     rw [mem_preimage, e.left_inv hxe]
     exact mem_chart_source ℂ x
-  refine hcomp.congr (Filter.eventuallyEq_of_mem (hU.mem_nhds hexU) fun z hz => ?_)
+  refine hcomp.congr (Filter.eventuallyEq_of_mem (hU.mem_nhds hexU) fun z hz ↦ ?_)
   simp only [Function.comp_apply, c.left_inv hz.2]
 
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
-set_option linter.unusedVariables false in
 /-- If `F` agrees with a holomorphic map near each point of `s`, it is
 holomorphic on `s`. -/
-theorem congr_of_eventuallyEq (hG : HolomorphicOn G s) (hs : IsOpen s)
+theorem congr_of_eventuallyEq (hG : HolomorphicOn G s)
     (h : ∀ x ∈ s, F =ᶠ[𝓝 x] G) : HolomorphicOn F s := by
   intro x hx
   have htend : Filter.Tendsto (chartAt ℂ x).symm (𝓝 (chartAt ℂ x x)) (𝓝 x) :=
@@ -152,7 +155,7 @@ theorem eqOn_of_eventuallyEq (hF : HolomorphicOn F s) (hG : HolomorphicOn G s)
       have htend : Filter.Tendsto c (𝓝 y) (𝓝 (c y)) := c.continuousAt hcy
       filter_upwards [htend.eventually hev, c.open_source.mem_nhds hcy] with z h1 h2
       simpa only [Function.comp_apply, c.left_inv h2] using h1
-  exact fun y hy => ((key hy).2).eq_of_nhds
+  exact fun y hy ↦ ((key hy).2).eq_of_nhds
 
 end HolomorphicOn
 
@@ -164,8 +167,8 @@ theorem affine_trans_mem_riemannAtlas {e : OpenPartialHomeomorph X ℂ}
     ∃ e' ∈ riemannAtlas X, e'.source = e.source ∧
       ∀ x ∈ e.source, e' x = a * e x + b := by
   set A : OpenPartialHomeomorph ℂ ℂ := (affineHomeomorph a b ha).toOpenPartialHomeomorph with hA
-  have hAcoe : (A : ℂ → ℂ) = fun z => a * z + b := rfl
-  have hAsymm : (A.symm : ℂ → ℂ) = fun z => (z - b) / a := rfl
+  have hAcoe : (A : ℂ → ℂ) = fun z ↦ a * z + b := rfl
+  have hAsymm : (A.symm : ℂ → ℂ) = fun z ↦ (z - b) / a := rfl
   have hAsource : A.source = univ := rfl
   have hAmem : A ∈ contDiffGroupoid 1 𝓘(ℂ, ℂ) := by
     rw [contDiffGroupoid, mem_groupoid_of_pregroupoid]
@@ -179,7 +182,7 @@ theorem affine_trans_mem_riemannAtlas {e : OpenPartialHomeomorph X ℂ}
       f.symm.trans e ∈ contDiffGroupoid 1 𝓘(ℂ, ℂ) :=
     mem_maximalAtlas_iff.1 (IsManifold.mem_maximalAtlas_iff.1 he)
   refine ⟨e.trans A, ?_, ?_, ?_⟩
-  · refine IsManifold.mem_maximalAtlas_iff.2 (mem_maximalAtlas_iff.2 fun f hf => ⟨?_, ?_⟩)
+  · refine IsManifold.mem_maximalAtlas_iff.2 (mem_maximalAtlas_iff.2 fun f hf ↦ ⟨?_, ?_⟩)
     · have hrw : (e.trans A).symm.trans f = A.symm.trans ((e.symm.trans f)) := by
         rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
           OpenPartialHomeomorph.trans_assoc]

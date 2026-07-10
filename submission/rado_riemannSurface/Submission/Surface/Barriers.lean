@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Submission.Surface.Perron
 import Submission.Complex.PlanarConnected
 
@@ -14,7 +19,6 @@ resp. `≤ 1/4` at the witness points `±4 + 2^(1/4)`.
 
 open Set Topology Metric MeasureTheory InnerProductSpace Complex Filter
 
-set_option linter.unusedSectionVars false
 set_option autoImplicit false
 
 namespace Rado
@@ -71,6 +75,7 @@ private theorem two_rpow_quarter_lt_two : (2 : ℝ) ^ ((1 : ℝ) / 4) < 2 := by
 
 variable {e} (he : e ∈ riemannAtlas X) (hb : ball (0 : ℂ) 8 ⊆ e.target)
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- A point of the big ball whose distance to a disk center exceeds the radius
 does not land in the disk preimage. -/
 private theorem notMem_image_of_dist_gt (hb : ball (0 : ℂ) 8 ⊆ e.target) {w : ℂ}
@@ -87,6 +92,7 @@ private theorem notMem_image_of_dist_gt (hb : ball (0 : ℂ) 8 ⊆ e.target) {w 
 
 include he hb
 
+omit he [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- `configY` is open. -/
 theorem isOpen_configY [T2Space X] : IsOpen (configY e) := by
   have hb₁ : closedBall (-4 : ℂ) 1 ⊆ e.target :=
@@ -104,6 +110,7 @@ theorem isOpen_configY [T2Space X] : IsOpen (configY e) := by
   rw [configY, ← Set.compl_eq_univ_sdiff]
   exact hcl.isOpen_compl
 
+omit he [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- Both witness points lie in `configY`. -/
 theorem witness_mem_configY :
     e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4)) ∈ configY e ∧
@@ -156,15 +163,16 @@ theorem witness_mem_configY :
     · exact notMem_image_of_dist_gt hb hw₂ hb₁ hd₃ hmem
     · exact notMem_image_of_dist_gt hb hw₂ hb₂ hd₄ hmem
 
+omit he [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- `configY` is connected when `X` is (clopen argument through the chart,
 using `isPathConnected_ball_diff_two_disks`). -/
 theorem isConnected_configY [ConnectedSpace X] [T2Space X] : IsConnected (configY e) := by
-  have hYo : IsOpen (configY e) := isOpen_configY he hb
+  have hYo : IsOpen (configY e) := isOpen_configY hb
   -- the connected chart core `P`
   set P : Set X := e.symm '' (ball (0 : ℂ) 8 \ (closedBall (-4 : ℂ) 1 ∪ closedBall (4 : ℂ) 1))
     with hP_def
   have hsub8 : ball (0 : ℂ) 8 \ (closedBall (-4 : ℂ) 1 ∪ closedBall (4 : ℂ) 1) ⊆ e.target :=
-    fun w hw => hb hw.1
+    fun w hw ↦ hb hw.1
   have hPY : P ⊆ configY e := by
     rintro x ⟨w, hw, rfl⟩
     refine ⟨mem_univ _, ?_⟩
@@ -199,14 +207,14 @@ theorem isConnected_configY [ConnectedSpace X] [T2Space X] : IsConnected (config
         simp
       rw [h4] at hmem
       norm_num at hmem
-  refine ⟨⟨_, (witness_mem_configY he hb).1⟩, ?_⟩
+  refine ⟨⟨_, (witness_mem_configY hb).1⟩, ?_⟩
   rw [isPreconnected_iff_subset_of_disjoint]
   intro u v hu hv hcov hdisj
   -- the key step, symmetric in `u` and `v`
   have key : ∀ u' v' : Set X, IsOpen u' → IsOpen v' → configY e ⊆ u' ∪ v' →
       configY e ∩ (u' ∩ v') = ∅ → P ⊆ u' → configY e ⊆ u' := by
     intro u' v' hu' hv' hcov' hdisj' hPu
-    have hdisj'' : ∀ z, z ∈ configY e → z ∈ u' → z ∈ v' → False := fun z h1 h2 h3 =>
+    have hdisj'' : ∀ z, z ∈ configY e → z ∈ u' → z ∈ v' → False := fun z h1 h2 h3 ↦
       eq_empty_iff_forall_notMem.mp hdisj' z ⟨h1, h2, h3⟩
     -- `Y ∩ v'` is clopen in `X`
     have hTopen : IsOpen (configY e ∩ v') := hYo.inter hv'
@@ -251,7 +259,7 @@ theorem isConnected_configY [ConnectedSpace X] [T2Space X] : IsConnected (config
       exact hdisj'' p (hPY hp) (hPu hp) hpT.2
   have hPuv : P ⊆ u ∪ v := hPY.trans hcov
   have hPdisj : P ∩ (u ∩ v) = ∅ :=
-    eq_empty_iff_forall_notMem.mpr fun z hz =>
+    eq_empty_iff_forall_notMem.mpr fun z hz ↦
       eq_empty_iff_forall_notMem.mp hdisj z ⟨hPY hz.1, hz.2⟩
   rcases isPreconnected_iff_subset_of_disjoint.mp hPconn u v hu hv hPuv hPdisj with hPu | hPv
   · exact Or.inl (key u v hu hv hcov hdisj hPu)
@@ -259,18 +267,19 @@ theorem isConnected_configY [ConnectedSpace X] [T2Space X] : IsConnected (config
     · rwa [union_comm]
     · rwa [inter_comm v u]
 
+omit he [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The configuration family is a Perron family. -/
 theorem isPerronFamily_configFamily [T2Space X] :
     IsPerronFamily (configFamily e) (configY e) := by
-  have hYo : IsOpen (configY e) := isOpen_configY he hb
+  have hYo : IsOpen (configY e) := isOpen_configY hb
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- nonempty: the zero function belongs to the family
-    refine ⟨fun _ => 0, ⟨continuousOn_const, fun e' _ => SubMeanOn.const⟩, ?_, ?_, ?_⟩
-    · exact fun x _ => ⟨le_rfl, zero_le_one⟩
+    refine ⟨fun _ ↦ 0, ⟨continuousOn_const, fun e' _ ↦ SubMeanOn.const⟩, ?_, ?_, ?_⟩
+    · exact fun x _ ↦ ⟨le_rfl, zero_le_one⟩
     · exact continuousOn_const
-    · exact fun x _ => le_rfl
-  · exact fun g hg => hg.1
-  · exact fun g hg x hx => hg.2.1 x (subset_closure hx)
+    · exact fun x _ ↦ le_rfl
+  · exact fun g hg ↦ hg.1
+  · exact fun g hg x hx ↦ hg.2.1 x (subset_closure hx)
   · -- closed under pairwise max
     rintro g₁ ⟨h₁sub, h₁icc, h₁cont, h₁bd⟩ g₂ ⟨h₂sub, h₂icc, h₂cont, h₂bd⟩
     refine ⟨h₁sub.max h₂sub, ?_, ContinuousOn.sup h₁cont h₂cont, ?_⟩
@@ -286,29 +295,29 @@ theorem isPerronFamily_configFamily [T2Space X] :
     have hgsub' : SurfaceSubharmonicOn (surfaceReplace g e' c' r') (configY e) :=
       surfaceReplace_surfaceSubharmonicOn hYo hgsub hd
     have hicc' : ∀ x ∈ configY e, surfaceReplace g e' c' r' x ∈ Icc (0 : ℝ) 1 :=
-      surfaceReplace_mem_Icc hYo hgsub hd fun x hx => hgicc x (subset_closure hx)
+      surfaceReplace_mem_Icc hgsub hd fun x hx ↦ hgicc x (subset_closure hx)
     refine ⟨hgsub', ?_, ?_, ?_⟩
     · -- values in `[0, 1]` on the closure
       intro x hx
       by_cases hxD : x ∈ e'.symm '' closedBall c' r'
       · exact hicc' x (hDY hxD)
-      · rw [surfaceReplace_eqOn_compl hd hxD]
+      · rw [surfaceReplace_eqOn_compl hxD]
         exact hgicc x hx
     · -- continuity on the closure
       intro x hx
       by_cases hxY : x ∈ configY e
       · exact (hgsub'.continuousOn.continuousAt (hYo.mem_nhds hxY)).continuousWithinAt
-      · have hxD : x ∉ e'.symm '' closedBall c' r' := fun hcon => hxY (hDY hcon)
+      · have hxD : x ∉ e'.symm '' closedBall c' r' := fun hcon ↦ hxY (hDY hcon)
         have hev : surfaceReplace g e' c' r' =ᶠ[𝓝 x] g := by
           filter_upwards [hDclosed.isOpen_compl.mem_nhds hxD] with y hy
-          exact surfaceReplace_eqOn_compl hd hy
+          exact surfaceReplace_eqOn_compl hy
         exact (hgcont x hx).congr_of_eventuallyEq
           (hev.filter_mono nhdsWithin_le_nhds) hev.self_of_nhds
     · -- boundary condition at the disk `K₀`
       intro x hx
-      have hxY : x ∉ configY e := fun hcon => hcon.2 (Or.inl hx.2)
-      have hxD : x ∉ e'.symm '' closedBall c' r' := fun hcon => hxY (hDY hcon)
-      rw [surfaceReplace_eqOn_compl hd hxD]
+      have hxY : x ∉ configY e := fun hcon ↦ hcon.2 (Or.inl hx.2)
+      have hxD : x ∉ e'.symm '' closedBall c' r' := fun hcon ↦ hxY (hDY hcon)
+      rw [surfaceReplace_eqOn_compl hxD]
       exact hgbd x hx
 
 /-- The lower barrier: forced value `≥ 3/4` at the witness point near the disk
@@ -316,14 +325,14 @@ at `+4` (the function `max 0 (log(2/|ζ-4|)/log 2)` belongs to the family). -/
 theorem perronSup_ge_witness [T2Space X] :
     3 / 4 ≤ perronSup (configFamily e) (e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) := by
   classical
-  have hYo : IsOpen (configY e) := isOpen_configY he hb
+  have hYo : IsOpen (configY e) := isOpen_configY hb
   -- the lower barrier
-  set β : X → ℝ := fun x =>
+  set β : X → ℝ := fun x ↦
     if x ∈ e.source then Max.max 0 ((Real.log 2 - Real.log ‖e x - 4‖) / Real.log 2) else 0
     with hβ_def
-  have hβ0 : ∀ x, x ∉ e.source → β x = 0 := fun x hx => if_neg hx
+  have hβ0 : ∀ x, x ∉ e.source → β x = 0 := fun x hx ↦ if_neg hx
   have hβin : ∀ x ∈ e.source,
-      β x = Max.max 0 ((Real.log 2 - Real.log ‖e x - 4‖) / Real.log 2) := fun x hx => if_pos hx
+      β x = Max.max 0 ((Real.log 2 - Real.log ‖e x - 4‖) / Real.log 2) := fun x hx ↦ if_pos hx
   have hβnn : ∀ x, 0 ≤ β x := by
     intro x
     by_cases hx : x ∈ e.source
@@ -342,7 +351,7 @@ theorem perronSup_ge_witness [T2Space X] :
     have hcl : x ∈ closure (e.source ∩ configY e) :=
       e.open_source.inter_closure ⟨hxe, hx⟩
     haveI : (𝓝[e.source ∩ configY e] x).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hcl
-    have hcont : ContinuousWithinAt (fun y => ‖e y - 4‖) (e.source ∩ configY e) x :=
+    have hcont : ContinuousWithinAt (fun y ↦ ‖e y - 4‖) (e.source ∩ configY e) x :=
       (((e.continuousAt hxe).sub continuousAt_const).norm).continuousWithinAt
     refine ge_of_tendsto hcont ?_
     filter_upwards [self_mem_nhdsWithin] with y hy
@@ -368,7 +377,7 @@ theorem perronSup_ge_witness [T2Space X] :
     intro y hyC
     by_cases hys : y ∈ e.source
     · rw [hβin y hys]
-      have h1 : e y ∉ closedBall (4 : ℂ) 2 := fun hcon => hyC ⟨e y, hcon, e.left_inv hys⟩
+      have h1 : e y ∉ closedBall (4 : ℂ) 2 := fun hcon ↦ hyC ⟨e y, hcon, e.left_inv hys⟩
       have h2 : 2 < ‖e y - 4‖ := by
         rw [mem_closedBall, dist_eq_norm, not_le] at h1
         exact h1
@@ -383,7 +392,7 @@ theorem perronSup_ge_witness [T2Space X] :
     · have h1 : 1 ≤ ‖e x - 4‖ := hnorm1 x hx hxe
       have hne : ‖e x - 4‖ ≠ 0 := by positivity
       have hcont1 : ContinuousAt
-          (fun y => Max.max 0 ((Real.log 2 - Real.log ‖e y - 4‖) / Real.log 2)) x := by
+          (fun y ↦ Max.max 0 ((Real.log 2 - Real.log ‖e y - 4‖) / Real.log 2)) x := by
         refine Filter.Tendsto.max continuousAt_const ?_
         refine ContinuousAt.div ?_ continuousAt_const (Real.log_pos one_lt_two).ne'
         refine ContinuousAt.sub continuousAt_const ?_
@@ -394,23 +403,23 @@ theorem perronSup_ge_witness [T2Space X] :
     · have hxC : x ∉ e.symm '' closedBall (4 : ℂ) 2 := by
         rintro ⟨w, hw, rfl⟩
         exact hxe (e.map_target (hb (hC_sub hw)))
-      have hev : β =ᶠ[𝓝 x] fun _ => 0 := by
+      have hev : β =ᶠ[𝓝 x] fun _ ↦ 0 := by
         filter_upwards [hCclosed.isOpen_compl.mem_nhds hxC] with y hy
         exact hβ_zero_off y hy
       exact continuousWithinAt_const.congr_of_eventuallyEq
         (hev.filter_mono nhdsWithin_le_nhds) hev.self_of_nhds
   -- subharmonicity of `β` on `Y`, by locality
   have hβsub : SurfaceSubharmonicOn β (configY e) := by
-    refine SurfaceSubharmonicOn.of_locally hYo ?_
+    refine SurfaceSubharmonicOn.of_locally ?_
     intro x hxY
     by_cases hxe : x ∈ e.source
     · -- on `e.source ∩ Y`, `β = max 0 (harmonic)`
       refine ⟨e.source ∩ configY e, e.open_source.inter hYo, ⟨hxe, hxY⟩,
         inter_subset_right, ?_⟩
       have hharm : SurfaceHarmonicOn
-          (fun y => (Real.log 2 - Real.log ‖e y - 4‖) / Real.log 2)
+          (fun y ↦ (Real.log 2 - Real.log ‖e y - 4‖) / Real.log 2)
           (e.source ∩ configY e) := by
-        refine SurfaceHarmonicOn.of_chartwise (e.open_source.inter hYo) ?_
+        refine SurfaceHarmonicOn.of_chartwise ?_
         rintro y ⟨hys, hyY⟩
         refine ⟨e, he, hys, ?_⟩
         have hy4 : e y ≠ 4 := by
@@ -420,14 +429,14 @@ theorem perronSup_ge_witness [T2Space X] :
           simp at h1
           norm_num at h1
         have hexp : HarmonicAt
-            (fun w : ℂ => (Real.log 2 - Real.log ‖w - 4‖) / Real.log 2) (e y) := by
-          have h1 : AnalyticAt ℂ (fun w : ℂ => w - 4) (e y) := by fun_prop
-          have h2 : (fun w : ℂ => w - 4) (e y) ≠ 0 := sub_ne_zero.mpr hy4
+            (fun w : ℂ ↦ (Real.log 2 - Real.log ‖w - 4‖) / Real.log 2) (e y) := by
+          have h1 : AnalyticAt ℂ (fun w : ℂ ↦ w - 4) (e y) := by fun_prop
+          have h2 : (fun w : ℂ ↦ w - 4) (e y) ≠ 0 := sub_ne_zero.mpr hy4
           have hlog := h1.harmonicAt_log_norm h2
-          have hsub : HarmonicAt (fun w : ℂ => Real.log 2 - Real.log ‖w - 4‖) (e y) :=
+          have hsub : HarmonicAt (fun w : ℂ ↦ Real.log 2 - Real.log ‖w - 4‖) (e y) :=
             (harmonicAt_const _).sub hlog
-          have heq : (fun w : ℂ => (Real.log 2 - Real.log ‖w - 4‖) / Real.log 2)
-              = (Real.log 2)⁻¹ • fun w : ℂ => Real.log 2 - Real.log ‖w - 4‖ := by
+          have heq : (fun w : ℂ ↦ (Real.log 2 - Real.log ‖w - 4‖) / Real.log 2)
+              = (Real.log 2)⁻¹ • fun w : ℂ ↦ Real.log 2 - Real.log ‖w - 4‖ := by
             funext w
             simp [div_eq_inv_mul]
           rw [heq]
@@ -437,9 +446,9 @@ theorem perronSup_ge_witness [T2Space X] :
         simp only [Function.comp_apply]
         rw [e.right_inv hw]
       have hmax := SurfaceSubharmonicOn.max
-        (⟨continuousOn_const, fun e' _ => SubMeanOn.const⟩ :
-          SurfaceSubharmonicOn (fun _ => (0 : ℝ)) (e.source ∩ configY e))
-        (hharm.surfaceSubharmonicOn (e.open_source.inter hYo))
+        (⟨continuousOn_const, fun e' _ ↦ SubMeanOn.const⟩ :
+          SurfaceSubharmonicOn (fun _ ↦ (0 : ℝ)) (e.source ∩ configY e))
+        hharm.surfaceSubharmonicOn
       refine surfaceSubharmonicOn_congr hmax ?_
       intro y hy
       exact hβin y hy.1
@@ -450,8 +459,8 @@ theorem perronSup_ge_witness [T2Space X] :
       refine ⟨(e.symm '' closedBall (4 : ℂ) 2)ᶜ ∩ configY e,
         hCclosed.isOpen_compl.inter hYo, ⟨hxC, hxY⟩, inter_subset_right, ?_⟩
       refine surfaceSubharmonicOn_congr
-        (⟨continuousOn_const, fun e' _ => SubMeanOn.const⟩ :
-          SurfaceSubharmonicOn (fun _ => (0 : ℝ)) _) ?_
+        (⟨continuousOn_const, fun e' _ ↦ SubMeanOn.const⟩ :
+          SurfaceSubharmonicOn (fun _ ↦ (0 : ℝ)) _) ?_
       intro y hy
       exact hβ_zero_off y hy.1
   -- boundary condition at the disk `K₀`
@@ -475,7 +484,7 @@ theorem perronSup_ge_witness [T2Space X] :
     linarith
   -- `β` belongs to the family
   have hβmem : β ∈ configFamily e :=
-    ⟨hβsub, fun x hx => ⟨hβnn x, hβle1 x hx⟩, hβcont, hβbd⟩
+    ⟨hβsub, fun x hx ↦ ⟨hβnn x, hβle1 x hx⟩, hβcont, hβbd⟩
   -- value at the witness point
   have hval : β (e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) = 3 / 4 := by
     set t := (2 : ℂ) ^ ((1 : ℂ) / 4) with ht
@@ -498,26 +507,27 @@ theorem perronSup_ge_witness [T2Space X] :
     exact max_eq_right (by norm_num)
   calc (3 : ℝ) / 4 = β (e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) := hval.symm
     _ ≤ perronSup (configFamily e) (e.symm (4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) :=
-        (isPerronFamily_configFamily he hb).le_perronSup hβmem _
-          (witness_mem_configY he hb).1
+        (isPerronFamily_configFamily hb).le_perronSup hβmem _
+          (witness_mem_configY hb).1
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The upper barrier: forced value `≤ 1/4` at the witness point near the disk
 at `-4` (every family member is dominated on the annulus by
 `1 - log(2/|ζ+4|)/log 2`, by the boundary comparison principle). -/
 theorem perronSup_le_witness [T2Space X] :
     perronSup (configFamily e) (e.symm (-4 + (2 : ℂ) ^ ((1 : ℂ) / 4))) ≤ 1 / 4 := by
-  have hYo : IsOpen (configY e) := isOpen_configY he hb
+  have hYo : IsOpen (configY e) := isOpen_configY hb
   set t := (2 : ℂ) ^ ((1 : ℂ) / 4) with ht
   have hnt : ‖t‖ = (2 : ℝ) ^ ((1 : ℝ) / 4) := norm_two_cpow_quarter
   have h1t : 1 < ‖t‖ := by rw [hnt]; exact one_lt_two_rpow_quarter
   have h2t : ‖t‖ < 2 := by rw [hnt]; exact two_rpow_quarter_lt_two
   -- the annulus and the upper barrier
   set A : Set ℂ := {w | 1 < ‖w + 4‖ ∧ ‖w + 4‖ < 2} with hA_def
-  set γ : ℂ → ℝ := fun w => Real.log ‖w + 4‖ / Real.log 2 with hγ_def
-  have hcontf : Continuous fun w : ℂ => ‖w + 4‖ := by fun_prop
+  set γ : ℂ → ℝ := fun w ↦ Real.log ‖w + 4‖ / Real.log 2 with hγ_def
+  have hcontf : Continuous fun w : ℂ ↦ ‖w + 4‖ := by fun_prop
   have hAopen : IsOpen A := isOpen_Ioo.preimage hcontf
   have hclA : closure A ⊆ {w : ℂ | 1 ≤ ‖w + 4‖ ∧ ‖w + 4‖ ≤ 2} :=
-    closure_minimal (fun w hw => ⟨hw.1.le, hw.2.le⟩) (isClosed_Icc.preimage hcontf)
+    closure_minimal (fun w hw ↦ ⟨hw.1.le, hw.2.le⟩) (isClosed_Icc.preimage hcontf)
   have hAbd : Bornology.IsBounded A := by
     refine (isBounded_ball (x := (-4 : ℂ)) (r := 2)).subset ?_
     intro w hw
@@ -571,9 +581,9 @@ theorem perronSup_le_witness [T2Space X] :
       rw [hcon] at h1
       simp at h1
       norm_num at h1
-    have h1 : AnalyticAt ℂ (fun w : ℂ => w + 4) w := by fun_prop
+    have h1 : AnalyticAt ℂ (fun w : ℂ ↦ w + 4) w := by fun_prop
     have hlog := h1.harmonicAt_log_norm hne
-    have heq : γ = (Real.log 2)⁻¹ • fun w : ℂ => Real.log ‖w + 4‖ := by
+    have heq : γ = (Real.log 2)⁻¹ • fun w : ℂ ↦ Real.log ‖w + 4‖ := by
       funext w
       simp [hγ_def, div_eq_inv_mul]
     rw [heq]
@@ -588,12 +598,12 @@ theorem perronSup_le_witness [T2Space X] :
   have hkey : ∀ g ∈ configFamily e, g (e.symm (-4 + t)) ≤ 1 / 4 := by
     rintro g ⟨hgsub, hgicc, hgcont, hgbd⟩
     have hgsm : SubMeanOn (g ∘ e.symm) A := (hgsub.subMeanOn e he).mono hAchart
-    have hγmeq : MeanEqOn γ A := HarmonicOnNhd.meanEqOn hAopen hγharm
+    have hγmeq : MeanEqOn γ A := HarmonicOnNhd.meanEqOn hγharm
     have hsm : SubMeanOn ((g ∘ e.symm) + -γ) A := hgsm.add_meanEq hγmeq.neg
     have hcont2 : ContinuousOn ((g ∘ e.symm) + -γ) (closure A) := by
       refine ContinuousOn.add ?_ hγcont.neg
-      refine hgcont.comp (e.symm.continuousOn.mono ?_) fun w hw => hclAY w hw
-      have hsub : closure A ⊆ e.target := fun w hw => hb (hAball w (hclA hw).2)
+      refine hgcont.comp (e.symm.continuousOn.mono ?_) fun w hw ↦ hclAY w hw
+      have hsub : closure A ⊆ e.target := fun w hw ↦ hb (hAball w (hclA hw).2)
       simpa using hsub
     have hfr : ∀ w ∈ frontier A, ((g ∘ e.symm) + -γ) w ≤ 0 := by
       intro w hw
@@ -643,8 +653,7 @@ theorem perronSup_le_witness [T2Space X] :
       field_simp
     rw [hγw] at hval
     linarith
-  exact (isPerronFamily_configFamily he hb).perronSup_le
-    (witness_mem_configY he hb).2 hkey
+  exact (isPerronFamily_configFamily hb).perronSup_le hkey
 
 end Config
 

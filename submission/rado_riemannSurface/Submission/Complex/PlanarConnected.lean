@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Mathlib
 
 /-!
@@ -71,7 +76,7 @@ private lemma isPathConnected_prod {α β : Type*} [TopologicalSpace α] [Topolo
   obtain ⟨hx, hy⟩ := hp
   obtain ⟨γ, hγ⟩ := hsj hx
   obtain ⟨δ, hδ⟩ := htj hy
-  refine ⟨γ.prod δ, fun τ => ?_⟩
+  refine ⟨γ.prod δ, fun τ ↦ ?_⟩
   simp only [Path.prod_coe]
   exact mem_prod.mpr ⟨hγ τ, hδ τ⟩
 
@@ -85,9 +90,9 @@ private lemma isPathConnected_annulus {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hrR 
     (convex_Ioo r R).isPathConnected (nonempty_Ioo.mpr hrR)
   have himg :=
     (isPathConnected_prod hIoo hsphere).image
-      (show Continuous fun p : ℝ × ℂ => c + p.1 • p.2 from
+      (show Continuous fun p : ℝ × ℂ ↦ c + p.1 • p.2 from
         continuous_const.add (continuous_fst.smul continuous_snd))
-  have heq : (fun p : ℝ × ℂ => c + p.1 • p.2) '' (Ioo r R ×ˢ sphere (0 : ℂ) 1)
+  have heq : (fun p : ℝ × ℂ ↦ c + p.1 • p.2) '' (Ioo r R ×ˢ sphere (0 : ℂ) 1)
       = {z : ℂ | r < dist z c ∧ dist z c < R} := by
     ext z
     constructor
@@ -308,8 +313,8 @@ theorem isPathConnected_ball_diff_two_disks :
     rintro z ⟨hb, hnot⟩
     rw [mem_union, not_or] at hnot
     obtain ⟨hm', hp'⟩ := hnot
-    have hm : 1 < dist z (-4 : ℂ) := not_le.mp fun h => hm' (mem_closedBall.mpr h)
-    have hp : 1 < dist z (4 : ℂ) := not_le.mp fun h => hp' (mem_closedBall.mpr h)
+    have hm : 1 < dist z (-4 : ℂ) := not_le.mp fun h ↦ hm' (mem_closedBall.mpr h)
+    have hp : 1 < dist z (4 : ℂ) := not_le.mp fun h ↦ hp' (mem_closedBall.mpr h)
     simp only [mem_union]
     rcases lt_or_ge 1 z.im with him | him1
     · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨hb, him⟩)))))

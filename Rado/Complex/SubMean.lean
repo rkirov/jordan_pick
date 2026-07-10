@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Mathlib
 
 /-!
@@ -39,43 +44,43 @@ private lemma circleAverage_neg (f : ℂ → ℝ) (c : ℂ) (R : ℝ) :
   simp only [Real.circleAverage_def, Pi.neg_apply, intervalIntegral.integral_neg, smul_neg]
 
 theorem MeanEqOn.subMeanOn {h : ℂ → ℝ} {s : Set ℂ} (hh : MeanEqOn h s) : SubMeanOn h s :=
-  ⟨hh.continuousOn, fun c r hr hsub => (hh.mean_eq c r hr hsub).ge⟩
+  ⟨hh.continuousOn, fun c r hr hsub ↦ (hh.mean_eq c r hr hsub).ge⟩
 
 theorem MeanEqOn.neg {h : ℂ → ℝ} {s : Set ℂ} (hh : MeanEqOn h s) : MeanEqOn (-h) s := by
-  refine ⟨hh.continuousOn.neg, fun c r hr hsub => ?_⟩
+  refine ⟨hh.continuousOn.neg, fun c r hr hsub ↦ ?_⟩
   rw [circleAverage_neg, hh.mean_eq c r hr hsub, Pi.neg_apply]
 
 theorem SubMeanOn.mono {g : ℂ → ℝ} {s t : Set ℂ} (hg : SubMeanOn g s) (hts : t ⊆ s) :
     SubMeanOn g t :=
-  ⟨hg.continuousOn.mono hts, fun c r hr hsub => hg.submean c r hr (hsub.trans hts)⟩
+  ⟨hg.continuousOn.mono hts, fun c r hr hsub ↦ hg.submean c r hr (hsub.trans hts)⟩
 
 theorem SubMeanOn.max {g₁ g₂ : ℂ → ℝ} {s : Set ℂ} (h₁ : SubMeanOn g₁ s) (h₂ : SubMeanOn g₂ s) :
-    SubMeanOn (fun z => Max.max (g₁ z) (g₂ z)) s := by
-  have hcmax : ContinuousOn (fun z => Max.max (g₁ z) (g₂ z)) s := fun x hx =>
+    SubMeanOn (fun z ↦ Max.max (g₁ z) (g₂ z)) s := by
+  have hcmax : ContinuousOn (fun z ↦ Max.max (g₁ z) (g₂ z)) s := fun x hx ↦
     Filter.Tendsto.max (h₁.continuousOn x hx) (h₂.continuousOn x hx)
-  refine ⟨hcmax, fun c r hr hsub => ?_⟩
+  refine ⟨hcmax, fun c r hr hsub ↦ ?_⟩
   have hsphere : sphere c r ⊆ s := sphere_subset_closedBall.trans hsub
   have hi₁ : CircleIntegrable g₁ c r := (h₁.continuousOn.mono hsphere).circleIntegrable hr.le
   have hi₂ : CircleIntegrable g₂ c r := (h₂.continuousOn.mono hsphere).circleIntegrable hr.le
-  have him : CircleIntegrable (fun z => Max.max (g₁ z) (g₂ z)) c r :=
+  have him : CircleIntegrable (fun z ↦ Max.max (g₁ z) (g₂ z)) c r :=
     (hcmax.mono hsphere).circleIntegrable hr.le
-  have le₁ : circleAverage g₁ c r ≤ circleAverage (fun z => Max.max (g₁ z) (g₂ z)) c r :=
-    circleAverage_mono hi₁ him fun x _ => le_max_left _ _
-  have le₂ : circleAverage g₂ c r ≤ circleAverage (fun z => Max.max (g₁ z) (g₂ z)) c r :=
-    circleAverage_mono hi₂ him fun x _ => le_max_right _ _
+  have le₁ : circleAverage g₁ c r ≤ circleAverage (fun z ↦ Max.max (g₁ z) (g₂ z)) c r :=
+    circleAverage_mono hi₁ him fun x _ ↦ le_max_left _ _
+  have le₂ : circleAverage g₂ c r ≤ circleAverage (fun z ↦ Max.max (g₁ z) (g₂ z)) c r :=
+    circleAverage_mono hi₂ him fun x _ ↦ le_max_right _ _
   exact max_le ((h₁.submean c r hr hsub).trans le₁) ((h₂.submean c r hr hsub).trans le₂)
 
 theorem SubMeanOn.add_meanEq {g h : ℂ → ℝ} {s : Set ℂ} (hg : SubMeanOn g s)
     (hh : MeanEqOn h s) : SubMeanOn (g + h) s := by
-  refine ⟨hg.continuousOn.add hh.continuousOn, fun c r hr hsub => ?_⟩
+  refine ⟨hg.continuousOn.add hh.continuousOn, fun c r hr hsub ↦ ?_⟩
   have hsphere : sphere c r ⊆ s := sphere_subset_closedBall.trans hsub
   have hig : CircleIntegrable g c r := (hg.continuousOn.mono hsphere).circleIntegrable hr.le
   have hih : CircleIntegrable h c r := (hh.continuousOn.mono hsphere).circleIntegrable hr.le
   rw [circleAverage_add hig hih, hh.mean_eq c r hr hsub, Pi.add_apply]
   exact add_le_add (hg.submean c r hr hsub) le_rfl
 
-theorem SubMeanOn.const {a : ℝ} {s : Set ℂ} : SubMeanOn (fun _ => a) s :=
-  ⟨continuousOn_const, fun c r _ _ => (circleAverage_const a c r).ge⟩
+theorem SubMeanOn.const {a : ℝ} {s : Set ℂ} : SubMeanOn (fun _ ↦ a) s :=
+  ⟨continuousOn_const, fun c r _ _ ↦ (circleAverage_const a c r).ge⟩
 
 /-- If a continuous function is at most `M` on a sphere of positive radius while its
 circle average is at least `M`, then it equals `M` everywhere on the sphere. -/
@@ -95,12 +100,12 @@ private lemma eqOn_sphere_of_le_of_circleAverage_ge {g : ℂ → ℝ} {a : ℂ} 
     rw [← self_sub_toIocDiv_zsmul two_pi_pos 0 θ, (periodic_circleMap a r).sub_zsmul_eq]
     exact hθ
   -- strict inequality of interval integrals
-  have hcont : Continuous fun θ => g (circleMap a r θ) :=
-    hc.comp_continuous (continuous_circleMap a r) fun θ => circleMap_mem_sphere a hr.le θ
+  have hcont : Continuous fun θ ↦ g (circleMap a r θ) :=
+    hc.comp_continuous (continuous_circleMap a r) fun θ ↦ circleMap_mem_sphere a hr.le θ
   have hint : (∫ θ in (0:ℝ)..2 * π, g (circleMap a r θ)) < ∫ _ in (0:ℝ)..2 * π, M := by
     refine intervalIntegral.integral_lt_integral_of_continuousOn_of_le_of_exists_lt two_pi_pos
       hcont.continuousOn continuousOn_const
-      (fun x _ => hle _ (circleMap_mem_sphere a hr.le x)) ?_
+      (fun x _ ↦ hle _ (circleMap_mem_sphere a hr.le x)) ?_
     exact ⟨toIocMod two_pi_pos 0 θ, Set.Ioc_subset_Icc_self hmem, by rw [hθ₀]; exact hzlt⟩
   have hlt : circleAverage g a r < M := by
     rw [Real.circleAverage_def, smul_eq_mul]
@@ -116,7 +121,7 @@ private lemma eqOn_sphere_of_le_of_circleAverage_ge {g : ℂ → ℝ} {a : ℂ} 
 set that attains its supremum is constant. -/
 theorem SubMeanOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs : IsOpen s)
     (hsc : IsPreconnected s) (hg : SubMeanOn g s) {x₀ : ℂ} (hx₀ : x₀ ∈ s)
-    (hmax : IsMaxOn g s x₀) : EqOn g (fun _ => g x₀) s := by
+    (hmax : IsMaxOn g s x₀) : EqOn g (fun _ ↦ g x₀) s := by
   set M := g x₀ with hM
   set A : Set ℂ := {x ∈ s | g x = M} with hA
   set B : Set ℂ := {x ∈ s | g x ≠ M} with hB
@@ -125,14 +130,14 @@ theorem SubMeanOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs : Is
     rw [Metric.isOpen_iff]
     rintro a ⟨has, hga⟩
     obtain ⟨ε, hε, hballs⟩ := Metric.isOpen_iff.mp hs a has
-    refine ⟨ε, hε, fun y hy => ?_⟩
+    refine ⟨ε, hε, fun y hy ↦ ?_⟩
     rcases eq_or_ne y a with rfl | hne
     · exact ⟨has, hga⟩
     · have hrpos : 0 < dist y a := dist_pos.mpr hne
       have hrlt : dist y a < ε := mem_ball.mp hy
       have hcb : closedBall a (dist y a) ⊆ s := (closedBall_subset_ball hrlt).trans hballs
       have hsph : sphere a (dist y a) ⊆ s := sphere_subset_closedBall.trans hcb
-      have h1 : ∀ z ∈ sphere a (dist y a), g z ≤ M := fun z hz => hmax (hsph hz)
+      have h1 : ∀ z ∈ sphere a (dist y a), g z ≤ M := fun z hz ↦ hmax (hsph hz)
       have h2 : M ≤ circleAverage g a (dist y a) := by
         rw [← hga]; exact hg.submean a _ hrpos hcb
       have heq := eqOn_sphere_of_le_of_circleAverage_ge hrpos
@@ -149,7 +154,7 @@ theorem SubMeanOn.eqOn_const_of_isMaxOn {g : ℂ → ℝ} {s : Set ℂ} (hs : Is
     rw [Set.disjoint_left]
     rintro x ⟨_, hxM⟩ ⟨_, hxM'⟩
     exact hxM' hxM
-  have hcover : s ⊆ A ∪ B := fun x hx => by
+  have hcover : s ⊆ A ∪ B := fun x hx ↦ by
     by_cases h : g x = M
     · exact Or.inl ⟨hx, h⟩
     · exact Or.inr ⟨hx, h⟩
@@ -173,14 +178,14 @@ theorem SubMeanOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : IsOpen
     have hCopen : IsOpen (connectedComponentIn U z) := hU.connectedComponentIn
     have hCU : connectedComponentIn U z ⊆ U := connectedComponentIn_subset U z
     have hzC : z ∈ connectedComponentIn U z := mem_connectedComponentIn hzU
-    have hmaxC : IsMaxOn g (connectedComponentIn U z) z := fun y hy =>
+    have hmaxC : IsMaxOn g (connectedComponentIn U z) z := fun y hy ↦
       hzmax (subset_closure (hCU hy))
-    have heq : EqOn g (fun _ => g z) (connectedComponentIn U z) :=
+    have heq : EqOn g (fun _ ↦ g z) (connectedComponentIn U z) :=
       (hg.mono hCU).eqOn_const_of_isMaxOn hCopen isPreconnected_connectedComponentIn hzC hmaxC
     -- the component has nonempty frontier since it is bounded and nonempty
     have hfr : (frontier (connectedComponentIn U z)).Nonempty := by
       rw [nonempty_frontier_iff]
-      refine ⟨⟨z, hzC⟩, fun huniv => ?_⟩
+      refine ⟨⟨z, hzC⟩, fun huniv ↦ ?_⟩
       have hCb : Bornology.IsBounded (connectedComponentIn U z) := hUb.subset hCU
       rw [huniv] at hCb
       exact NormedSpace.unbounded_univ ℝ ℂ hCb
@@ -195,13 +200,13 @@ theorem SubMeanOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : IsOpen
         mem_closure_iff_nhdsWithin_neBot.mp hbC
       have h2 : Filter.Tendsto g (𝓝[connectedComponentIn U z] b) (𝓝 (g z)) :=
         Filter.Tendsto.congr'
-          (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun y hy => (heq hy).symm)
+          (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun y hy ↦ (heq hy).symm)
           tendsto_const_nhds
       exact tendsto_nhds_unique h1 h2
     -- `b` lies on the frontier of `U`
     have hbfr : b ∈ frontier U := by
       rw [hU.frontier_eq]
-      refine ⟨hbU, fun hbU' => ?_⟩
+      refine ⟨hbU, fun hbU' ↦ ?_⟩
       have hCb' : connectedComponentIn U b ∈ 𝓝 b :=
         (hU.connectedComponentIn).mem_nhds (mem_connectedComponentIn hbU')
       obtain ⟨y, hyt, hyC⟩ := mem_closure_iff_nhds.mp hbC _ hCb'
@@ -225,9 +230,9 @@ theorem MeanEqOn.eqOn_closure_of_frontier {u v : ℂ → ℝ} {U : Set ℂ} (hU 
     (hb : EqOn u v (frontier U)) : EqOn u v (closure U) := by
   have h1 : SubMeanOn (u + -v) U := hu.subMeanOn.add_meanEq hv.neg
   have h2 : SubMeanOn (v + -u) U := hv.subMeanOn.add_meanEq hu.neg
-  have hb1 : ∀ x ∈ frontier U, (u + -v) x ≤ 0 := fun x hx => by
+  have hb1 : ∀ x ∈ frontier U, (u + -v) x ≤ 0 := fun x hx ↦ by
     simp [hb hx]
-  have hb2 : ∀ x ∈ frontier U, (v + -u) x ≤ 0 := fun x hx => by
+  have hb2 : ∀ x ∈ frontier U, (v + -u) x ≤ 0 := fun x hx ↦ by
     simp [hb hx]
   have hle1 := h1.le_of_frontier_le hU hUb (huc.add hvc.neg) hb1
   have hle2 := h2.le_of_frontier_le hU hUb (hvc.add huc.neg) hb2

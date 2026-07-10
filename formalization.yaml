@@ -33,7 +33,7 @@ sources:
       Two prior automated solutions are recorded on the leaderboard (Aristotle/Harmonic 2026-06-22,
       Seed Prover/ByteDance 2026-06-28); both submission repos are private and neither proof was
       seen. Clean-room: this development was produced independently from the mathematical
-      literature below.
+      literature below. This submission passed the lean-eval comparator (2026-07-10).
   - title: "A short proof of the uniformization theorem (self-contained Perron/Radó treatment)"
     authors: ["Cipriana Anghel", "Rareş Stan"]
     id: "arXiv:2008.12189; Ann. Glob. Anal. Geom. (2022)"

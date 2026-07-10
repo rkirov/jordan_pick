@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Rado.Complex.SubMean
 
 /-!
@@ -39,7 +44,7 @@ namespace Rado
 /-- The Schwarz integral of boundary data `f` on `sphere c R`, evaluated at the
 interior point `w`. -/
 noncomputable def schwarzIntegral (f : ℂ → ℝ) (c : ℂ) (R : ℝ) (w : ℂ) : ℂ :=
-  Real.circleAverage (fun z => herglotzRieszKernel c w z * (f z : ℂ)) c R
+  Real.circleAverage (fun z ↦ herglotzRieszKernel c w z * (f z : ℂ)) c R
 
 section Kernel
 
@@ -76,7 +81,7 @@ private theorem continuousOn_poissonKernel (hw : w ∈ ball c R) :
   have hne : ‖(z - c) - (w - c)‖ ^ 2 ≠ 0 :=
     pow_ne_zero _ (norm_ne_zero_iff.mpr (sub_sub_ne_zero hw hz))
   have h : ContinuousAt
-      (fun z : ℂ => (‖z - c‖ ^ 2 - ‖w - c‖ ^ 2) / ‖(z - c) - (w - c)‖ ^ 2) z :=
+      (fun z : ℂ ↦ (‖z - c‖ ^ 2 - ‖w - c‖ ^ 2) / ‖(z - c) - (w - c)‖ ^ 2) z :=
     ContinuousAt.div (by fun_prop) (by fun_prop) hne
   exact h.continuousWithinAt
 
@@ -86,11 +91,11 @@ theorem circleAverage_poissonKernel (hw : w ∈ ball c R) :
   have hR : 0 < R := pos_of_mem_ball hw
   have hint : CircleIntegrable (poissonKernel c w) c R :=
     (continuousOn_poissonKernel hw).circleIntegrable hR.le
-  have hconst : DiffContOnCl ℂ (fun _ : ℂ => (1 : ℂ)) (ball c R) :=
+  have hconst : DiffContOnCl ℂ (fun _ : ℂ ↦ (1 : ℂ)) (ball c R) :=
     ⟨differentiableOn_const _, continuousOn_const⟩
   have h1 := hconst.circleAverage_poissonKernel_smul hw
-  have h2 : (poissonKernel c w • fun _ : ℂ => (1 : ℂ))
-      = fun z => ((poissonKernel c w z : ℝ) : ℂ) := by
+  have h2 : (poissonKernel c w • fun _ : ℂ ↦ (1 : ℂ))
+      = fun z ↦ ((poissonKernel c w z : ℝ) : ℂ) := by
     ext z
     simp [Pi.smul_apply', Complex.real_smul]
   have h3 := Complex.ofRealCLM.circleAverage_comp_comm hint
@@ -156,13 +161,13 @@ variable {f : ℂ → ℝ} {c : ℂ} {R : ℝ}
 
 /-- Real circle averages commute with multiplication by a constant. -/
 private theorem circleAverage_const_mul (a : ℝ) (g : ℂ → ℝ) (c : ℂ) (R : ℝ) :
-    Real.circleAverage (fun z => a * g z) c R = a * Real.circleAverage g c R := by
+    Real.circleAverage (fun z ↦ a * g z) c R = a * Real.circleAverage g c R := by
   simpa [smul_eq_mul] using
     Real.circleAverage_fun_smul (a := a) (f := g) (c := c) (R := R)
 
 /-- Complex circle averages commute with multiplication by a constant. -/
 private theorem circleAverage_const_mul_complex (a : ℂ) (g : ℂ → ℂ) (c : ℂ) (R : ℝ) :
-    Real.circleAverage (fun z => a * g z) c R = a * Real.circleAverage g c R := by
+    Real.circleAverage (fun z ↦ a * g z) c R = a * Real.circleAverage g c R := by
   simpa [smul_eq_mul] using
     Real.circleAverage_fun_smul (a := a) (f := g) (c := c) (R := R)
 
@@ -170,13 +175,13 @@ private theorem circleAverage_const_mul_complex (a : ℂ) (g : ℂ → ℂ) (c :
 point. -/
 private theorem continuousOn_kernel_mul {w : ℂ} (hw : w ∈ ball c R)
     (hf : ContinuousOn f (sphere c R)) :
-    ContinuousOn (fun z => herglotzRieszKernel c w z * (f z : ℂ)) (sphere c R) := by
-  have hg : ContinuousOn (fun z => ((f z : ℝ) : ℂ)) (sphere c R) :=
+    ContinuousOn (fun z ↦ herglotzRieszKernel c w z * (f z : ℂ)) (sphere c R) := by
+  have hg : ContinuousOn (fun z ↦ ((f z : ℝ) : ℂ)) (sphere c R) :=
     Complex.continuous_ofReal.comp_continuousOn hf
   simp only [herglotzRieszKernel_def]
   apply ContinuousOn.mul _ hg
   intro z hz
-  have h : ContinuousAt (fun z : ℂ => ((z - c) + (w - c)) / ((z - c) - (w - c))) z :=
+  have h : ContinuousAt (fun z : ℂ ↦ ((z - c) + (w - c)) / ((z - c) - (w - c))) z :=
     ContinuousAt.div (by fun_prop) (by fun_prop) (sub_sub_ne_zero hw hz)
   exact h.continuousWithinAt
 
@@ -184,21 +189,21 @@ private theorem continuousOn_kernel_mul {w : ℂ} (hw : w ∈ ball c R)
 (differentiation under the integral). -/
 theorem schwarzIntegral_differentiableOn (hR : 0 < R) (hf : ContinuousOn f (sphere c R)) :
     DifferentiableOn ℂ (schwarzIntegral f c R) (ball c R) := by
-  have hg : ContinuousOn (fun z => ((f z : ℝ) : ℂ)) (sphere c R) :=
+  have hg : ContinuousOn (fun z ↦ ((f z : ℝ) : ℂ)) (sphere c R) :=
     Complex.continuous_ofReal.comp_continuousOn hf
-  have hgint : CircleIntegrable (fun z => ((f z : ℝ) : ℂ)) c R := hg.circleIntegrable hR.le
+  have hgint : CircleIntegrable (fun z ↦ ((f z : ℝ) : ℂ)) c R := hg.circleIntegrable hR.le
   -- the Cauchy-type integral is differentiable on the ball
   have hR0 : 0 < R.toNNReal := Real.toNNReal_pos.2 hR
   have hcoe : (R.toNNReal : ℝ) = R := Real.coe_toNNReal R hR.le
-  have hgint' : CircleIntegrable (fun z => ((f z : ℝ) : ℂ)) c R.toNNReal := by rwa [hcoe]
+  have hgint' : CircleIntegrable (fun z ↦ ((f z : ℝ) : ℂ)) c R.toNNReal := by rwa [hcoe]
   have hdiff : DifferentiableOn ℂ
-      (fun w => (2 * (π : ℂ) * I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • ((f z : ℝ) : ℂ))
+      (fun w ↦ (2 * (π : ℂ) * I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • ((f z : ℝ) : ℂ))
       (ball c R) := by
     have h := (hasFPowerSeriesOn_cauchy_integral hgint' hR0).differentiableOn
     rwa [Metric.eball_coe, hcoe] at h
   have hRHS : DifferentiableOn ℂ
-      (fun w => (2 : ℂ) * ((2 * (π : ℂ) * I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • ((f z : ℝ) : ℂ))
-        - Real.circleAverage (fun z => ((f z : ℝ) : ℂ)) c R) (ball c R) :=
+      (fun w ↦ (2 : ℂ) * ((2 * (π : ℂ) * I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • ((f z : ℝ) : ℂ))
+        - Real.circleAverage (fun z ↦ ((f z : ℝ) : ℂ)) c R) (ball c R) :=
     (hdiff.const_mul 2).sub_const _
   apply hRHS.congr
   intro w hw
@@ -206,21 +211,21 @@ theorem schwarzIntegral_differentiableOn (hR : 0 < R) (hf : ContinuousOn f (sphe
     intro z hz
     have h := sub_sub_ne_zero hw hz
     rwa [sub_sub_sub_cancel_right] at h
-  have hA_cont : ContinuousOn (fun z => (z - c) / (z - w) * ((f z : ℝ) : ℂ)) (sphere c R) := by
+  have hA_cont : ContinuousOn (fun z ↦ (z - c) / (z - w) * ((f z : ℝ) : ℂ)) (sphere c R) := by
     apply ContinuousOn.mul _ hg
     intro z hz
-    have h : ContinuousAt (fun z : ℂ => (z - c) / (z - w)) z :=
+    have h : ContinuousAt (fun z : ℂ ↦ (z - c) / (z - w)) z :=
       ContinuousAt.div (by fun_prop) (by fun_prop) (hwz z hz)
     exact h.continuousWithinAt
-  have hA_int : CircleIntegrable (fun z => (z - c) / (z - w) * ((f z : ℝ) : ℂ)) c R :=
+  have hA_int : CircleIntegrable (fun z ↦ (z - c) / (z - w) * ((f z : ℝ) : ℂ)) c R :=
     hA_cont.circleIntegrable hR.le
   have hA2_int : CircleIntegrable
-      (fun z => (2 : ℂ) * ((z - c) / (z - w) * ((f z : ℝ) : ℂ))) c R :=
+      (fun z ↦ (2 : ℂ) * ((z - c) / (z - w) * ((f z : ℝ) : ℂ))) c R :=
     (continuousOn_const.mul hA_cont).circleIntegrable hR.le
   calc schwarzIntegral f c R w
-      = Real.circleAverage (fun z => herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R := rfl
+      = Real.circleAverage (fun z ↦ herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R := rfl
     _ = Real.circleAverage
-          (fun z => 2 * ((z - c) / (z - w) * ((f z : ℝ) : ℂ)) - ((f z : ℝ) : ℂ)) c R := by
+          (fun z ↦ 2 * ((z - c) / (z - w) * ((f z : ℝ) : ℂ)) - ((f z : ℝ) : ℂ)) c R := by
         apply Real.circleAverage_congr_sphere
         intro z hz
         rw [abs_of_pos hR] at hz
@@ -229,14 +234,14 @@ theorem schwarzIntegral_differentiableOn (hR : 0 < R) (hf : ContinuousOn f (sphe
         simp only [herglotzRieszKernel_def, h2]
         field_simp
         try ring
-    _ = Real.circleAverage (fun z => (2 : ℂ) * ((z - c) / (z - w) * ((f z : ℝ) : ℂ))) c R
-        - Real.circleAverage (fun z => ((f z : ℝ) : ℂ)) c R :=
+    _ = Real.circleAverage (fun z ↦ (2 : ℂ) * ((z - c) / (z - w) * ((f z : ℝ) : ℂ))) c R
+        - Real.circleAverage (fun z ↦ ((f z : ℝ) : ℂ)) c R :=
         Real.circleAverage_fun_sub hA2_int hgint
-    _ = 2 * Real.circleAverage (fun z => (z - c) / (z - w) * ((f z : ℝ) : ℂ)) c R
-        - Real.circleAverage (fun z => ((f z : ℝ) : ℂ)) c R := by
+    _ = 2 * Real.circleAverage (fun z ↦ (z - c) / (z - w) * ((f z : ℝ) : ℂ)) c R
+        - Real.circleAverage (fun z ↦ ((f z : ℝ) : ℂ)) c R := by
         rw [circleAverage_const_mul_complex]
     _ = (2 : ℂ) * ((2 * (π : ℂ) * I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • ((f z : ℝ) : ℂ))
-        - Real.circleAverage (fun z => ((f z : ℝ) : ℂ)) c R := by
+        - Real.circleAverage (fun z ↦ ((f z : ℝ) : ℂ)) c R := by
         congr 2
         rw [Real.circleAverage_eq_circleIntegral hR.ne']
         congr 1
@@ -255,12 +260,12 @@ theorem schwarzIntegral_differentiableOn (hR : 0 < R) (hf : ContinuousOn f (sphe
 theorem re_schwarzIntegral {w : ℂ} (hR : 0 < R) (hf : ContinuousOn f (sphere c R))
     (hw : w ∈ ball c R) :
     (schwarzIntegral f c R w).re
-      = Real.circleAverage (fun z => poissonKernel c w z • f z) c R := by
-  have hint : CircleIntegrable (fun z => herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R :=
+      = Real.circleAverage (fun z ↦ poissonKernel c w z • f z) c R := by
+  have hint : CircleIntegrable (fun z ↦ herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R :=
     (continuousOn_kernel_mul hw hf).circleIntegrable hR.le
   have h := Complex.reCLM.circleAverage_comp_comm hint
   simp only [Function.comp_def, Complex.reCLM_apply] at h
-  show (Real.circleAverage (fun z => herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R).re = _
+  show (Real.circleAverage (fun z ↦ herglotzRieszKernel c w z * ((f z : ℝ) : ℂ)) c R).re = _
   rw [← h]
   apply Real.circleAverage_congr_sphere
   intro z hz
@@ -275,7 +280,7 @@ to the data at each boundary point (approximate-identity argument, using
 positivity, unit mass and off-singularity smallness of the kernel). -/
 theorem tendsto_re_schwarzIntegral (hR : 0 < R) (hf : ContinuousOn f (sphere c R))
     {ζ₀ : ℂ} (hζ₀ : ζ₀ ∈ sphere c R) :
-    Filter.Tendsto (fun w => (schwarzIntegral f c R w).re) (𝓝[ball c R] ζ₀) (𝓝 (f ζ₀)) := by
+    Filter.Tendsto (fun w ↦ (schwarzIntegral f c R w).re) (𝓝[ball c R] ζ₀) (𝓝 (f ζ₀)) := by
   rw [Metric.tendsto_nhds]
   intro ε hε
   obtain ⟨M, hM⟩ := (isCompact_sphere c R).exists_bound_of_continuousOn hf
@@ -288,32 +293,32 @@ theorem tendsto_re_schwarzIntegral (hR : 0 < R) (hf : ContinuousOn f (sphere c R
   simp only [smul_eq_mul]
   -- integrability of all integrands in sight
   have hKcont : ContinuousOn (poissonKernel c w) (sphere c R) := continuousOn_poissonKernel hw
-  have hKf_int : CircleIntegrable (fun z => poissonKernel c w z * (f z - f ζ₀)) c R :=
+  have hKf_int : CircleIntegrable (fun z ↦ poissonKernel c w z * (f z - f ζ₀)) c R :=
     (hKcont.mul (hf.sub continuousOn_const)).circleIntegrable hR.le
-  have hKf₁_int : CircleIntegrable (fun z => poissonKernel c w z * f z) c R :=
+  have hKf₁_int : CircleIntegrable (fun z ↦ poissonKernel c w z * f z) c R :=
     (hKcont.mul hf).circleIntegrable hR.le
-  have hKf₂_int : CircleIntegrable (fun z => poissonKernel c w z * f ζ₀) c R :=
+  have hKf₂_int : CircleIntegrable (fun z ↦ poissonKernel c w z * f ζ₀) c R :=
     (hKcont.mul continuousOn_const).circleIntegrable hR.le
   have hbnd_int : CircleIntegrable
-      (fun z => ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R :=
+      (fun z ↦ ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R :=
     ((continuousOn_const.mul hKcont).add continuousOn_const).circleIntegrable hR.le
   have hunit : Real.circleAverage (poissonKernel c w) c R = 1 := circleAverage_poissonKernel hw
   -- the difference is the average of `K · (f - f ζ₀)`
-  have key : Real.circleAverage (fun z => poissonKernel c w z * f z) c R - f ζ₀
-      = Real.circleAverage (fun z => poissonKernel c w z * (f z - f ζ₀)) c R := by
-    have h1 : Real.circleAverage (fun z => poissonKernel c w z * (f z - f ζ₀)) c R
-        = Real.circleAverage (fun z => poissonKernel c w z * f z) c R
-          - Real.circleAverage (fun z => poissonKernel c w z * f ζ₀) c R := by
-      calc Real.circleAverage (fun z => poissonKernel c w z * (f z - f ζ₀)) c R
+  have key : Real.circleAverage (fun z ↦ poissonKernel c w z * f z) c R - f ζ₀
+      = Real.circleAverage (fun z ↦ poissonKernel c w z * (f z - f ζ₀)) c R := by
+    have h1 : Real.circleAverage (fun z ↦ poissonKernel c w z * (f z - f ζ₀)) c R
+        = Real.circleAverage (fun z ↦ poissonKernel c w z * f z) c R
+          - Real.circleAverage (fun z ↦ poissonKernel c w z * f ζ₀) c R := by
+      calc Real.circleAverage (fun z ↦ poissonKernel c w z * (f z - f ζ₀)) c R
           = Real.circleAverage
-              (fun z => poissonKernel c w z * f z - poissonKernel c w z * f ζ₀) c R := by
+              (fun z ↦ poissonKernel c w z * f z - poissonKernel c w z * f ζ₀) c R := by
             congr 1
             funext z
             ring
         _ = _ := Real.circleAverage_fun_sub hKf₁_int hKf₂_int
     rw [h1]
-    have h2 : (fun z => poissonKernel c w z * f ζ₀)
-        = fun z => f ζ₀ * poissonKernel c w z := by
+    have h2 : (fun z ↦ poissonKernel c w z * f ζ₀)
+        = fun z ↦ f ζ₀ * poissonKernel c w z := by
       funext z
       ring
     rw [h2, circleAverage_const_mul, hunit, mul_one]
@@ -347,20 +352,20 @@ theorem tendsto_re_schwarzIntegral (hR : 0 < R) (hf : ContinuousOn f (sphere c R
         mul_le_mul h1 h2 (abs_nonneg _) hε''.le
       linarith
   -- integrate the bound
-  calc |Real.circleAverage (fun z => poissonKernel c w z * (f z - f ζ₀)) c R|
-      ≤ Real.circleAverage |fun z => poissonKernel c w z * (f z - f ζ₀)| c R :=
+  calc |Real.circleAverage (fun z ↦ poissonKernel c w z * (f z - f ζ₀)) c R|
+      ≤ Real.circleAverage |fun z ↦ poissonKernel c w z * (f z - f ζ₀)| c R :=
         Real.abs_circleAverage_le_circleAverage_abs
     _ ≤ Real.circleAverage
-          (fun z => ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R := by
+          (fun z ↦ ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R := by
         apply Real.circleAverage_mono hKf_int.abs hbnd_int
         intro x hx
         rw [abs_of_pos hR] at hx
         simpa using hbound x hx
     _ = ε / 4 + ε / (4 * (M + 1)) * (2 * M) := by
         calc Real.circleAverage
-              (fun z => ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R
-            = Real.circleAverage (fun z => ε / 4 * poissonKernel c w z) c R
-              + Real.circleAverage (fun _ => ε / (4 * (M + 1)) * (2 * M)) c R :=
+              (fun z ↦ ε / 4 * poissonKernel c w z + ε / (4 * (M + 1)) * (2 * M)) c R
+            = Real.circleAverage (fun z ↦ ε / 4 * poissonKernel c w z) c R
+              + Real.circleAverage (fun _ ↦ ε / (4 * (M + 1)) * (2 * M)) c R :=
               Real.circleAverage_fun_add
                 ((continuousOn_const.mul hKcont).circleIntegrable hR.le)
                 (circleIntegrable_const _ _ _)
@@ -384,17 +389,17 @@ theorem exists_harmonic_extension {c : ℂ} {R : ℝ} (hR : 0 < R) {f : ℂ → 
   classical
   have hSdiff : DifferentiableOn ℂ (schwarzIntegral f c R) (ball c R) :=
     schwarzIntegral_differentiableOn hR hf
-  refine ⟨fun w => if w ∈ ball c R then (schwarzIntegral f c R w).re else f w, ?_, ?_, ?_⟩
+  refine ⟨fun w ↦ if w ∈ ball c R then (schwarzIntegral f c R w).re else f w, ?_, ?_, ?_⟩
   · -- continuity on the closed ball
     intro x hx
     rcases lt_or_eq_of_le (mem_closedBall.1 hx) with hlt | heq2
     · -- interior point
       have hxball : x ∈ ball c R := mem_ball.2 hlt
-      have hS_cont : ContinuousAt (fun w => (schwarzIntegral f c R w).re) x :=
+      have hS_cont : ContinuousAt (fun w ↦ (schwarzIntegral f c R w).re) x :=
         Complex.continuous_re.continuousAt.comp
           (hSdiff.analyticAt (isOpen_ball.mem_nhds hxball)).continuousAt
-      have heqv : (fun w => (schwarzIntegral f c R w).re) =ᶠ[𝓝 x]
-          (fun w => if w ∈ ball c R then (schwarzIntegral f c R w).re else f w) := by
+      have heqv : (fun w ↦ (schwarzIntegral f c R w).re) =ᶠ[𝓝 x]
+          (fun w ↦ if w ∈ ball c R then (schwarzIntegral f c R w).re else f w) := by
         filter_upwards [isOpen_ball.mem_nhds hxball] with y hy
         rw [if_pos hy]
       exact (hS_cont.congr heqv).continuousWithinAt
@@ -407,13 +412,13 @@ theorem exists_harmonic_extension {c : ℂ} {R : ℝ} (hR : 0 < R) {f : ℂ → 
       apply ContinuousWithinAt.union
       · -- approach from the interior: boundary attainment
         have h1 := tendsto_re_schwarzIntegral hR hf hxsph
-        have heqv : (fun w => (schwarzIntegral f c R w).re) =ᶠ[𝓝[ball c R] x]
-            (fun w => if w ∈ ball c R then (schwarzIntegral f c R w).re else f w) := by
+        have heqv : (fun w ↦ (schwarzIntegral f c R w).re) =ᶠ[𝓝[ball c R] x]
+            (fun w ↦ if w ∈ ball c R then (schwarzIntegral f c R w).re else f w) := by
           filter_upwards [self_mem_nhdsWithin] with y hy
           rw [if_pos hy]
         have h2 := h1.congr' heqv
         show Filter.Tendsto
-          (fun w => if w ∈ ball c R then (schwarzIntegral f c R w).re else f w)
+          (fun w ↦ if w ∈ ball c R then (schwarzIntegral f c R w).re else f w)
           (𝓝[ball c R] x)
           (𝓝 (if x ∈ ball c R then (schwarzIntegral f c R x).re else f x))
         rw [if_neg hxnb]
@@ -432,8 +437,8 @@ theorem exists_harmonic_extension {c : ℂ} {R : ℝ} (hR : 0 < R) {f : ℂ → 
     intro x hx
     have hxan : AnalyticAt ℂ (schwarzIntegral f c R) x :=
       hSdiff.analyticAt (isOpen_ball.mem_nhds hx)
-    have heqv : (fun w => if w ∈ ball c R then (schwarzIntegral f c R w).re else f w)
-        =ᶠ[𝓝 x] (fun w => (schwarzIntegral f c R w).re) := by
+    have heqv : (fun w ↦ if w ∈ ball c R then (schwarzIntegral f c R w).re else f w)
+        =ᶠ[𝓝 x] (fun w ↦ (schwarzIntegral f c R w).re) := by
       filter_upwards [isOpen_ball.mem_nhds hx] with y hy
       exact if_pos hy
     exact (harmonicAt_congr_nhds heqv).2 hxan.harmonicAt_re

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Submission.Topology.SecondCountable
 
 /-!
@@ -68,7 +73,7 @@ private theorem countable_components_meeting {Z : Type*} [TopologicalSpace Z]
     intro w hw₁ hw₂
     exact hne ((connectedComponentIn_eq hw₁).trans (connectedComponentIn_eq hw₂).symm)
   -- the traces in `U₀` form a pairwise-disjoint family of nonempty open sets
-  have key : ((fun U : Set Z => (Subtype.val ⁻¹' U : Set U₀)) '' 𝒱).Countable := by
+  have key : ((fun U : Set Z ↦ (Subtype.val ⁻¹' U : Set U₀)) '' 𝒱).Countable := by
     apply Rado.countable_of_pairwiseDisjoint_isOpen
     · rintro W ⟨U, hU, rfl⟩
       obtain ⟨z, hz, rfl⟩ := hcomp U hU
@@ -104,8 +109,8 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
   -- the empty space is trivially second countable (empty cover)
   rcases isEmpty_or_nonempty Z with hZ | hne
   · refine Rado.secondCountableTopology_of_countable_setCover (𝒰 := ∅) countable_empty
-      (fun U hU => absurd hU (Set.notMem_empty U))
-      (fun U hU => absurd hU (Set.notMem_empty U)) ?_
+      (fun U hU ↦ absurd hU (Set.notMem_empty U))
+      (fun U hU ↦ absurd hU (Set.notMem_empty U)) ?_
     rw [sUnion_empty]
     exact (Set.univ_eq_empty_iff.mpr hZ).symm
   obtain ⟨z₀⟩ := hne
@@ -162,7 +167,7 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
       intro w hw
       rcases em (w ∈ interior K) with hwW | hwW
       · exact mem_union_left _ hwW
-      · refine mem_union_right _ fun hwc => ?_
+      · refine mem_union_right _ fun hwc ↦ ?_
         have hwf : w ∈ frontier (interior K) := by
           rw [hWo.frontier_eq]
           exact ⟨hwc, hwW⟩
@@ -173,12 +178,12 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
         hUsub ⟨z, hzU, hzW⟩
     -- second countability: the component sits inside the compact `K`
     have hKsc : SecondCountableTopology K :=
-      Rado.IsCompact.secondCountableTopology hKc fun w _ => hloc w
+      Rado.IsCompact.secondCountableTopology hKc fun w _ ↦ hloc w
     have hUK : connectedComponentIn (f ⁻¹' V) z ⊆ K := hUW.trans interior_subset
     have hUsc : SecondCountableTopology (connectedComponentIn (f ⁻¹' V) z) :=
       secondCountableTopology_of_subset hUK hKsc
     exact ⟨connectedComponentIn (f ⁻¹' V) z, (mem𝒰 _).mpr ⟨V, hVB, ⟨z, hzV, rfl⟩, hUsc⟩,
-      hzU, fun w hw => (hKsub (hUK hw)).2⟩
+      hzU, fun w hw ↦ (hKsub (hUK hw)).2⟩
   -- Step 2: each member of `𝒰` meets only countably many members of `𝒰`
   have step2 : ∀ A ∈ 𝒰, {C : Set Z | C ∈ 𝒰 ∧ (A ∩ C).Nonempty}.Countable := by
     intro A hA
@@ -192,9 +197,9 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
       obtain ⟨x, hxA, hxC⟩ := hCA
       exact mem_biUnion hVB ⟨hcomp, ⟨x, hxC, hxA⟩⟩
     refine Set.Countable.mono hsub ?_
-    refine (countable_countableBasis Y).biUnion fun V hVB => ?_
+    refine (countable_countableBasis Y).biUnion fun V hVB ↦ ?_
     exact countable_components_meeting ((isOpen_of_mem_countableBasis hVB).preimage hf) hAsc
-      (fun U hU => hU.1) (fun U hU => hU.2)
+      (fun U hU ↦ hU.1) (fun U hU ↦ hU.2)
   -- Step 3: chain argument from a fixed starting member
   obtain ⟨U₀, hU₀𝒰, hz₀U₀, -⟩ := step1 z₀ univ (mem_univ z₀) isOpen_univ
   have hbranch : ∀ A : Set Z,
@@ -208,7 +213,7 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
       intro C hC
       exact (hA hC.1).elim
   have hreach𝒰 : ∀ C : Set Z, Relation.ReflTransGen
-      (fun A C : Set Z => A ∈ 𝒰 ∧ C ∈ 𝒰 ∧ (A ∩ C).Nonempty) U₀ C → C ∈ 𝒰 := by
+      (fun A C : Set Z ↦ A ∈ 𝒰 ∧ C ∈ 𝒰 ∧ (A ∩ C).Nonempty) U₀ C → C ∈ 𝒰 := by
     intro C hC
     induction hC with
     | refl => exact hU₀𝒰
@@ -218,14 +223,14 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
       ∃ R : Set (Set Z), R.Countable ∧ U₀ ∈ R ∧ (∀ C ∈ R, C ∈ 𝒰) ∧
         ∀ A ∈ R, ∀ C ∈ 𝒰, (A ∩ C).Nonempty → C ∈ R := by
     refine ⟨{C : Set Z | Relation.ReflTransGen
-        (fun A C : Set Z => A ∈ 𝒰 ∧ C ∈ 𝒰 ∧ (A ∩ C).Nonempty) U₀ C},
+        (fun A C : Set Z ↦ A ∈ 𝒰 ∧ C ∈ 𝒰 ∧ (A ∩ C).Nonempty) U₀ C},
       Rado.countable_setOf_reflTransGen U₀ hbranch, ?_, ?_, ?_⟩
     · exact Relation.ReflTransGen.refl
     · exact hreach𝒰
     · intro A hA C hC𝒰 hne
       exact Relation.ReflTransGen.tail hA ⟨hreach𝒰 A hA, hC𝒰, hne⟩
   -- the union of the reachable family is clopen and nonempty, hence everything
-  have hGopen : IsOpen (⋃₀ R) := isOpen_sUnion fun U hU => h𝒰open U (hR𝒰 U hU)
+  have hGopen : IsOpen (⋃₀ R) := isOpen_sUnion fun U hU ↦ h𝒰open U (hR𝒰 U hU)
   have hGclosed : IsClosed (⋃₀ R) := by
     apply isClosed_of_closure_subset
     intro z hz
@@ -236,6 +241,6 @@ theorem poincare_volterra {Z : Type*} [TopologicalSpace Z] [T2Space Z] [Connecte
   have hGuniv : ⋃₀ R = univ :=
     IsClopen.eq_univ ⟨hGclosed, hGopen⟩ ⟨z₀, mem_sUnion.mpr ⟨U₀, hRU₀, hz₀U₀⟩⟩
   exact Rado.secondCountableTopology_of_countable_setCover hRc
-    (fun U hU => h𝒰open U (hR𝒰 U hU)) (fun U hU => h𝒰sc U (hR𝒰 U hU)) hGuniv
+    (fun U hU ↦ h𝒰open U (hR𝒰 U hU)) (fun U hU ↦ h𝒰sc U (hR𝒰 U hU)) hGuniv
 
 end Rado

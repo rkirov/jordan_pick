@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Rado.Surface.Harmonic
 
 /-!
@@ -15,7 +20,6 @@ Prop. 1.2.3).
 
 open Set Topology Metric MeasureTheory InnerProductSpace Complex Filter
 
-set_option linter.unusedSectionVars false
 set_option autoImplicit false
 
 namespace Rado
@@ -29,7 +33,7 @@ open Classical in
 /-- Replace `g` inside the closed disk `e.symm '' closedBall c r` by the
 Dirichlet solution with `g`'s boundary values, read through the chart. -/
 noncomputable def surfaceReplace (g : X → ℝ) (e : OpenPartialHomeomorph X ℂ)
-    (c : ℂ) (r : ℝ) : X → ℝ := fun x =>
+    (c : ℂ) (r : ℝ) : X → ℝ := fun x ↦
   if _h : x ∈ e.source ∧ e x ∈ closedBall c r then
     poissonExtension (g ∘ e.symm) c r (e x)
   else g x
@@ -47,36 +51,42 @@ structure IsReplaceDisk (e : OpenPartialHomeomorph X ℂ) (c : ℂ) (r : ℝ) (s
   closedBall_subset : closedBall c r ⊆ e.target
   preimage_subset : e.symm '' closedBall c r ⊆ s
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem IsReplaceDisk.compact_preimage (hd : IsReplaceDisk e c r s) :
     IsCompact (e.symm '' closedBall c r) :=
   (isCompact_closedBall c r).image_of_continuousOn
     (e.symm.continuousOn.mono (by simpa using hd.closedBall_subset))
 
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The replacement agrees with `g` off the closed replacement disk. -/
-theorem surfaceReplace_eqOn_compl (_hd : IsReplaceDisk e c r s) :
+theorem surfaceReplace_eqOn_compl :
     EqOn (surfaceReplace g e c r) g (e.symm '' closedBall c r)ᶜ := by
   intro x hx
   rw [surfaceReplace, dif_neg]
   rintro ⟨hxs, hxb⟩
   exact hx ⟨e x, hxb, e.left_inv hxs⟩
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem IsReplaceDisk.closedBall_subset_chartImage (hd : IsReplaceDisk e c r s) :
-    closedBall c r ⊆ chartImage e s := fun w hw =>
+    closedBall c r ⊆ chartImage e s := fun w hw ↦
   ⟨e.symm w, ⟨hd.preimage_subset ⟨w, hw, rfl⟩, e.map_target (hd.closedBall_subset hw)⟩,
     e.right_inv (hd.closedBall_subset hw)⟩
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem IsReplaceDisk.isOpen_ball_image (hd : IsReplaceDisk e c r s) :
     IsOpen (e.symm '' ball c r) :=
   e.symm.isOpen_image_of_subset_source isOpen_ball
     (by simpa using ball_subset_closedBall.trans hd.closedBall_subset)
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem IsReplaceDisk.continuousOn_sphere (hd : IsReplaceDisk e c r s)
     (hg : SurfaceSubharmonicOn g s) : ContinuousOn (g ∘ e.symm) (sphere c r) :=
   (continuousOn_comp_chart_symm e hg.continuousOn).mono
     (sphere_subset_closedBall.trans hd.closedBall_subset_chartImage)
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- `g` is dominated by its replacement (comparison principle); helper form. -/
-private theorem le_surfaceReplace_aux (hs : IsOpen s) (hg : SurfaceSubharmonicOn g s)
+private theorem le_surfaceReplace_aux (hg : SurfaceSubharmonicOn g s)
     (hd : IsReplaceDisk e c r s) : ∀ x ∈ s, g x ≤ surfaceReplace g e c r x := by
   intro x hx
   by_cases hxD : x ∈ e.symm '' closedBall c r
@@ -85,18 +95,19 @@ private theorem le_surfaceReplace_aux (hs : IsOpen s) (hg : SurfaceSubharmonicOn
     have hxsrc : e.symm w ∈ e.source := e.map_target hwt
     have hew : e (e.symm w) = w := e.right_inv hwt
     have hle := (hg.subMeanOn e hd.mem_atlas).le_poissonExtension_on
-      (isOpen_chartImage e hs) hd.r_pos hd.closedBall_subset_chartImage w hwb
+      hd.r_pos hd.closedBall_subset_chartImage w hwb
     rw [surfaceReplace, dif_pos ⟨hxsrc, by rw [hew]; exact hwb⟩, hew]
     exact hle
-  · exact (surfaceReplace_eqOn_compl hd hxD).ge
+  · exact (surfaceReplace_eqOn_compl hxD).ge
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The replacement is harmonic inside the disk; helper form. -/
 private theorem surfaceReplace_surfaceHarmonicOn_aux (hg : SurfaceSubharmonicOn g s)
     (hd : IsReplaceDisk e c r s) :
     SurfaceHarmonicOn (surfaceReplace g e c r) (e.symm '' ball c r) := by
   have hbt : ball c r ⊆ e.target := ball_subset_closedBall.trans hd.closedBall_subset
   have hgs : ContinuousOn (g ∘ e.symm) (sphere c r) := hd.continuousOn_sphere hg
-  refine SurfaceHarmonicOn.of_chartwise hd.isOpen_ball_image ?_
+  refine SurfaceHarmonicOn.of_chartwise ?_
   rintro x ⟨w, hwb, rfl⟩
   have hwt : w ∈ e.target := hbt hwb
   have hxsrc : e.symm w ∈ e.source := e.map_target hwt
@@ -111,6 +122,7 @@ private theorem surfaceReplace_surfaceHarmonicOn_aux (hg : SurfaceSubharmonicOn 
   rw [surfaceReplace, dif_pos ⟨e.map_target hwt',
     by rw [e.right_inv hwt']; exact ball_subset_closedBall hw'⟩, e.right_inv hwt']
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The replacement is subharmonic (Anghel–Stan Remark 4): with `[T2Space X]`
 the compact replacement disk is closed, and the replacement is subharmonic on
 `s` — harmonic inside the disk, equal to `g` outside, and the sub-mean
@@ -129,7 +141,7 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
   have hrepg : ContinuousOn (g ∘ e.symm) (chartImage e s) :=
     continuousOn_comp_chart_symm e hg.continuousOn
   -- the chart-side glued function is continuous on `chartImage e s`
-  have hh : ContinuousOn (fun w => if w ∈ closedBall c r
+  have hh : ContinuousOn (fun w ↦ if w ∈ closedBall c r
       then poissonExtension (g ∘ e.symm) c r w else (g ∘ e.symm) w) (chartImage e s) := by
     refine ContinuousOn.if ?_ ?_ ?_
     · intro a ha
@@ -147,10 +159,10 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
     intro x hx
     by_cases hxsrc : x ∈ e.source
     · have hex : e x ∈ chartImage e s := mem_chartImage_of_mem hx hxsrc
-      have h1 : ContinuousAt (fun w => if w ∈ closedBall c r
+      have h1 : ContinuousAt (fun w ↦ if w ∈ closedBall c r
           then poissonExtension (g ∘ e.symm) c r w else (g ∘ e.symm) w) (e x) :=
         hh.continuousAt ((isOpen_chartImage e hs).mem_nhds hex)
-      have h2 : ContinuousAt ((fun w => if w ∈ closedBall c r
+      have h2 : ContinuousAt ((fun w ↦ if w ∈ closedBall c r
           then poissonExtension (g ∘ e.symm) c r w else (g ∘ e.symm) w) ∘ e) x :=
         h1.comp (e.continuousAt hxsrc)
       refine (h2.congr ?_).continuousWithinAt
@@ -159,7 +171,7 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
       · simp only [Function.comp_apply, if_pos hyb]
         rw [surfaceReplace, dif_pos ⟨hy, hyb⟩]
       · simp only [Function.comp_apply, if_neg hyb]
-        rw [surfaceReplace, dif_neg fun hcon => hyb hcon.2]
+        rw [surfaceReplace, dif_neg fun hcon ↦ hyb hcon.2]
         simp only [e.left_inv hy]
     · -- off the chart source: the disk is closed (T2), so the replacement
       -- agrees with `g` on a neighbourhood
@@ -169,12 +181,12 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
       have hDc : IsClosed (e.symm '' closedBall c r) := hd.compact_preimage.isClosed
       have hev : surfaceReplace g e c r =ᶠ[𝓝 x] g := by
         filter_upwards [hDc.isOpen_compl.mem_nhds hxD] with y hy
-        exact surfaceReplace_eqOn_compl hd hy
+        exact surfaceReplace_eqOn_compl hy
       exact (hg.continuousOn x hx).congr_of_eventuallyEq
         (hev.filter_mono nhdsWithin_le_nhds) hev.self_of_nhds
   -- the sub-mean inequality in every chart, on small circles
-  refine ⟨hcont, fun e' he' => ?_⟩
-  refine SubMeanLocalOn.subMeanOn (isOpen_chartImage e' hs) ?_
+  refine ⟨hcont, fun e' he' ↦ ?_⟩
+  refine SubMeanLocalOn.subMeanOn ?_
   refine ⟨continuousOn_comp_chart_symm e' hcont, ?_⟩
   rintro w ⟨x, ⟨hxs, hxe⟩, rfl⟩
   by_cases hxB : x ∈ e.symm '' ball c r
@@ -184,7 +196,7 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
       surfaceReplace_surfaceHarmonicOn_aux hg hd e' he'
     have hMeq : MeanEqOn (surfaceReplace g e c r ∘ e'.symm)
         (chartImage e' (e.symm '' ball c r)) :=
-      HarmonicOnNhd.meanEqOn (isOpen_chartImage e' hd.isOpen_ball_image) hharm
+      HarmonicOnNhd.meanEqOn hharm
     have hmem : e' x ∈ chartImage e' (e.symm '' ball c r) := mem_chartImage_of_mem hxB hxe
     obtain ⟨ρ, hρ, hball⟩ :=
       Metric.isOpen_iff.mp (isOpen_chartImage e' hd.isOpen_ball_image) _ hmem
@@ -206,7 +218,7 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
         rw [surfaceReplace, dif_pos ⟨hxsrc, by rw [hew]; exact hw'⟩, hew,
           poissonExtension_eqOn_sphere hd.r_pos hgs hsph]
         simp
-      · exact surfaceReplace_eqOn_compl hd hxD
+      · exact surfaceReplace_eqOn_compl hxD
     obtain ⟨ρ, hρ, hball⟩ := Metric.isOpen_iff.mp (isOpen_chartImage e' hs) _
       (mem_chartImage_of_mem hxs hxe)
     filter_upwards [Ioo_mem_nhdsGT hρ] with r' hr'
@@ -227,25 +239,28 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
       obtain ⟨y, ⟨hys, hye⟩, rfl⟩ := hsph_sub hz
       simp only [Function.comp_apply]
       rw [e'.left_inv hye]
-      exact le_surfaceReplace_aux hs hg hd y hys
+      exact le_surfaceReplace_aux hg hd y hys
     have hval : (surfaceReplace g e c r ∘ e'.symm) (e' x) = (g ∘ e'.symm) (e' x) := by
       simp only [Function.comp_apply, e'.left_inv hxe, hux]
     rw [hval]
     exact hle1.trans hle2
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- `g` is dominated by its replacement (comparison principle). -/
-theorem le_surfaceReplace (hs : IsOpen s) (hg : SurfaceSubharmonicOn g s)
+theorem le_surfaceReplace (hg : SurfaceSubharmonicOn g s)
     (hd : IsReplaceDisk e c r s) : ∀ x ∈ s, g x ≤ surfaceReplace g e c r x :=
-  le_surfaceReplace_aux hs hg hd
+  le_surfaceReplace_aux hg hd
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The replacement is harmonic in the open replacement disk. -/
-theorem surfaceReplace_surfaceHarmonicOn (_hs : IsOpen s) (hg : SurfaceSubharmonicOn g s)
+theorem surfaceReplace_surfaceHarmonicOn (hg : SurfaceSubharmonicOn g s)
     (hd : IsReplaceDisk e c r s) :
     SurfaceHarmonicOn (surfaceReplace g e c r) (e.symm '' ball c r) :=
   surfaceReplace_surfaceHarmonicOn_aux hg hd
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The replacement stays in `[0,1]` if `g` does (on `s`). -/
-theorem surfaceReplace_mem_Icc (_hs : IsOpen s) (hg : SurfaceSubharmonicOn g s)
+theorem surfaceReplace_mem_Icc (hg : SurfaceSubharmonicOn g s)
     (hd : IsReplaceDisk e c r s) (hb : ∀ x ∈ s, g x ∈ Icc (0 : ℝ) 1) :
     ∀ x ∈ s, surfaceReplace g e c r x ∈ Icc (0 : ℝ) 1 := by
   intro x hx
@@ -254,12 +269,12 @@ theorem surfaceReplace_mem_Icc (_hs : IsOpen s) (hg : SurfaceSubharmonicOn g s)
     have hwt : w ∈ e.target := hd.closedBall_subset hwb
     have hxsrc : e.symm w ∈ e.source := e.map_target hwt
     have hew : e (e.symm w) = w := e.right_inv hwt
-    have hbd : ∀ z ∈ sphere c r, (g ∘ e.symm) z ∈ Icc (0:ℝ) 1 := fun z hz =>
+    have hbd : ∀ z ∈ sphere c r, (g ∘ e.symm) z ∈ Icc (0:ℝ) 1 := fun z hz ↦
       hb _ (hd.preimage_subset ⟨z, sphere_subset_closedBall hz, rfl⟩)
     have hval := poissonExtension_mem_Icc hd.r_pos (hd.continuousOn_sphere hg) hbd w hwb
     rw [surfaceReplace, dif_pos ⟨hxsrc, by rw [hew]; exact hwb⟩, hew]
     exact hval
-  · rw [surfaceReplace_eqOn_compl hd hxD]
+  · rw [surfaceReplace_eqOn_compl hxD]
     exact hb x hx
 
 end Replace
@@ -272,12 +287,12 @@ structure IsPerronFamily (𝓕 : Set (X → ℝ)) (s : Set X) : Prop where
   nonempty : 𝓕.Nonempty
   subharmonic : ∀ g ∈ 𝓕, SurfaceSubharmonicOn g s
   bounds : ∀ g ∈ 𝓕, ∀ x ∈ s, g x ∈ Icc (0 : ℝ) 1
-  max_mem : ∀ g₁ ∈ 𝓕, ∀ g₂ ∈ 𝓕, (fun x => Max.max (g₁ x) (g₂ x)) ∈ 𝓕
+  max_mem : ∀ g₁ ∈ 𝓕, ∀ g₂ ∈ 𝓕, (fun x ↦ Max.max (g₁ x) (g₂ x)) ∈ 𝓕
   replace_mem : ∀ g ∈ 𝓕, ∀ e c r, IsReplaceDisk e c r s → surfaceReplace g e c r ∈ 𝓕
 
 /-- The upper envelope of a family of functions. -/
-noncomputable def perronSup (𝓕 : Set (X → ℝ)) : X → ℝ := fun x =>
-  sSup ((fun g => g x) '' 𝓕)
+noncomputable def perronSup (𝓕 : Set (X → ℝ)) : X → ℝ := fun x ↦
+  sSup ((fun g ↦ g x) '' 𝓕)
 
 /-! ### Harnack's principle for monotone sequences of harmonic functions -/
 
@@ -287,8 +302,8 @@ private theorem continuousOn_poissonKernel_sphere {z₀ w : ℂ} {R : ℝ}
     (hw : w ∈ ball z₀ R) : ContinuousOn (poissonKernel z₀ w) (sphere z₀ R) := by
   have hdR : ‖w - z₀‖ < R := mem_ball_iff_norm.mp hw
   have hfun : poissonKernel z₀ w
-      = fun z => (‖z - z₀‖ ^ 2 - ‖w - z₀‖ ^ 2) / ‖(z - z₀) - (w - z₀)‖ ^ 2 :=
-    funext fun z => poissonKernel_def z₀ w z
+      = fun z ↦ (‖z - z₀‖ ^ 2 - ‖w - z₀‖ ^ 2) / ‖(z - z₀) - (w - z₀)‖ ^ 2 :=
+    funext fun z ↦ poissonKernel_def z₀ w z
   intro z hz
   have hzR : ‖z - z₀‖ = R := mem_sphere_iff_norm.mp hz
   have hne : (z - z₀) - (w - z₀) ≠ 0 := by
@@ -307,7 +322,7 @@ private theorem harnack_le {h : ℂ → ℝ} {z₀ w : ℂ} {R : ℝ} (hR : 0 < 
     (hh : HarmonicOnNhd h (closedBall z₀ R))
     (hpos : ∀ z ∈ closedBall z₀ R, 0 ≤ h z) (hw : w ∈ ball z₀ R) :
     h w ≤ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z₀ := by
-  have hcont : ContinuousOn h (sphere z₀ R) := fun z hz =>
+  have hcont : ContinuousOn h (sphere z₀ R) := fun z hz ↦
     ((hh z (sphere_subset_closedBall hz)).1.continuousAt).continuousWithinAt
   have hker : ContinuousOn (poissonKernel z₀ w) (sphere z₀ R) :=
     continuousOn_poissonKernel_sphere hw
@@ -319,10 +334,10 @@ private theorem harnack_le {h : ℂ → ℝ} {z₀ w : ℂ} {R : ℝ} (hR : 0 < 
   have hint1 : CircleIntegrable (poissonKernel z₀ w • h) z₀ R :=
     (hker.smul hcont).circleIntegrable hR.le
   have hint2 : CircleIntegrable
-      (fun z => (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R :=
+      (fun z ↦ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R :=
     (continuousOn_const.mul hcont).circleIntegrable hR.le
   have hmono : Real.circleAverage (poissonKernel z₀ w • h) z₀ R
-      ≤ Real.circleAverage (fun z => (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R := by
+      ≤ Real.circleAverage (fun z ↦ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R := by
     refine Real.circleAverage_mono hint1 hint2 ?_
     intro z hz
     rw [abs_of_pos hR] at hz
@@ -333,14 +348,14 @@ private theorem harnack_le {h : ℂ → ℝ} {z₀ w : ℂ} {R : ℝ} (hR : 0 < 
     have h0 : 0 ≤ h z := hpos z (sphere_subset_closedBall hz)
     calc (poissonKernel z₀ w • h) z = poissonKernel z₀ w z * h z := rfl
       _ ≤ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z := mul_le_mul_of_nonneg_right hkb h0
-  have havg : Real.circleAverage (fun z => (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R
+  have havg : Real.circleAverage (fun z ↦ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R
       = (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z₀ := by
-    have h1 : Real.circleAverage (fun z => ((R + ‖w - z₀‖) / (R - ‖w - z₀‖)) • h z) z₀ R
+    have h1 : Real.circleAverage (fun z ↦ ((R + ‖w - z₀‖) / (R - ‖w - z₀‖)) • h z) z₀ R
         = ((R + ‖w - z₀‖) / (R - ‖w - z₀‖)) • Real.circleAverage h z₀ R :=
       Real.circleAverage_fun_smul
     simpa [smul_eq_mul, hmv] using h1
   calc h w = Real.circleAverage (poissonKernel z₀ w • h) z₀ R := hrep.symm
-    _ ≤ Real.circleAverage (fun z => (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R := hmono
+    _ ≤ Real.circleAverage (fun z ↦ (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z) z₀ R := hmono
     _ = (R + ‖w - z₀‖) / (R - ‖w - z₀‖) * h z₀ := havg
 
 /-- **Harnack's principle** (bounded case): the pointwise supremum of a
@@ -352,14 +367,14 @@ private theorem harmonicOnNhd_ciSup_of_monotone {h : ℕ → ℂ → ℝ} {U : S
     (hU : IsOpen U) (hharm : ∀ n, HarmonicOnNhd (h n) U)
     (hmono : ∀ z ∈ U, ∀ m n : ℕ, m ≤ n → h m z ≤ h n z)
     (hbd : ∀ n, ∀ z ∈ U, h n z ∈ Icc (0 : ℝ) 1) :
-    HarmonicOnNhd (fun z => ⨆ n, h n z) U := by
-  set W : ℂ → ℝ := fun z => ⨆ n, h n z with hWdef
-  have hWapp : ∀ z, W z = ⨆ n, h n z := fun z => rfl
-  have hbdd : ∀ z ∈ U, BddAbove (range fun n => h n z) := fun z hz =>
+    HarmonicOnNhd (fun z ↦ ⨆ n, h n z) U := by
+  set W : ℂ → ℝ := fun z ↦ ⨆ n, h n z with hWdef
+  have hWapp : ∀ z, W z = ⨆ n, h n z := fun z ↦ rfl
+  have hbdd : ∀ z ∈ U, BddAbove (range fun n ↦ h n z) := fun z hz ↦
     ⟨1, by rintro v ⟨n, rfl⟩; exact (hbd n z hz).2⟩
-  have hle : ∀ n, ∀ z ∈ U, h n z ≤ W z := fun n z hz => le_ciSup (hbdd z hz) n
-  have htend : ∀ z ∈ U, Tendsto (fun n => h n z) atTop (𝓝 (W z)) := fun z hz =>
-    tendsto_atTop_ciSup (fun m n hmn => hmono z hz m n hmn) (hbdd z hz)
+  have hle : ∀ n, ∀ z ∈ U, h n z ≤ W z := fun n z hz ↦ le_ciSup (hbdd z hz) n
+  have htend : ∀ z ∈ U, Tendsto (fun n ↦ h n z) atTop (𝓝 (W z)) := fun z hz ↦
+    tendsto_atTop_ciSup (fun m n hmn ↦ hmono z hz m n hmn) (hbdd z hz)
   -- continuity of the supremum, via Harnack's inequality
   have hWc : ContinuousOn W U := by
     intro z₀ hz₀
@@ -379,13 +394,13 @@ private theorem harmonicOnNhd_ciSup_of_monotone {h : ℕ → ℂ → ℝ} {U : S
       intro x hx
       have hxR : x ∈ ball z₀ R := ball_subset_ball (by linarith) hx
       have hxU : x ∈ U := hRU (ball_subset_closedBall hxR)
-      have htends : Tendsto (fun n => h n x - h m x) atTop (𝓝 (W x - h m x)) :=
+      have htends : Tendsto (fun n ↦ h n x - h m x) atTop (𝓝 (W x - h m x)) :=
         (htend x hxU).sub tendsto_const_nhds
       refine le_of_tendsto htends ?_
       filter_upwards [eventually_ge_atTop m] with n hn
-      have hdiff : HarmonicOnNhd (fun z => h n z - h m z) (closedBall z₀ R) := fun z hz =>
+      have hdiff : HarmonicOnNhd (fun z ↦ h n z - h m z) (closedBall z₀ R) := fun z hz ↦
         (hharm n z (hRU hz)).sub (hharm m z (hRU hz))
-      have hnonneg : ∀ z ∈ closedBall z₀ R, 0 ≤ h n z - h m z := fun z hz =>
+      have hnonneg : ∀ z ∈ closedBall z₀ R, 0 ≤ h n z - h m z := fun z hz ↦
         sub_nonneg.mpr (hmono z (hRU hz) m n hn)
       have hHar := harnack_le hR hdiff hnonneg hxR
       have hd2 : ‖x - z₀‖ < R / 2 := mem_ball_iff_norm.mp hx
@@ -416,31 +431,31 @@ private theorem harmonicOnNhd_ciSup_of_monotone {h : ℕ → ℂ → ℝ} {U : S
     · linarith [k3.2]
   -- the mean value property passes to the limit
   have hmean : MeanEqOn W U := by
-    refine ⟨hWc, fun a ρ hρ hsub => ?_⟩
+    refine ⟨hWc, fun a ρ hρ hsub ↦ ?_⟩
     have haU : a ∈ U := hsub (mem_closedBall_self hρ.le)
     have hsph : sphere a ρ ⊆ U := sphere_subset_closedBall.trans hsub
-    have hcm : ∀ n, Continuous fun θ : ℝ => h n (circleMap a ρ θ) := by
+    have hcm : ∀ n, Continuous fun θ : ℝ ↦ h n (circleMap a ρ θ) := by
       intro n
-      refine continuous_iff_continuousAt.mpr fun θ => ?_
+      refine continuous_iff_continuousAt.mpr fun θ ↦ ?_
       exact ((hharm n _ (hsph (circleMap_mem_sphere a hρ.le θ))).1.continuousAt).comp
         (continuous_circleMap a ρ).continuousAt
-    have hci : Tendsto (fun n => ∫ θ in (0 : ℝ)..2 * Real.pi, h n (circleMap a ρ θ)) atTop
+    have hci : Tendsto (fun n ↦ ∫ θ in (0 : ℝ)..2 * Real.pi, h n (circleMap a ρ θ)) atTop
         (𝓝 (∫ θ in (0 : ℝ)..2 * Real.pi, W (circleMap a ρ θ))) := by
       refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
-        (fun _ => (1 : ℝ)) (Filter.Eventually.of_forall fun n => (hcm n).aestronglyMeasurable)
-        (Filter.Eventually.of_forall fun n => ae_of_all _ fun θ _ => ?_)
-        intervalIntegrable_const (ae_of_all _ fun θ _ => ?_)
+        (fun _ ↦ (1 : ℝ)) (Filter.Eventually.of_forall fun n ↦ (hcm n).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun n ↦ ae_of_all _ fun θ _ ↦ ?_)
+        intervalIntegrable_const (ae_of_all _ fun θ _ ↦ ?_)
       · have hmem := hbd n _ (hsph (circleMap_mem_sphere a hρ.le θ))
         rw [Real.norm_eq_abs, abs_le]
         exact ⟨by linarith [hmem.1], hmem.2⟩
       · exact htend _ (hsph (circleMap_mem_sphere a hρ.le θ))
-    have h2 : Tendsto (fun n => Real.circleAverage (h n) a ρ) atTop
+    have h2 : Tendsto (fun n ↦ Real.circleAverage (h n) a ρ) atTop
         (𝓝 (Real.circleAverage W a ρ)) := by
       simp only [Real.circleAverage_def]
       exact hci.const_smul _
-    have h3 : Tendsto (fun n => Real.circleAverage (h n) a ρ) atTop (𝓝 (W a)) :=
+    have h3 : Tendsto (fun n ↦ Real.circleAverage (h n) a ρ) atTop (𝓝 (W a)) :=
       Filter.Tendsto.congr
-        (fun n => ((HarmonicOnNhd.meanEqOn hU (hharm n)).mean_eq a ρ hρ hsub).symm)
+        (fun n ↦ ((HarmonicOnNhd.meanEqOn (hharm n)).mean_eq a ρ hρ hsub).symm)
         (htend a haU)
     exact tendsto_nhds_unique h2 h3
   exact hmean.harmonicOnNhd hU
@@ -451,8 +466,9 @@ private theorem harmonicOnNhd_ciSup_of_monotone {h : ℕ → ℂ → ℝ} {U : S
 functions. -/
 private def maxUpTo (f : ℕ → X → ℝ) : ℕ → X → ℝ
   | 0 => f 0
-  | j + 1 => fun y => Max.max (maxUpTo f j y) (f (j + 1) y)
+  | j + 1 => fun y ↦ Max.max (maxUpTo f j y) (f (j + 1) y)
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem maxUpTo_mem {𝓕 : Set (X → ℝ)} {s : Set X} (h𝓕 : IsPerronFamily 𝓕 s)
     {f : ℕ → X → ℝ} (hf : ∀ j, f j ∈ 𝓕) : ∀ j, maxUpTo f j ∈ 𝓕 := by
   intro j
@@ -460,6 +476,7 @@ private theorem maxUpTo_mem {𝓕 : Set (X → ℝ)} {s : Set X} (h𝓕 : IsPerr
   | zero => rw [maxUpTo]; exact hf 0
   | succ j ih => rw [maxUpTo]; exact h𝓕.max_mem _ ih _ (hf (j + 1))
 
+omit [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem le_maxUpTo {f : ℕ → X → ℝ} {i j : ℕ} (hij : i ≤ j) (y : X) :
     f i y ≤ maxUpTo f j y := by
   induction j with
@@ -478,13 +495,14 @@ private noncomputable def perronSeq (e : OpenPartialHomeomorph X ℂ) (c : ℂ) 
     (b : ℕ → X → ℝ) : ℕ → X → ℝ
   | 0 => surfaceReplace (b 0) e c r
   | n + 1 => surfaceReplace
-      (fun y => Max.max (perronSeq e c r b n y) (b (n + 1) y)) e c r
+      (fun y ↦ Max.max (perronSeq e c r b n y) (b (n + 1) y)) e c r
 
 section PerronSeq
 
 variable {𝓕 : Set (X → ℝ)} {s : Set X} {e : OpenPartialHomeomorph X ℂ} {c : ℂ} {r : ℝ}
   {b : ℕ → X → ℝ}
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 private theorem perronSeq_mem (h𝓕 : IsPerronFamily 𝓕 s) (hd : IsReplaceDisk e c r s)
     (hb : ∀ n, b n ∈ 𝓕) : ∀ n, perronSeq e c r b n ∈ 𝓕 := by
   intro n
@@ -496,47 +514,51 @@ private theorem perronSeq_mem (h𝓕 : IsPerronFamily 𝓕 s) (hd : IsReplaceDis
     rw [perronSeq]
     exact h𝓕.replace_mem _ (h𝓕.max_mem _ ih _ (hb (n + 1))) e c r hd
 
-private theorem le_perronSeq (hs : IsOpen s) (h𝓕 : IsPerronFamily 𝓕 s)
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
+private theorem le_perronSeq (h𝓕 : IsPerronFamily 𝓕 s)
     (hd : IsReplaceDisk e c r s) (hb : ∀ n, b n ∈ 𝓕) (n : ℕ) :
     ∀ y ∈ s, b n y ≤ perronSeq e c r b n y := by
   intro y hy
   cases n with
   | zero =>
     rw [perronSeq]
-    exact le_surfaceReplace hs (h𝓕.subharmonic _ (hb 0)) hd y hy
+    exact le_surfaceReplace (h𝓕.subharmonic _ (hb 0)) hd y hy
   | succ n =>
     rw [perronSeq]
     refine le_trans (le_max_right (perronSeq e c r b n y) (b (n + 1) y)) ?_
-    exact le_surfaceReplace hs (h𝓕.subharmonic _
+    exact le_surfaceReplace (h𝓕.subharmonic _
       (h𝓕.max_mem _ (perronSeq_mem h𝓕 hd hb n) _ (hb (n + 1)))) hd y hy
 
-private theorem perronSeq_le_succ (hs : IsOpen s) (h𝓕 : IsPerronFamily 𝓕 s)
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
+private theorem perronSeq_le_succ (h𝓕 : IsPerronFamily 𝓕 s)
     (hd : IsReplaceDisk e c r s) (hb : ∀ n, b n ∈ 𝓕) (n : ℕ) :
     ∀ y ∈ s, perronSeq e c r b n y ≤ perronSeq e c r b (n + 1) y := by
   intro y hy
   rw [perronSeq]
   refine le_trans (le_max_left (perronSeq e c r b n y) (b (n + 1) y)) ?_
-  exact le_surfaceReplace hs (h𝓕.subharmonic _
+  exact le_surfaceReplace (h𝓕.subharmonic _
     (h𝓕.max_mem _ (perronSeq_mem h𝓕 hd hb n) _ (hb (n + 1)))) hd y hy
 
-private theorem perronSeq_mono (hs : IsOpen s) (h𝓕 : IsPerronFamily 𝓕 s)
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
+private theorem perronSeq_mono (h𝓕 : IsPerronFamily 𝓕 s)
     (hd : IsReplaceDisk e c r s) (hb : ∀ n, b n ∈ 𝓕) {m n : ℕ} (hmn : m ≤ n) :
     ∀ y ∈ s, perronSeq e c r b m y ≤ perronSeq e c r b n y := by
   intro y hy
   induction n, hmn using Nat.le_induction with
   | base => exact le_rfl
-  | succ n hmn ih => exact ih.trans (perronSeq_le_succ hs h𝓕 hd hb n y hy)
+  | succ n hmn ih => exact ih.trans (perronSeq_le_succ h𝓕 hd hb n y hy)
 
-private theorem perronSeq_surfaceHarmonicOn (hs : IsOpen s) (h𝓕 : IsPerronFamily 𝓕 s)
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
+private theorem perronSeq_surfaceHarmonicOn (h𝓕 : IsPerronFamily 𝓕 s)
     (hd : IsReplaceDisk e c r s) (hb : ∀ n, b n ∈ 𝓕) (n : ℕ) :
     SurfaceHarmonicOn (perronSeq e c r b n) (e.symm '' ball c r) := by
   cases n with
   | zero =>
     rw [perronSeq]
-    exact surfaceReplace_surfaceHarmonicOn hs (h𝓕.subharmonic _ (hb 0)) hd
+    exact surfaceReplace_surfaceHarmonicOn (h𝓕.subharmonic _ (hb 0)) hd
   | succ n =>
     rw [perronSeq]
-    exact surfaceReplace_surfaceHarmonicOn hs (h𝓕.subharmonic _
+    exact surfaceReplace_surfaceHarmonicOn (h𝓕.subharmonic _
       (h𝓕.max_mem _ (perronSeq_mem h𝓕 hd hb n) _ (hb (n + 1)))) hd
 
 end PerronSeq
@@ -546,7 +568,7 @@ upper envelope of a Perron family is harmonic. -/
 theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s : Set X}
     (hs : IsOpen s) (h𝓕 : IsPerronFamily 𝓕 s) :
     SurfaceHarmonicOn (perronSup 𝓕) s := by
-  refine SurfaceHarmonicOn.of_chartwise hs fun x hx => ?_
+  refine SurfaceHarmonicOn.of_chartwise fun x hx ↦ ?_
   set e := chartAt ℂ x with he_def
   have he : e ∈ riemannAtlas X := chartAt_mem_riemannAtlas x
   have hxe : x ∈ e.source := mem_chart_source ℂ x
@@ -560,20 +582,20 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
     ⟨he, hr, hcb.trans (chartImage_subset_target e s), by
       rintro y ⟨w, hw, rfl⟩
       exact mapsTo_symm_chartImage (hcb hw)⟩
-  have hBmem : ∀ w ∈ ball c r, e.symm w ∈ s := fun w hw =>
+  have hBmem : ∀ w ∈ ball c r, e.symm w ∈ s := fun w hw ↦
     hd.preimage_subset ⟨w, ball_subset_closedBall hw, rfl⟩
   have hball_sub : ball c r ⊆ chartImage e (e.symm '' ball c r) := by
     intro w hw
     have hwt : w ∈ e.target := hd.closedBall_subset (ball_subset_closedBall hw)
     exact ⟨e.symm w, ⟨⟨w, hw, rfl⟩, e.map_target hwt⟩, e.right_inv hwt⟩
   -- unfolded form of the envelope
-  have hPS : ∀ y : X, perronSup 𝓕 y = sSup ((fun g => g y) '' 𝓕) := fun y => rfl
-  have hPSbdd : ∀ y ∈ s, BddAbove ((fun g => g y) '' 𝓕) := fun y hy =>
+  have hPS : ∀ y : X, perronSup 𝓕 y = sSup ((fun g ↦ g y) '' 𝓕) := fun y ↦ rfl
+  have hPSbdd : ∀ y ∈ s, BddAbove ((fun g ↦ g y) '' 𝓕) := fun y hy ↦
     ⟨1, by rintro v ⟨g', hg', rfl⟩; exact (h𝓕.bounds g' hg' y hy).2⟩
   -- a dense sequence in the disk
   haveI hnB : Nonempty (ball c r) := ⟨⟨c, mem_ball_self hr⟩⟩
-  set zs : ℕ → ℂ := fun j => (TopologicalSpace.denseSeq (ball c r) j : ℂ) with hzs_def
-  have hzs_mem : ∀ j, zs j ∈ ball c r := fun j => (TopologicalSpace.denseSeq (ball c r) j).2
+  set zs : ℕ → ℂ := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j : ℂ) with hzs_def
+  have hzs_mem : ∀ j, zs j ∈ ball c r := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j).2
   have hzs_dense : ∀ w ∈ ball c r, w ∈ closure (range zs) := by
     intro w hw
     have h1 : (⟨w, hw⟩ : ball c r) ∈ closure (range (TopologicalSpace.denseSeq (ball c r))) :=
@@ -588,41 +610,41 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
       perronSup 𝓕 (e.symm (zs j)) - 1 / ((n : ℝ) + 1) < g (e.symm (zs j)) := by
     intro j n
     have h1 : perronSup 𝓕 (e.symm (zs j)) - 1 / ((n : ℝ) + 1)
-        < sSup ((fun g => g (e.symm (zs j))) '' 𝓕) := by
+        < sSup ((fun g ↦ g (e.symm (zs j))) '' 𝓕) := by
       rw [← hPS]
       exact sub_lt_self _ (by positivity)
     obtain ⟨v, ⟨g, hg, rfl⟩, hv⟩ := exists_lt_of_lt_csSup (h𝓕.nonempty.image _) h1
     exact ⟨g, hg, hv⟩
   choose fj hfj𝓕 hfjval using hopt
   -- running maxima of the near-optimal members
-  set cseq : ℕ → X → ℝ := fun n => maxUpTo (fun i => fj i n) n with hcseq_def
-  have hcseq_mem : ∀ n, cseq n ∈ 𝓕 := fun n => maxUpTo_mem h𝓕 (fun i => hfj𝓕 i n) n
+  set cseq : ℕ → X → ℝ := fun n ↦ maxUpTo (fun i ↦ fj i n) n with hcseq_def
+  have hcseq_mem : ∀ n, cseq n ∈ 𝓕 := fun n ↦ maxUpTo_mem h𝓕 (fun i ↦ hfj𝓕 i n) n
   have hcseq_dom : ∀ j n : ℕ, j ≤ n → ∀ y, fj j n y ≤ cseq n y := by
     intro j n hjn y
     rw [hcseq_def]
-    exact le_maxUpTo (f := fun i => fj i n) hjn y
+    exact le_maxUpTo (f := fun i ↦ fj i n) hjn y
   -- boundedness of the approximating suprema
   have hbddW : ∀ b : ℕ → X → ℝ, (∀ n, b n ∈ 𝓕) → ∀ w ∈ ball c r,
-      BddAbove (range fun n => perronSeq e c r b n (e.symm w)) := fun b hb w hw =>
+      BddAbove (range fun n ↦ perronSeq e c r b n (e.symm w)) := fun b hb w hw ↦
     ⟨1, by
       rintro v ⟨n, rfl⟩
       exact (h𝓕.bounds _ (perronSeq_mem h𝓕 hd hb n) _ (hBmem w hw)).2⟩
   -- harmonicity of the suprema (Harnack's principle)
   have hWharm : ∀ b : ℕ → X → ℝ, (∀ n, b n ∈ 𝓕) →
-      HarmonicOnNhd (fun w => ⨆ n, perronSeq e c r b n (e.symm w)) (ball c r) := by
+      HarmonicOnNhd (fun w ↦ ⨆ n, perronSeq e c r b n (e.symm w)) (ball c r) := by
     intro b hb
-    refine harmonicOnNhd_ciSup_of_monotone isOpen_ball (fun n => ?_) ?_ ?_
+    refine harmonicOnNhd_ciSup_of_monotone isOpen_ball (fun n ↦ ?_) ?_ ?_
     · intro w hw
-      exact perronSeq_surfaceHarmonicOn hs h𝓕 hd hb n e he w (hball_sub hw)
+      exact perronSeq_surfaceHarmonicOn h𝓕 hd hb n e he w (hball_sub hw)
     · intro w hw m n hmn
-      exact perronSeq_mono hs h𝓕 hd hb hmn (e.symm w) (hBmem w hw)
+      exact perronSeq_mono h𝓕 hd hb hmn (e.symm w) (hBmem w hw)
     · intro n w hw
       exact h𝓕.bounds _ (perronSeq_mem h𝓕 hd hb n) _ (hBmem w hw)
   -- the suprema are dominated by the Perron envelope
   have hWle : ∀ b : ℕ → X → ℝ, (∀ n, b n ∈ 𝓕) → ∀ w ∈ ball c r,
       (⨆ n, perronSeq e c r b n (e.symm w)) ≤ perronSup 𝓕 (e.symm w) := by
     intro b hb w hw
-    refine ciSup_le fun n => ?_
+    refine ciSup_le fun n ↦ ?_
     rw [hPS]
     exact le_csSup (hPSbdd _ (hBmem w hw)) ⟨_, perronSeq_mem h𝓕 hd hb n, rfl⟩
   -- at the dense points, any supremum built from a dominating sequence attains
@@ -640,7 +662,7 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
     have h2 : fj j m (e.symm (zs j)) ≤ b m (e.symm (zs j)) :=
       hdom j m (le_max_left j n) _
     have h3 : b m (e.symm (zs j)) ≤ perronSeq e c r b m (e.symm (zs j)) :=
-      le_perronSeq hs h𝓕 hd hb m _ (hBmem (zs j) (hzs_mem j))
+      le_perronSeq h𝓕 hd hb m _ (hBmem (zs j) (hzs_mem j))
     have h4 : perronSeq e c r b m (e.symm (zs j))
         ≤ ⨆ k, perronSeq e c r b k (e.symm (zs j)) :=
       le_ciSup (hbddW b hb (zs j) (hzs_mem j)) m
@@ -650,7 +672,7 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
       linarith
     linarith
   -- the supremum for the running-maxima sequence
-  have hW₁harm : HarmonicOnNhd (fun w => ⨆ n, perronSeq e c r cseq n (e.symm w))
+  have hW₁harm : HarmonicOnNhd (fun w ↦ ⨆ n, perronSeq e c r cseq n (e.symm w))
       (ball c r) := hWharm cseq hcseq_mem
   -- the Perron envelope agrees with this harmonic function on the disk
   have hfinal : ∀ w ∈ ball c r,
@@ -661,70 +683,73 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
     refine csSup_le (h𝓕.nonempty.image _) ?_
     rintro v ⟨g, hg, rfl⟩
     -- the second sequence, dominating both `g` and the first sequence
-    have hb₂mem : ∀ n, (fun n' y => Max.max (g y) (cseq n' y)) n ∈ 𝓕 := fun n =>
+    have hb₂mem : ∀ n, (fun n' y ↦ Max.max (g y) (cseq n' y)) n ∈ 𝓕 := fun n ↦
       h𝓕.max_mem _ hg _ (hcseq_mem n)
     have hb₂dom : ∀ j n : ℕ, j ≤ n → ∀ y,
-        fj j n y ≤ (fun n' y => Max.max (g y) (cseq n' y)) n y := fun j n hjn y =>
+        fj j n y ≤ (fun n' y ↦ Max.max (g y) (cseq n' y)) n y := fun j n hjn y ↦
       (hcseq_dom j n hjn y).trans (le_max_right _ _)
     have hW₂harm := hWharm _ hb₂mem
     -- the two suprema agree on the dense sequence, hence at `w`
-    have heq : (⨆ n, perronSeq e c r (fun n' y => Max.max (g y) (cseq n' y)) n (e.symm w))
+    have heq : (⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w))
         = ⨆ n, perronSeq e c r cseq n (e.symm w) := by
-      have h1 : Tendsto (fun w' => ⨆ n, perronSeq e c r cseq n (e.symm w'))
+      have h1 : Tendsto (fun w' ↦ ⨆ n, perronSeq e c r cseq n (e.symm w'))
           (𝓝[range zs] w) (𝓝 (⨆ n, perronSeq e c r cseq n (e.symm w))) :=
         ((hW₁harm w hw).1.continuousAt).continuousWithinAt
       have h2 : Tendsto
-          (fun w' => ⨆ n, perronSeq e c r (fun n' y => Max.max (g y) (cseq n' y)) n (e.symm w'))
+          (fun w' ↦ ⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w'))
           (𝓝[range zs] w)
-          (𝓝 (⨆ n, perronSeq e c r (fun n' y => Max.max (g y) (cseq n' y)) n (e.symm w))) :=
+          (𝓝 (⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w))) :=
         ((hW₂harm w hw).1.continuousAt).continuousWithinAt
       haveI : (𝓝[range zs] w).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hzs_dense w hw)
       have hcongr :
-          (fun w' => ⨆ n, perronSeq e c r (fun n' y => Max.max (g y) (cseq n' y)) n (e.symm w'))
-          =ᶠ[𝓝[range zs] w] fun w' => ⨆ n, perronSeq e c r cseq n (e.symm w') := by
+          (fun w' ↦ ⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w'))
+          =ᶠ[𝓝[range zs] w] fun w' ↦ ⨆ n, perronSeq e c r cseq n (e.symm w') := by
         filter_upwards [self_mem_nhdsWithin] with w' hw'
         obtain ⟨j, rfl⟩ := hw'
         exact (hWge _ hb₂mem hb₂dom j).trans (hWge cseq hcseq_mem hcseq_dom j).symm
       exact tendsto_nhds_unique (h2.congr' hcongr) h1
     -- `g` is dominated by the second supremum
     have hgle : g (e.symm w)
-        ≤ ⨆ n, perronSeq e c r (fun n' y => Max.max (g y) (cseq n' y)) n (e.symm w) := by
+        ≤ ⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w) := by
       refine le_trans (le_max_left (g (e.symm w)) (cseq 0 (e.symm w))) ?_
-      refine le_trans (le_perronSeq hs h𝓕 hd hb₂mem 0 _ (hBmem w hw)) ?_
+      refine le_trans (le_perronSeq h𝓕 hd hb₂mem 0 _ (hBmem w hw)) ?_
       exact le_ciSup (hbddW _ hb₂mem w hw) 0
     exact le_of_le_of_eq hgle heq
   -- conclude via congruence on the open disk
   have hcongr : (perronSup 𝓕 ∘ e.symm) =ᶠ[𝓝 c]
-      fun w => ⨆ n, perronSeq e c r cseq n (e.symm w) := by
+      fun w ↦ ⨆ n, perronSeq e c r cseq n (e.symm w) := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hr)] with w hw
     exact hfinal w hw
   exact (harmonicAt_congr_nhds hcongr).mpr (hW₁harm c (mem_ball_self hr))
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem IsPerronFamily.le_perronSup {𝓕 : Set (X → ℝ)} {s : Set X}
     (h𝓕 : IsPerronFamily 𝓕 s) {g : X → ℝ} (hg : g ∈ 𝓕) :
-    ∀ x ∈ s, g x ≤ perronSup 𝓕 x := fun x hx =>
-  le_csSup ⟨1, fun _ ⟨g', hg', hgx⟩ => hgx ▸ (h𝓕.bounds g' hg' x hx).2⟩ ⟨g, hg, rfl⟩
+    ∀ x ∈ s, g x ≤ perronSup 𝓕 x := fun x hx ↦
+  le_csSup ⟨1, fun _ ⟨g', hg', hgx⟩ ↦ hgx ▸ (h𝓕.bounds g' hg' x hx).2⟩ ⟨g, hg, rfl⟩
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem IsPerronFamily.perronSup_le {𝓕 : Set (X → ℝ)} {s : Set X}
-    (h𝓕 : IsPerronFamily 𝓕 s) {M : ℝ} {x : X} (_hx : x ∈ s)
+    (h𝓕 : IsPerronFamily 𝓕 s) {M : ℝ} {x : X}
     (hM : ∀ g ∈ 𝓕, g x ≤ M) : perronSup 𝓕 x ≤ M :=
-  csSup_le (h𝓕.nonempty.image _) fun _ ⟨g, hg, hgx⟩ => hgx ▸ hM g hg
+  csSup_le (h𝓕.nonempty.image _) fun _ ⟨g, hg, hgx⟩ ↦ hgx ▸ hM g hg
 
 /-- `SubMeanOn` transfers along equality on the domain. -/
 theorem subMeanOn_congr {g₁ g₂ : ℂ → ℝ} {s : Set ℂ} (hg : SubMeanOn g₁ s)
     (h : EqOn g₂ g₁ s) : SubMeanOn g₂ s := by
-  refine ⟨hg.continuousOn.congr h, fun c r hr hsub => ?_⟩
+  refine ⟨hg.continuousOn.congr h, fun c r hr hsub ↦ ?_⟩
   have havg : Real.circleAverage g₂ c r = Real.circleAverage g₁ c r := by
-    refine Real.circleAverage_congr_sphere fun z hz => ?_
+    refine Real.circleAverage_congr_sphere fun z hz ↦ ?_
     rw [abs_of_pos hr] at hz
     exact h (hsub (sphere_subset_closedBall hz))
   rw [h (hsub (mem_closedBall_self hr.le)), havg]
   exact hg.submean c r hr hsub
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- `SurfaceSubharmonicOn` transfers along equality on the domain. -/
 theorem surfaceSubharmonicOn_congr {g₁ g₂ : X → ℝ} {s : Set X}
     (hg : SurfaceSubharmonicOn g₁ s) (h : EqOn g₂ g₁ s) : SurfaceSubharmonicOn g₂ s := by
-  refine ⟨hg.continuousOn.congr h, fun e' he' => ?_⟩
+  refine ⟨hg.continuousOn.congr h, fun e' he' ↦ ?_⟩
   refine subMeanOn_congr (hg.subMeanOn e' he') ?_
   rintro w ⟨x, ⟨hxs, hxe⟩, rfl⟩
   simp only [Function.comp_apply]

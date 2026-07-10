@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Rado.Complex.Poisson
 
 /-!
@@ -38,7 +43,7 @@ data `f`, extended by junk values off the closed disk and for illegal
 parameters. -/
 noncomputable def poissonExtension (f : ℂ → ℝ) (c : ℂ) (R : ℝ) : ℂ → ℝ :=
   if h : 0 < R ∧ ContinuousOn f (sphere c R) then
-    fun z => if z ∈ closedBall c R then (exists_harmonic_extension h.1 h.2).choose z else f z
+    fun z ↦ if z ∈ closedBall c R then (exists_harmonic_extension h.1 h.2).choose z else f z
   else f
 
 section PoissonExtensionAPI
@@ -82,7 +87,7 @@ theorem poissonExtension_eqOn_compl (hR : 0 < R) (hf : ContinuousOn f (sphere c 
 hypothesis of `HarmonicOnNhd.meanEqOn` below is not needed). -/
 private theorem meanEqOn_of_harmonicOnNhd {u : ℂ → ℝ} {s : Set ℂ}
     (hu : HarmonicOnNhd u s) : MeanEqOn u s := by
-  refine ⟨hu.continuousOn, fun a r hr hsub => ?_⟩
+  refine ⟨hu.continuousOn, fun a r hr hsub ↦ ?_⟩
   have h : HarmonicOnNhd u (closedBall a |r|) := by
     rw [abs_of_pos hr]
     exact hu.mono hsub
@@ -91,7 +96,7 @@ private theorem meanEqOn_of_harmonicOnNhd {u : ℂ → ℝ} {s : Set ℂ}
 /-- `MeanEqOn` is antitone in the set. -/
 private theorem meanEqOn_mono {h : ℂ → ℝ} {s t : Set ℂ} (hh : MeanEqOn h s) (hts : t ⊆ s) :
     MeanEqOn h t :=
-  ⟨hh.continuousOn.mono hts, fun a r hr hsub => hh.mean_eq a r hr (hsub.trans hts)⟩
+  ⟨hh.continuousOn.mono hts, fun a r hr hsub ↦ hh.mean_eq a r hr (hsub.trans hts)⟩
 
 /-- The Poisson extension takes values in any closed interval containing the
 boundary data (maximum principle packaging). -/
@@ -132,9 +137,8 @@ theorem poissonExtension_mem_Icc (hR : 0 < R) (hf : ContinuousOn f (sphere c R))
 
 end PoissonExtensionAPI
 
-set_option linter.unusedVariables false in
 /-- Harmonic functions satisfy the mean-value property on open sets. -/
-theorem HarmonicOnNhd.meanEqOn {u : ℂ → ℝ} {s : Set ℂ} (hs : IsOpen s)
+theorem HarmonicOnNhd.meanEqOn {u : ℂ → ℝ} {s : Set ℂ}
     (hu : HarmonicOnNhd u s) : MeanEqOn u s :=
   meanEqOn_of_harmonicOnNhd hu
 
@@ -160,33 +164,31 @@ theorem MeanEqOn.harmonicOnNhd {u : ℂ → ℝ} {s : Set ℂ} (hs : IsOpen s)
     · rw [hcl]
       exact hPc
     · rw [frontier_ball x hr.ne']
-      exact fun z hz => (poissonExtension_eqOn_sphere hr hus hz).symm
+      exact fun z hz ↦ (poissonExtension_eqOn_sphere hr hus hz).symm
   have hev : u =ᶠ[𝓝 x] poissonExtension u x r := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hr)] with y hy
     exact heq (subset_closure hy)
   exact (harmonicAt_congr_nhds hev).2 (hPh x (mem_ball_self hr))
 
-set_option linter.unusedVariables false in
 /-- Harmonicity is preserved by holomorphic precomposition. -/
 theorem HarmonicOnNhd.comp_analytic {u : ℂ → ℝ} {t : Set ℂ} (hu : HarmonicOnNhd u t)
-    (ht : IsOpen t) {φ : ℂ → ℂ} {s : Set ℂ} (hs : IsOpen s) (hφ : AnalyticOnNhd ℂ φ s)
+    (ht : IsOpen t) {φ : ℂ → ℂ} {s : Set ℂ} (hφ : AnalyticOnNhd ℂ φ s)
     (hmaps : MapsTo φ s t) : HarmonicOnNhd (u ∘ φ) s := by
   intro x hx
   obtain ⟨ρ, hρ, hball⟩ := Metric.isOpen_iff.1 ht (φ x) (hmaps hx)
   obtain ⟨H, hH, hHre⟩ :=
     InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq (hu.mono hball)
   have hHφ : AnalyticAt ℂ (H ∘ φ) x := (hH (φ x) (mem_ball_self hρ)).comp (hφ x hx)
-  have hev : u ∘ φ =ᶠ[𝓝 x] fun z => ((H ∘ φ) z).re := by
+  have hev : u ∘ φ =ᶠ[𝓝 x] fun z ↦ ((H ∘ φ) z).re := by
     have hcont : ContinuousAt φ x := (hφ x hx).continuousAt
     filter_upwards [hcont.preimage_mem_nhds (isOpen_ball.mem_nhds (mem_ball_self hρ))] with y hy
     exact (hHre hy).symm
   exact (harmonicAt_congr_nhds hev).2 hHφ.harmonicAt_re
 
-set_option linter.unusedVariables false in
 /-- Comparison characterization of subharmonicity (Anghel–Stan Prop. 3,
 D1 ⇒ D3): a sub-mean-value function is dominated on every closed disk by the
 Poisson extension of its own boundary values. -/
-theorem SubMeanOn.le_poissonExtension_on {g : ℂ → ℝ} {s : Set ℂ} (hs : IsOpen s)
+theorem SubMeanOn.le_poissonExtension_on {g : ℂ → ℝ} {s : Set ℂ}
     (hg : SubMeanOn g s) {c : ℂ} {R : ℝ} (hR : 0 < R) (hsub : closedBall c R ⊆ s) :
     ∀ x ∈ closedBall c R, g x ≤ poissonExtension g c R x := by
   have hgs : ContinuousOn g (sphere c R) :=
