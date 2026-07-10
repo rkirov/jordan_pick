@@ -1,10 +1,13 @@
 # jordan_pick
 
 A clean-room Lean 4 / Mathlib formalization of **Pick's theorem** (Freek's
-*Formalizing 100 Theorems* #92), the **polygonal Jordan curve theorem**, and the
-full **(continuous) Jordan curve theorem** — all genuinely missing from Mathlib.
-Two lean-eval problems are solved: [`pick`](https://lean-lang.org/eval/problems/pick/)
-and [`jordan_curve`](https://lean-lang.org/eval/problems/jordan_curve/).
+*Formalizing 100 Theorems* #92), the **polygonal Jordan curve theorem**, the
+full **(continuous) Jordan curve theorem**, and **Radó's theorem** (every
+connected Hausdorff Riemann surface is second countable) — all genuinely
+missing from Mathlib.
+Three lean-eval problems are solved: [`pick`](https://lean-lang.org/eval/problems/pick/),
+[`jordan_curve`](https://lean-lang.org/eval/problems/jordan_curve/), and
+[`rado_riemannSurface`](https://lean-lang.org/eval/problems/rado_riemannSurface/).
 
 ## Main results
 
@@ -18,6 +21,18 @@ All proved **sorry-free**; `#print axioms` shows only the three standard axioms
 | **lean-eval Pick** | `LeanEval.Geometry.PicksTheorem.pick` (`JordanPick/PicksTheorem/EvalBridgeMain.lean`) | the exact statement of <https://lean-lang.org/eval/problems/pick/> (Mathlib `Polygon`, *topological* interior, no orientation hypothesis), bridged to `Pick.pick` |
 | **Jordan curve theorem (continuous)** | `JordanCurve.jordan_curve` (`JordanPick/JordanCurve.lean`) | the exact statement of <https://lean-lang.org/eval/problems/jordan_curve/>: a continuous injection `S¹ → ℝ²` has a complement with exactly two connected components (`Nat.card (ConnectedComponents (range r)ᶜ) = 2`) |
 | **Brouwer fixed point theorem (2D)** | `JordanCurve.Brouwer.brouwerFPT` (`JordanPick/JordanCurve/Brouwer.lean`) | every continuous self-map of a nonempty compact convex subset of `ℝ²` has a fixed point |
+| **Radó's theorem** | `rado_riemannSurface` (`Rado/Main.lean`) | the exact statement of <https://lean-lang.org/eval/problems/rado_riemannSurface/>: a connected Hausdorff `ChartedSpace ℂ` with `IsManifold 𝓘(ℂ) 1` is `SecondCountableTopology` |
+| **Poincaré–Volterra lemma** | `Rado.poincare_volterra` (`Rado/Topology/PoincareVolterra.lean`) | a connected Hausdorff, locally compact, locally connected, locally second-countable space with a continuous discrete-fiber map to a second-countable Hausdorff space is second countable |
+| **Dirichlet problem on a disk** | `Rado.exists_harmonic_extension` (`Rado/Complex/Poisson.lean`) | continuous boundary data on a circle extends continuously to the closed disk, harmonically inside |
+| **Perron's principle** | `Rado.IsPerronFamily.surfaceHarmonicOn_perronSup` (`Rado/Surface/Core.lean`) | the upper envelope of a Perron family on a Riemann surface is harmonic |
+
+The **Radó development** (`Rado/`, separate `lean_lib`) is a distinct project
+from Pick/Jordan: Perron's method on an explicit two-disk configuration
+produces a nonconstant harmonic function; the étale space of its
+harmonic-conjugate germs has an evaluation map with discrete fibers; the
+Poincaré–Volterra lemma plus descent give second countability. Plan and
+module map: `Rado/PLAN.md`; submission workspace:
+`submission/rado_riemannSurface/` (`scripts/make_rado_submission.sh`).
 
 ## Approach
 

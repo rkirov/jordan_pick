@@ -21,6 +21,10 @@ build/
 # the bundled copy of the engine is not.
 /submission/Submission/
 
+# Local build artifacts of the rado_riemannSurface submission workspace
+# (verification builds fetch a full Mathlib here).
+/submission/rado_riemannSurface/.lake/
+
 # Editor / OS noise
 .DS_Store
 *.swp
