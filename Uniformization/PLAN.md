@@ -101,32 +101,61 @@ RMT to bypass Hubbard's heavier prerequisites. Sources: `anghel-stan.txt`,
    both ways). *Montel/Hurwitz from step-4 port.* No Carathéodory kernel
    machinery needed for the key statement (no canonical target to hit).
 
-## Design decisions (2026-07-16) — eliminating Sard entirely
+## Design decisions v2 (2026-07-16) — no Sard, no Stokes, no van Kampen
 
-A–S use Sard twice; both uses are replaced by more formalizable arguments:
+A–S use Sard twice (Thm 10 period quantization; Thm 12 smooth exhaustion).
+Both are engineered away:
 
-1. **Thm 10 period quantization** (A–S Remark 11 uses Sard + Stokes to show
-   `∮_γ JdG ∈ 2πℤ`). Instead: **grid subdivision**. `γ` is null-homotopic in
-   `K°` (simply connected); take `h : [0,1]² → K°` continuous, subdivide by a
-   Lebesgue-number-fine grid so each small square maps into a chart disk that
-   either avoids `x₀` (period of its boundary loop = 0 by local exactness of
-   `JdG`) or is the coordinate disk `D₀` at `x₀` (period = −2π·winding number
-   of the planar loop `ξ ∘ h ∘ ∂Q` around 0, an integer via exp-covering path
-   lifting). Boundary-loop periods telescope: `per γ = Σ per(∂Q) ∈ 2πℤ`.
-   Ingredients: Lebesgue number lemma (pin), homotopy-invariance bookkeeping of
-   path integrals (fiddly but elementary), winding number of a continuous loop
-   in `ℂ∗` via `IsCoveringMap` lifting (pin has exp machinery + Homotopy.Lifting).
-2. **Thm 12 exhaustion**: pieces are **finite unions of closed chart disks with
-   generically chosen radii**, then hole-filled. No smooth boundary, no Morse
-   theory. Tangency radii between a circle and a fixed analytic curve are
-   critical values of an analytic function ⇒ countable ⇒ avoidable (1-D
-   analytic "Sard" for free). Transversal corners ⇒ every boundary point has an
-   **exterior-disk** ⇒ annulus log-barrier (`Rado/Surface/Barriers`) ⇒
-   Dirichlet-regular boundary, which is all Perron/Green needs. Smoothness of
-   `∂K` was only ever used for regularity + Stokes, both now avoided.
-   Hole-filling (`K̂ := K ∪` relatively compact components of `X∖K`) keeps
-   `∂K̂ ⊆ ∂K` (regularity survives); simple connectivity of `K̂°` from
-   `SimplyConnectedSpace X` is the remaining topological crux of M3.
+1. **φ-existence via a covering over the UNPUNCTURED piece (replaces the
+   period argument entirely).** For `G` a Green's function of a piece `V` with
+   pole `x₀`, build the étale space `E → V` of local holomorphic `ψ` with
+   `‖ψ‖ = exp (−G)` — with domains allowed to CONTAIN `x₀` (where `ψ` has a
+   simple zero, locally `ψ = ξ·e^{−H−iH̃}`). Key miracle: over the punctured
+   chart disk EVERY branch extends across `x₀`, because the ratio of two
+   branches is a holomorphic `S¹`-valued function, hence locally constant —
+   the integer residue of the log pole in multiplicative disguise. So the
+   fibers are discrete `S¹`-torsors everywhere and `E → V` is an honest
+   covering map of ALL of `V`. `V` simply connected ⇒ global section (path
+   lifting + monodromy; pin has `Topology/Homotopy/Lifting` + `IsCoveringMap`)
+   ⇒ global holomorphic `φ` with `‖φ‖ = e^{−G}`, `φ(x₀) = 0`. No periods, no
+   winding numbers, no grid. Machinery mirrors `Rado/Surface/Germs.lean`
+   (étale space of conjugate germs) in multiplicative form.
+2. **Exhaustion pieces = finite unions of closed chart disks with generic
+   radii** (no smooth boundary, no Morse, no Sard). Tangency radii between a
+   circle and an analytic curve are critical values of an analytic function ⇒
+   countable ⇒ avoidable. Transversal corners ⇒ every frontier point has an
+   **exterior disk** (`ExteriorDiskAt`, `Uniformization/Surface/Regularity.lean`)
+   ⇒ log-barrier ⇒ Dirichlet-regular, which is all Perron/Green needs.
+3. **The topological heart (W7), isolated:** in a simply connected `X`, a
+   generic-disk-union piece hole-fills/enlarges to a **simply connected**
+   piece (Kerékjártó-style). Plan: the boundary of a complement component is a
+   finite union of circular arcs meeting at generic corners ⇒ decompose into
+   explicit **arc-cycles** (combinatorial tracing, no Jordan curve theorem);
+   connectivity of each component's boundary via a **crossing-parity**
+   argument: an explicit collar of an arc-cycle (built by hand from disk
+   geometry) gives a map `τ : X → S¹` with `τ = 1` off the collar; a loop
+   crossing the arc-cycle once has winding `±1`, contradicting
+   `SimplyConnectedSpace X` (winding is homotopy-invariant via circle-covering
+   lifting — pin machinery). Then the A–S Tietze retraction (`X → K̂` collapsing
+   each complement end onto its boundary arc-cycle) gives `π₁(K̂°) = 1`.
+4. **Assembly without RMT-normalization risk:** with simply connected pieces,
+   `φₙ : Vₙ ≃ D` via ported RMT; hyperbolic case (radii bounded) needs only
+   Schwarz + Montel + Hurwitz; parabolic case (radii → ∞) needs **Koebe
+   quarter + distortion (W6)** — A–S's Lemma 13 as printed has a glossed step
+   ("easy to see" uniform disk at `−i`) that is a hidden Koebe-type input, so
+   we build Koebe honestly: area theorem → Bieberbach `|a₂| ≤ 2` → quarter +
+   distortion (planar power-series/Parseval work, independently valuable).
+
+### Reuse from `reference/jacobian-fable` (surveyed 2026-07-16, sorry-free)
+- `Jacobian/Path/*`: integration-free `pathIntegral` (primitive-difference),
+  homotopy invariance, `Periods.lean`, `Perturb.lean` loop-avoidance —
+  compactness-free, portable; useful for W7/W2 alternatives and M5.
+- `Jacobian/AbelWeak/PlanarLogBranch.lean`: `exists_logBranch_disk`,
+  `exists_exteriorLogBranch` — pure ℂ, portable.
+- `Jacobian/PlanarStokes/*`: compact-support ∂̄ = 0, annulus residue atoms.
+- `Jacobian/SphereTopology/SimplyConnectedP1.lean`: two-cap simple-connectivity
+  pattern (template for `OnePoint`-style arguments in M5's dichotomy).
+- NO surface topology (no homology/classification/retraction) — W7 must be built.
 
 ## What `Rado/` already gives us (reuse targets)
 
