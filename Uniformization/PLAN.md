@@ -1,29 +1,105 @@
-# Uniformization theorem — formalization plan
+# Uniformization — formalization plan
 
-**Target** (lean-eval [`uniformization`](https://lean-lang.org/eval/problems/uniformization/),
-submitter Junyan Xu, source Hubbard *Teichmüller theory* Vol. 1, Ch. 1 — **Theorem 1.1.2**):
+**Status (2026-07-16): STATEMENTS COMPILE (`sorry`), plan re-scoped around
+lean-eval PR #473 and mathlib4 PR #33505.** Nothing proved yet. Both problems
+**UNSOLVED on the leaderboard by anyone** (incl. Aristotle, Seed Prover).
+
+## Two targets (lean-eval, submitter Junyan Xu)
+
+[lean-eval PR #473](https://github.com/leanprover/lean-eval/pull/473) (open, by
+the problem submitter) added a second, "possibly easier" problem
+`uniformization_key` next to the original `uniformization`. Both are mirrored
+exactly in `Uniformization/Main.lean` (typechecked against the pin: Lean
+`v4.32.0-rc1`, Mathlib `360da6f`); the PR's diff is vendored at
+`reference/uniformization/lean-eval-pr473.diff`.
+
+**Primary target — `uniformization_key`** (Anghel–Stan arXiv:2008.12189,
+text in `reference/rado/anghel-stan.txt`):
 
 ```lean
-theorem uniformization {X : Type*} [TopologicalSpace X] [T2Space X] [ConnectedSpace X]
-    [SecondCountableTopology X] [ChartedSpace ℂ X] [IsManifold mℂ 1 X]
-    (hX : ¬ CompactSpace X) (x : X) [Subsingleton <| Additive (FundamentalGroup X x) →+ ℝ] :
+theorem uniformization_key (hX : ¬ CompactSpace X) [SimplyConnectedSpace X] :
+    ∃ D : TopologicalSpace.Opens ℂ, Nonempty (X ≃ₘ⟮mℂ, mℂ⟯ D)
+```
+
+A connected, noncompact, second countable, **simply connected** Riemann surface
+is biholomorphic to **some open subset of ℂ** — no ℂ-vs-disk dichotomy, no
+`H¹(X,ℝ)=0` decoding, and the target is any planar domain. Manifest note: "a
+key step … which just needs to be combined with the Riemann mapping theorem and
+Radó's theorem to yield a full proof."
+
+**Secondary — `uniformization`** (Hubbard Thm 1.1.2, unchanged semantically):
+
+```lean
+theorem uniformization (hX : ¬ CompactSpace X) (x : X)
+    [Subsingleton <| Additive (FundamentalGroup X x) →+ ℝ] :
     Nonempty (X ≃ₘ⟮mℂ, mℂ⟯ ℂ) ∨ Nonempty (X ≃ₘ⟮mℂ, mℂ⟯ UpperHalfPlane)
 ```
 
-A connected, noncompact, **second countable** Riemann surface with `H¹(X,ℝ)=0`
-(encoded as `Subsingleton (Hom(π₁ X, ℝ))`) is biholomorphic to `ℂ` or to the
-open disk (`≃ UpperHalfPlane`, the disk's Mathlib stand-in). Toolchain pins
-match this repo (Lean `v4.32.0-rc1`, Mathlib `360da6f`); standard 3 axioms only.
+Deriving `uniformization` from `uniformization_key` needs: planar RMT applied
+to the resulting domain `D` (simply connected as a biholomorph of `X`; `D ≠ ℂ`
+case → disk → upper half plane), plus the glue `H¹(X,ℝ)=0 ⇒ SimplyConnectedSpace`
+for noncompact surfaces (π₁ of an open surface is free; a free group with no
+nontrivial homs to ℝ is trivial) — this glue is itself nontrivial, so treat the
+two problems independently and go after `uniformization_key` first.
 
-**Status (2026-07-10): STATEMENT COMPILES (`sorry`).** `Uniformization/Main.lean`
-holds the exact eval statement, typechecked against the pin. Nothing proved yet.
-**UNSOLVED on the leaderboard by anyone** (incl. Aristotle, Seed Prover).
+## The game changer: RMT is no longer a from-scratch build
 
-## Why the harness hands us second countability
+[mathlib4 PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505)
+(urkud, draft, +974 lines, **sorry-free**) proves the planar Riemann mapping
+theorem: `exists_bijOn_unitBall_map_eq_zero` — for `U ⊆ ℂ` open, simply
+connected, `≠ univ`: a holomorphic bijection `U → ball 0 1`. En route it builds
+exactly what our old gap analysis flagged as missing:
 
-§1.3 of Hubbard = Radó's theorem, already a separate LeanEval problem we solved
-(`Rado/`). The harness assumes `[SecondCountableTopology X]` to avoid the overlap.
-So we import/reuse the Radó development freely and never re-derive s.c.
+- **Montel-style compactness**: `equicontinuousAt_of_forall_norm_le`,
+  `uniformEquicontinuousOn_of_thickening_subset_of_forall_norm_le` + Ascoli
+  (`Topology/UniformSpace/Ascoli` is already in the pin).
+- **Hurwitz theorems**: `eqOn_zero_or_forall_ne_zero_of_tendstoLocallyUniformlyOn`,
+  `eqOn_const_or_injOn_of_tendstoLocallyUniformlyOn` (injectivity of locally
+  uniform limits — needed for our limit assembly, not just for RMT).
+- **Branch of log / n-th root** on simply connected sets (`exists_branch_log`,
+  `exists_branch_nthRoot`).
+- Möbius shifts of the unit disc (new file `UnitDisc/Shift.lean`).
+
+Full sources vendored in `reference/uniformization/` with porting notes. All its
+imports **exist at our pin** except its own new file; porting = strip the new
+`module`/`public` keywords + routine API drift. Backup source:
+[vbeffara/RMT4](https://github.com/vbeffara/RMT4) (complete standalone RMT,
+older pin).
+
+**First concrete milestone: port PR #33505 to the pin as `Uniformization/RMT/`**
+(audit `#print axioms` after port; PR is a draft with possible dependencies on
+unmerged PRs — resolve drift against the pin as it surfaces).
+
+## Proof route for `uniformization_key` (A–S §4–7)
+
+Per PR #473's docstring, A–S prove exactly this statement, using Sard + planar
+RMT to bypass Hubbard's heavier prerequisites. Sources: `anghel-stan.txt`,
+`hubbard-ch1.txt` in `reference/rado/`.
+
+1. **Green's function** (A–S Prop 9). On compact simply-connected `K ⊂ X` with
+   smooth boundary and `x₀ ∈ K°`: Perron family with `−log|ξ|` barrier gives
+   `G : K∖{x₀} → [0,∞)`, harmonic on `K°∖{x₀}`, `0` on `∂K`, log pole at `x₀`.
+   *Reuses:* Perron + Dirichlet + barriers from `Rado/`.
+2. **Removable singularity** (A–S Lemma 8). Bounded harmonic on `D∗` extends.
+   Via conjugate + `exp` + Mathlib's holomorphic removable singularity.
+3. **Biholomorphism onto a subdomain of D** (A–S Thm 10). `ϕ = e^{−G−iF}`,
+   `F` integrating the conjugate 1-form; period `−2π` (Stokes + log-pole
+   residue) makes `ϕ` single-valued into `D`; injective via argument principle.
+   Gives `K° ≃ ϕ(K°) ⊆ D`. *Uses:* `Rado/Surface/Germs`, argument principle.
+4. **Planar RMT** (A–S Thm 11). Upgrade to `K° ≃ D`. ← **from ported PR #33505**
+   (note: its `BijOn` form needs packaging as a biholomorphism; inverse is
+   holomorphic by open mapping / inverse function theorem).
+5. **Compact exhaustion** (A–S Thm 12). Noncompact + s.c. + simply connected ⇒
+   exhaustion `K₀ ⊂ K₁ ⊂ …` by compact simply-connected sets with smooth
+   boundary. Proper smooth function + **Sard** regular values + hole-filling.
+   ⚠ Sard on manifolds: check pin; likely the main remaining infrastructure gap.
+6. **Limit assembly** (A–S Lemma 13 + Thm 1). Normalized `φₙ : Kₙ° ≃ rₙD`
+   (Green's-function monotonicity + Harnack control the normalization);
+   Montel + diagonal extraction → loc. uniform limit `φ`; Hurwitz ⇒ injective;
+   `φ : X ≃ φ(X)` open ⊆ ℂ. Package as `X ≃ₘ⟮mℂ, mℂ⟯ D` with
+   `D := ⟨φ '' univ, …⟩ : Opens ℂ` (holomorphic + injective ⇒ `ContMDiff` equiv
+   both ways). *Montel/Hurwitz from step-4 port.* No Carathéodory kernel
+   machinery needed for the key statement (no canonical target to hit).
 
 ## What `Rado/` already gives us (reuse targets)
 
@@ -31,114 +107,69 @@ So we import/reuse the Radó development freely and never re-derive s.c.
   extension, Dirichlet existence, MVP ⟺ harmonic, comparison.
 - `Rado/Complex/SubMean.lean`, `Rado/Surface/Harmonic.lean` — sub/harmonic on
   ℂ-opens and chartwise on `X`, maximum principles.
-- `Rado/Surface/Perron.lean` — **Perron's principle** (`IsPerronFamily`,
-  `surfaceHarmonicOn_perronSup`), harmonic replacement, Harnack.
+- `Rado/Surface/Perron.lean` — **Perron's principle**, harmonic replacement,
+  Harnack.
 - `Rado/Surface/Barriers.lean` — log-barrier technique on annuli.
-- `Rado/Surface/Germs.lean` — harmonic conjugates (`IsConjugate`, `Re F = u`
-  exactly), rigidity, étale space of germs — the machinery behind "integrate
-  the conjugate differential to a (locally) holomorphic function."
+- `Rado/Surface/Germs.lean` — harmonic conjugates, rigidity, étale space of
+  germs (the "integrate the conjugate differential" machinery for step 3).
 - `Rado/Surface/Charts.lean` — holomorphic transitions, identity theorem,
   `HolomorphicOn`, local structure.
 
-## Proof route (Anghel–Stan arXiv:2008.12189 §4–7 = Hubbard §1.4–1.7)
+## Revised gap analysis
 
-Sources in `reference/rado/`: `anghel-stan.txt` (self-contained), `hubbard-ch1.txt`.
+| Item | Old status | Now |
+|---|---|---|
+| Riemann Mapping Theorem | build from scratch | **port PR #33505** (sorry-free) |
+| Montel / normal families | build from scratch | **in PR #33505** (Ascoli route) |
+| Hurwitz / injective limits | check pin | **in PR #33505** |
+| Carathéodory kernel convergence | build | **not needed** for `uniformization_key` |
+| ℂ-vs-disk dichotomy | build | **not needed** for `uniformization_key` |
+| Green's function on surfaces | build on `Rado/` Perron | unchanged (main original work) |
+| Compact exhaustion + Sard | build | unchanged; Sard-on-manifolds = biggest pin gap |
+| `H¹=0 ⇒ simply connected` glue | (implicit) | only for secondary target |
 
-1. **Green's function** (A–S Prop 9). On a compact simply-connected `K ⊂ X` with
-   one smooth boundary component and `x₀ ∈ K°`, a Perron family with a
-   `−log|ξ|` barrier yields continuous `G : K∖{x₀} → [0,∞)`, harmonic on the
-   interior, `0` on `∂K`, logarithmic pole at `x₀` (`G + log|ξ|` harmonic near
-   `x₀`). *Reuses:* Perron + Dirichlet + barriers from `Rado/`.
-2. **Removable singularity** (A–S Lemma 8). A harmonic function on `D∗` bounded
-   near `0` extends harmonically across `0`. Via conjugate + `exp` + Mathlib
-   holomorphic removable singularity. *Partly new.*
-3. **Biholomorphism onto a subdomain of D** (A–S Thm 10). `ϕ = e^{−G−iF}` where
-   `F` integrates the conjugate 1-form `JdG`; the period is `−2π` (Stokes +
-   residue of the log pole), so `ϕ` is single-valued into `D`; injective by
-   open-mapping + local `z ↦ cz^k` structure; `ϕ(x₀)=0`. Gives
-   `K° ≃ ϕ(K°) ⊆ D`. *Uses:* `Rado/Surface/Germs`, argument principle, Sard.
-4. **Riemann Mapping Theorem** (A–S Thm 11). Upgrade `ϕ(K°) ⊆ D` to `K° ≃ D`.
-   ⚠ **NOT IN MATHLIB** (`Mathlib/Analysis/Complex/RiemannMapping.lean` has only
-   steps 1–2). Must be built. Depends on Montel (§6).
-5. **Compact exhaustion** (A–S Thm 12). `X` noncompact s.c. ⇒ exhaustion
-   `K₀ ⊂ K₁ ⊂ …`, each compact simply-connected with connected smooth boundary.
-   Via a proper Morse function (partition of unity from s.c.), Sard regular
-   values, hole-filling, and a Tietze retraction to kill `π₁`. *Uses:* the given
-   second countability. `H¹=0`/simply-connected enters here (kills periods).
-6. **Montel / normal families.** ⚠ **NOT IN MATHLIB.** Locally bounded families
-   of holomorphic functions are precompact in `O(D)` (loc. uniform topology).
-   Needed for §4 and §7.
-7. **Carathéodory kernel convergence + assembly** (A–S Lemma 13 + end of Thm 1).
-   Normalize `φₙ : Kₙ° ≃ rₙD`; diagonal-extract a loc. uniform limit `φ : X → ℂ`;
-   Hurwitz/argument-principle injectivity ⇒ `φ` biholomorphism onto its image.
-8. **ℂ-vs-disk dichotomy + packaging.** Decide `image = ℂ` vs bounded, produce
-   `Diffeomorph mℂ mℂ X ℂ ∞` or `… UpperHalfPlane`. Package holomorphic ⇒ `ContMDiff ∞`.
+Estimated size drops from 15–30k to roughly **8–15k LOC** on top of `Rado/`'s
+~5k, of which ~1k is the RMT port.
 
-## Mathlib gap analysis (the hard truth)
+## Milestones (each independently valuable)
 
-Critical-path items **absent from the pin**, each a substantial project:
-- **Riemann Mapping Theorem** (full) — only partial results present.
-- **Montel's theorem / normal families / `O(D)` topology.**
-- **Sard's lemma on manifolds** (needed §3, §5) — check pin; likely partial.
-- **Green's functions on Riemann surfaces** — none; build on `Rado/` Perron.
-- **Kernel/Carathéodory convergence, Hurwitz's theorem** — check pin.
-
-Present and reusable: Poisson/Dirichlet (Mathlib + `Rado/`), argument principle
-(`Mathlib/Analysis/Complex/…`), `UpperHalfPlane` manifold structure,
-`FundamentalGroup`, `Diffeomorph`.
-
-## Rough size / risk
-
-Estimated **15–30k LOC** on top of `Rado/`'s ~5k. Highest-risk (research-grade)
-milestones: RMT, Montel, exhaustion (Sard + retraction). This is the hardest
-in-reach problem on the board and is unsolved by any system to date.
-
-## Suggested milestone order (each independently valuable / upstreamable)
-
-- **M1 Analytic core:** Montel/normal families → full Riemann Mapping Theorem.
-- **M2 Green's functions** (Prop 9 + Lemma 8) on `Rado/` Perron.
-- **M3 Biholomorphism** `K° ≃ D` (Thm 10 + RMT).
-- **M4 Exhaustion** (Thm 12) — mostly independent, needs Sard.
-- **M5 Assembly** (Lemma 13 + Thm 1 end) + dichotomy + `Diffeomorph` packaging.
+- **M0 RMT port**: PR #33505 → `Uniformization/RMT/` on the pin, axiom-audited.
+  Mechanical; do first, unblocks 4 and 6.
+- **M1 Green's functions** (Prop 9 + Lemma 8) on `Rado/` Perron.
+- **M2 Biholomorphism `K° ≃ D`** (Thm 10 + ported RMT).
+- **M3 Exhaustion** (Thm 12) — mostly independent; needs Sard.
+- **M4 Limit assembly** (step 6) + `Diffeomorph`/`Opens` packaging ⇒
+  **`uniformization_key` done**.
+- **M5 (stretch) full `uniformization`**: key + RMT dichotomy + `H¹=0 ⇒
+  SimplyConnectedSpace` glue.
 
 ## Potential source repos for the missing analytic pieces
 
 Two prior AI-generated formalizations targeting **Abel's theorem / the Jacobian
-of a compact Riemann surface** carry much of the complex-analytic machinery this
-proof needs. Mine them "another time" rather than rebuilding from scratch:
+of a compact Riemann surface** carry much of the complex-analytic machinery
+(∂̄, Cauchy kernels, removable singularities, log branches, Stokes pairings):
 
 - **https://github.com/rkirov/jacobian-claude** (Claude) and
-  **https://github.com/rkirov/jacobian-fable** (Fable 5 rerun of the same, with a
-  minimal blueprint summary).
+  **https://github.com/rkirov/jacobian-fable** (Fable 5 rerun, with a minimal
+  blueprint summary).
 
-Likely-reusable modules (names from the trees):
-- `Dbar/` — the **∂̄ operator**, `CauchyKernel`, `SolveDisk`, `DiskAcyclic`,
-  Wirtinger calculus, planar Cousin + partition of unity. This is the engine for
-  constructing holomorphic functions / harmonic conjugates by solving ∂̄, i.e.
-  the analytic heart of §2–3 (biholomorphism) and an alt route to Green's fn.
-- `CanonicalForms/FormRemovableSingularity.lean` — **removable singularity for
-  forms**, directly relevant to A–S **Lemma 8**.
-- `Abel/LogPiece.lean`, `AbelWeak/PlanarLogBranch.lean` — **log branch / log
-  singularity** handling, relevant to Green's-function pole (§1) and the period
-  computation (§3).
-- `Abel/AreaPairing.lean`, `AbelPairingStokes.lean`, `SerreFunctional.lean` —
-  **Stokes / period pairings**, relevant to the `−2π` residue period in §3.
-- `Cech/`, `DolbeaultComparison/`, `Dbar/DiskAcyclic` — cohomology-vanishing
-  infrastructure (`H¹(disk)=0`), useful for period/exactness arguments.
+Likely-reusable modules: `Dbar/` (∂̄ operator, `CauchyKernel`, `SolveDisk`,
+`DiskAcyclic`, Wirtinger, planar Cousin), `CanonicalForms/FormRemovableSingularity.lean`
+(A–S Lemma 8), `Abel/LogPiece.lean` + `AbelWeak/PlanarLogBranch.lean` (log
+pole/period, step 1 & 3), `Abel/AreaPairing.lean` + `AbelPairingStokes.lean` +
+`SerreFunctional.lean` (Stokes/periods, step 3), `Cech/` + `DolbeaultComparison/`
+(cohomology vanishing).
 
-⚠ **Caveats before reuse:**
-- Both are **AI-generated and unreviewed** by the author ("I don't understand the
-  math, and haven't reviewed any of this"). Audit soundness (`#print axioms`,
-  `sorry` sweep) before trusting any lemma — do NOT import blindly.
-- Different pins: `jacobian-claude` = Lean `v4.30.0`; `jacobian-fable` =
-  `v4.30.0-rc2` + Mathlib `5483982…`. Our target is `v4.32.0-rc1` + Mathlib
-  `360da6f`. Pieces need **porting across ~2 Mathlib versions**.
-- They target compact surfaces (Jacobian/Abel); adapt statements to the
-  noncompact `X` and open-disk setting here.
+⚠ **Caveats:** AI-generated, unreviewed — audit `#print axioms` + `sorry` sweep
+before trusting anything. Older pins (`v4.30.0` / `v4.30.0-rc2`), need porting.
+Compact-surface statements need adapting.
 
 ## Submission mechanics
 
-Same as Radó: bundle a workspace `uniformization/` with `Submission.lean`
-declaring the theorem, comparator restricts to `propext, Quot.sound,
-Classical.choice`. See `generated/uniformization/` in `leanprover/lean-eval` and
-`scripts/make_rado_submission.sh`.
+Same as Radó: bundle a workspace with `Submission.lean` declaring the theorem;
+comparator restricts to `propext, Quot.sound, Classical.choice`. See
+`generated/uniformization/` in `leanprover/lean-eval` and
+`scripts/make_rado_submission.sh`. Note `uniformization_key`'s manifest
+(`manifests/problems/uniformization_key.toml`, in the vendored diff) — once PR
+#473 lands, the problem id is `uniformization_key`, module
+`LeanEval.Geometry.Uniformization`, hole `uniformization_key`.
