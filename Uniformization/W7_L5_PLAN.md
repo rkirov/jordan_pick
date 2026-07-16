@@ -396,3 +396,27 @@ L5.0 ─┬─> L5.1 ─┐
     shrink the geometry. Recommend the orchestrator either commit to the full
     multi-session route or green-light the F3 structural reconstruction before
     investing in L5.0.
+
+---
+
+## ORCHESTRATOR DECISION (2026-07-16): F3 adopted, in harmonic form
+
+Route F3 is adopted with `f` := the **Perron/Dirichlet harmonic function**
+(via the proven `exists_dirichlet_solution`) on an annular region between an
+inner regular piece around `K` and an outer regular piece (both from
+`exists_regular_piece`), boundary data 0 / 1. Then:
+- `∂f` is holomorphic in charts, `f` nonconstant per component (max principle)
+  ⇒ critical points isolated ⇒ **critical values countable — regular values
+  exist with NO Sard** (the analyticity trick, same spirit as the tangency-radii
+  countability).
+- `V' := inner piece ∪ (component of {f > c})` for a regular value `c`:
+  real-analytic corner-free boundary; `ExteriorDiskAt` from bounded curvature
+  (quantitative tangent disks); collar from the implicit function theorem /
+  the local biholomorphism `F = f + i·f̃` (conjugate exists locally by
+  `Rado.exists_conjugate`), which maps the level curve into a straight line —
+  arc-tracing without corners; L9 transfer eased by the genuine collar.
+- Parity engine (`Fill/Parity.lean`) still supplies per-end frontier
+  connectivity; Retraction engine unchanged.
+Execution order: (F3.a) harmonic-level-set piece construction + regular value
+selection; (F3.b) level-curve local structure via `F = f + i f̃`; (F3.c)
+collar + retraction + transfer.
