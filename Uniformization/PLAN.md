@@ -157,6 +157,26 @@ Both are engineered away:
   pattern (template for `OnePoint`-style arguments in M5's dichotomy).
 - NO surface topology (no homology/classification/retraction) — W7 must be built.
 
+### Reuse from `reference/classification-of-surfaces` (surveyed 2026-07-16)
+The lean-eval classification project (Lean v4.31.0; 2 sorries total, planar
+Moise stack clean). NOT a drop-in for W7 — it has zero π₁/simple-connectivity
+machinery and is straight-line-polygonal in `EuclideanSpace ℝ (Fin 2)`. Worth
+taking:
+- `Moise/PolygonalJordan.lean` (sorry-free): full **crossing-parity Jordan
+  proof** (`index` = ray-crossing parity, `index_locallyConstant`,
+  `exists_index_eq_one`) incl. frontier connectivity of complement components —
+  the template for our arc-cycle sub-lemmas in W7 (b).
+- `Moise/FrontierGlue.lean` (sorry-free, polymorphic over `X Y`): vanishing-
+  error frontier collapse with continuity/injectivity/embedding — the exact
+  shape of the A–S Tietze retraction step (W7 (c)); portable.
+- `Moise/NoRetraction.lean`: `exists_radial_retraction_to_frontier` (Minkowski
+  gauge retraction of punctured plane onto frontier of a convex body).
+- `polygonal_schoenflies_rel`: identity-off-`U` straightening — architectural
+  model for hole-filling normalizations.
+Also a design option W7 could adopt: build pieces from chart **polygons**
+instead of disks where that lets the polygonal templates apply verbatim
+inside a single chart.
+
 ## What `Rado/` already gives us (reuse targets)
 
 - `Rado/Complex/Poisson.lean`, `Dirichlet.lean` — Schwarz integral, Poisson
