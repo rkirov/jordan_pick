@@ -101,6 +101,33 @@ RMT to bypass Hubbard's heavier prerequisites. Sources: `anghel-stan.txt`,
    both ways). *Montel/Hurwitz from step-4 port.* No Carathéodory kernel
    machinery needed for the key statement (no canonical target to hit).
 
+## Design decisions (2026-07-16) — eliminating Sard entirely
+
+A–S use Sard twice; both uses are replaced by more formalizable arguments:
+
+1. **Thm 10 period quantization** (A–S Remark 11 uses Sard + Stokes to show
+   `∮_γ JdG ∈ 2πℤ`). Instead: **grid subdivision**. `γ` is null-homotopic in
+   `K°` (simply connected); take `h : [0,1]² → K°` continuous, subdivide by a
+   Lebesgue-number-fine grid so each small square maps into a chart disk that
+   either avoids `x₀` (period of its boundary loop = 0 by local exactness of
+   `JdG`) or is the coordinate disk `D₀` at `x₀` (period = −2π·winding number
+   of the planar loop `ξ ∘ h ∘ ∂Q` around 0, an integer via exp-covering path
+   lifting). Boundary-loop periods telescope: `per γ = Σ per(∂Q) ∈ 2πℤ`.
+   Ingredients: Lebesgue number lemma (pin), homotopy-invariance bookkeeping of
+   path integrals (fiddly but elementary), winding number of a continuous loop
+   in `ℂ∗` via `IsCoveringMap` lifting (pin has exp machinery + Homotopy.Lifting).
+2. **Thm 12 exhaustion**: pieces are **finite unions of closed chart disks with
+   generically chosen radii**, then hole-filled. No smooth boundary, no Morse
+   theory. Tangency radii between a circle and a fixed analytic curve are
+   critical values of an analytic function ⇒ countable ⇒ avoidable (1-D
+   analytic "Sard" for free). Transversal corners ⇒ every boundary point has an
+   **exterior-disk** ⇒ annulus log-barrier (`Rado/Surface/Barriers`) ⇒
+   Dirichlet-regular boundary, which is all Perron/Green needs. Smoothness of
+   `∂K` was only ever used for regularity + Stokes, both now avoided.
+   Hole-filling (`K̂ := K ∪` relatively compact components of `X∖K`) keeps
+   `∂K̂ ⊆ ∂K` (regularity survives); simple connectivity of `K̂°` from
+   `SimplyConnectedSpace X` is the remaining topological crux of M3.
+
 ## What `Rado/` already gives us (reuse targets)
 
 - `Rado/Complex/Poisson.lean`, `Dirichlet.lean` — Schwarz integral, Poisson
