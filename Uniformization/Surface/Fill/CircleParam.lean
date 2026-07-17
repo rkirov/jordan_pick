@@ -574,6 +574,12 @@ theorem isOpen_evIm_image_component (q₀ : ConjEtale f Y) :
     exact ⟨σ s, hsub ⟨s, hs, rfl⟩, hev s hs⟩
   exact Filter.mem_of_superset (isOpen_Ioo.mem_nhds hmem) hIoo
 
+/-- `evIm '' Ê` is preconnected: `Ê` is preconnected and `evIm` is continuous. -/
+theorem isPreconnected_evIm_image_component (q₀ : ConjEtale f Y) :
+    IsPreconnected (evIm '' connectedComponentIn
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀) :=
+  isPreconnected_connectedComponentIn.image _ continuous_evIm.continuousOn
+
 end Monodromy
 
 end Uniformization
