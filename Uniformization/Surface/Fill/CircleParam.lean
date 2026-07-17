@@ -106,6 +106,32 @@ variable [T2Space X] {f : X → ℝ} {Y : Set X}
 /-- The imaginary part of the conjugate evaluation: the frontier arc coordinate. -/
 noncomputable def evIm (q : ConjEtale f Y) : ℝ := (ConjEtale.eval q).im
 
+/-! ### The tautological section of a sheet -/
+
+/-- The tautological section of the sheet of a conjugate `F` over `W`. -/
+def etaleSec {W : Set X} {F : X → ℂ} (hWo : IsOpen W) (hWY : W ⊆ Y)
+    (hF : IsConjugate f F W) : ↥W → ConjEtale f Y :=
+  fun z => ⟨⟨z.1, (F : Filter.Germ (𝓝 z.1) ℂ)⟩, hWY z.2, W, F, hWo, z.2, hWY, hF, rfl⟩
+
+@[simp] theorem proj_etaleSec {W : Set X} {F : X → ℂ} (hWo : IsOpen W) (hWY : W ⊆ Y)
+    (hF : IsConjugate f F W) (z : ↥W) : ConjEtale.proj (etaleSec hWo hWY hF z) = z.1 := rfl
+
+theorem eval_etaleSec {W : Set X} {F : X → ℂ} (hWo : IsOpen W) (hWY : W ⊆ Y)
+    (hF : IsConjugate f F W) (z : ↥W) : ConjEtale.eval (etaleSec hWo hWY hF z) = F z.1 := by
+  simp only [ConjEtale.eval, etaleSec, Rado.germValue_coe]
+
+theorem continuous_etaleSec {W : Set X} {F : X → ℂ} (hWo : IsOpen W) (hWY : W ⊆ Y)
+    (hF : IsConjugate f F W) : Continuous (etaleSec hWo hWY hF) := by
+  refine continuous_generateFrom_iff.mpr ?_
+  rintro S ⟨W', G, hW'o, hW'c, hW'Y, hG, rfl⟩
+  have heq : etaleSec hWo hWY hF ⁻¹' ConjEtale.sheet W' G
+      = Subtype.val ⁻¹' (W' ∩ {x : X | F =ᶠ[𝓝 x] G}) := by
+    ext z
+    simp only [etaleSec, Set.mem_preimage, ConjEtale.sheet, Set.mem_setOf_eq, Set.mem_inter_iff]
+    exact and_congr Iff.rfl Filter.Germ.coe_eq
+  rw [heq]
+  exact (hW'o.inter Rado.isOpen_eventuallyEq_nhds).preimage continuous_subtype_val
+
 /-! ### The constant-shift deck action -/
 
 /-- `germValue` commutes with germ-level postcomposition. -/
@@ -243,5 +269,204 @@ theorem evIm_locally_injective {V : Set X} {c : ℝ}
   · exact hwev
 
 end Fibre
+
+/-! ## Local `evIm`-charts on the fibre over a frontier component -/
+
+section LocalChart
+
+variable [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+  (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+  (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+  (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+      ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+        (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+  {Y : Set X} (hYo : IsOpen Y) {x₀ : X}
+
+include hVo hdich hfc hchart hYo in
+/-- **Local `evIm`-section (Stage 1).**  Through every étale point `q` over a
+point of the frontier component `C = connectedComponentIn (frontier V) x₀` there is
+a continuous local section `σ` of `evIm`: on an open interval around `evIm q`,
+`evIm ∘ σ = id`, `σ (evIm q) = q`, and `σ` lands in the fibre `proj⁻¹ C`.  This
+exhibits `evIm` as a local homeomorphism on `proj⁻¹ C`. -/
+theorem exists_evIm_section (hCY : connectedComponentIn (frontier V) x₀ ⊆ Y)
+    {q : ConjEtale f Y} (hqC : ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀) :
+    ∃ (a b : ℝ) (σ : ℝ → ConjEtale f Y), a < b ∧ evIm q ∈ Set.Ioo a b ∧
+      ContinuousOn σ (Set.Ioo a b) ∧ σ (evIm q) = q ∧
+      (∀ s ∈ Set.Ioo a b, evIm (σ s) = s) ∧
+      (∀ s ∈ Set.Ioo a b,
+        ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀) := by
+  classical
+  set C := connectedComponentIn (frontier V) x₀ with hC
+  have hξfr : ConjEtale.proj q ∈ frontier V := connectedComponentIn_subset _ _ hqC
+  set ξ := ConjEtale.proj q with hξ
+  -- straightened box at ξ
+  obtain ⟨ψ, δ, ε, hψ, hξψ, hδ, hε, hqre, hbox_tgt, hWopen, hξW, hf_eq, hVcap, hfront⟩ :=
+    exists_straight_box hVo hdich hfc hchart hξfr
+  set box := straightBox (ψ ξ) c δ ε with hbox
+  set W := ψ.symm '' box with hWdef
+  set m := (ψ ξ).im with hm
+  set seg : ℝ → ℂ := fun s => (c : ℂ) + (s : ℂ) * Complex.I with hseg
+  have hseg_re : ∀ s, (seg s).re = c := by intro s; simp [hseg]
+  have hseg_im : ∀ s, (seg s).im = s := by intro s; simp [hseg]
+  set arc : ℝ → X := fun s => ψ.symm (seg s) with harc
+  set a := m - ε with ha
+  set b := m + ε with hb
+  have hab : a < b := by rw [ha, hb]; linarith
+  -- box membership of segment points
+  have hseg_box : ∀ s ∈ Set.Ioo a b, seg s ∈ box := by
+    intro s hs
+    rw [hbox, mem_straightBox, hseg_re, hseg_im]
+    refine ⟨by rw [sub_self, abs_zero]; exact hδ, ?_⟩
+    rw [abs_lt]; constructor <;> [linarith [hs.1]; linarith [hs.2]]
+  have hseg_mid : ∀ s ∈ Set.Ioo a b, seg s ∈ {z ∈ box | z.re = c} :=
+    fun s hs => ⟨hseg_box s hs, hseg_re s⟩
+  have harc_mem : ∀ s ∈ Set.Ioo a b, arc s ∈ frontier V ∩ W := by
+    intro s hs; rw [hfront]; exact ⟨seg s, hseg_mid s hs, rfl⟩
+  have hψarc : ∀ s ∈ Set.Ioo a b, ψ (arc s) = seg s := by
+    intro s hs; exact ψ.right_inv (hbox_tgt (hseg_box s hs))
+  -- `W ⊆ ψ.source`
+  have hWsrc : W ⊆ ψ.source := by rintro x ⟨z, hz, rfl⟩; exact ψ.map_target (hbox_tgt hz)
+  -- `frontier V ∩ W = arc '' Ioo a b`, hence preconnected, hence ⊆ C
+  have himg : frontier V ∩ W = arc '' Set.Ioo a b := by
+    apply Set.Subset.antisymm
+    · rw [hfront]
+      rintro _ ⟨z, ⟨hzbox, hzre⟩, rfl⟩
+      have hzim : z.im ∈ Set.Ioo a b := by
+        rw [hbox, mem_straightBox] at hzbox
+        have := hzbox.2; rw [abs_lt] at this
+        exact ⟨by rw [ha]; linarith [this.1], by rw [hb]; linarith [this.2]⟩
+      refine ⟨z.im, hzim, ?_⟩
+      show ψ.symm (seg z.im) = ψ.symm z
+      congr 1
+      apply Complex.ext
+      · rw [hseg_re, hzre]
+      · rw [hseg_im]
+    · rintro _ ⟨s, hs, rfl⟩; exact harc_mem s hs
+  have hcont_arc : ContinuousOn arc (Set.Ioo a b) := by
+    have hsegc : Continuous seg := by rw [hseg]; fun_prop
+    exact ψ.continuousOn_symm.comp hsegc.continuousOn
+      (fun s hs => hbox_tgt (hseg_box s hs))
+  have hpre : IsPreconnected (frontier V ∩ W) := by
+    rw [himg]; exact isPreconnected_Ioo.image arc hcont_arc
+  have hsubC : frontier V ∩ W ⊆ C := by
+    have h1 : frontier V ∩ W ⊆ connectedComponentIn (frontier V) ξ :=
+      hpre.subset_connectedComponentIn ⟨hξfr, hξW⟩ Set.inter_subset_left
+    rwa [hC, connectedComponentIn_eq hqC]
+  -- `ψ` is a conjugate of `f` on `W ∩ Y`
+  have hWYo : IsOpen (W ∩ Y) := hWopen.inter hYo
+  have hψconj : IsConjugate f (fun x => ψ x) (W ∩ Y) :=
+    (isConjugate_chart hψ hWsrc
+      (fun x hx => re_eq_f_of_mem_boxImage hbox_tgt hf_eq hx)).mono Set.inter_subset_left
+  -- membership of `arc s` in `W ∩ Y` for `s ∈ Ioo a b`
+  have harc_WY : ∀ s ∈ Set.Ioo a b, arc s ∈ W ∩ Y := by
+    intro s hs
+    exact ⟨(harc_mem s hs).2, hCY (hsubC (harc_mem s hs))⟩
+  -- q's branch and the rigidity constant
+  obtain ⟨hqY, VF, F, hVFo, hqVF, hVFY, hF, hgerm⟩ := q.2
+  have hψconjV : IsConjugate f (fun x => ψ x) W :=
+    isConjugate_chart hψ hWsrc (fun x hx => re_eq_f_of_mem_boxImage hbox_tgt hf_eq hx)
+  obtain ⟨t', ht'⟩ :=
+    IsConjugate.eventuallyEq_add_const hVFo hWopen hF hψconjV hqVF hξW
+  -- `t' = evIm q - m`
+  have hevq : evIm q = m + t' := by
+    have hFξ : F ξ = ψ ξ + (t' : ℂ) * Complex.I := ht'.self_of_nhds
+    have : evIm q = (F ξ).im := by
+      show (ConjEtale.eval q).im = _
+      have : ConjEtale.eval q = F ξ := by
+        simp only [ConjEtale.eval, hgerm, Rado.germValue_coe]; rfl
+      rw [this]
+    rw [this, hFξ]
+    simp [Complex.add_im, Complex.mul_im, hm]
+  set t := t' with ht
+  -- the ψ-point over `arc s` (partial section), and the shifted section
+  set P : ℝ → ConjEtale f Y := fun s =>
+    if h : arc (s - t) ∈ W ∩ Y then
+      etaleSec hWYo Set.inter_subset_right hψconj ⟨arc (s - t), h⟩
+    else q with hP
+  set σ : ℝ → ConjEtale f Y := fun s => shift t (P s) with hσ
+  set a' := a + t with ha'
+  set b' := b + t with hb'
+  have hab' : a' < b' := by rw [ha', hb']; linarith
+  -- subtype-safe bounds transfer
+  have hshiftmem : ∀ s ∈ Set.Ioo a' b', s - t ∈ Set.Ioo a b := by
+    intro s hs
+    exact ⟨by have := hs.1; rw [ha'] at this; linarith,
+           by have := hs.2; rw [hb'] at this; linarith⟩
+  have hshift : ∀ s ∈ Set.Ioo a' b', arc (s - t) ∈ W ∩ Y :=
+    fun s hs => harc_WY _ (hshiftmem s hs)
+  -- unfold `P` on the interval
+  have hPeq : ∀ s (h : arc (s - t) ∈ W ∩ Y),
+      P s = etaleSec hWYo Set.inter_subset_right hψconj ⟨arc (s - t), h⟩ := by
+    intro s h; simp only [hP]; rw [dif_pos h]
+  -- evIm of the section
+  have hevσ : ∀ s ∈ Set.Ioo a' b', evIm (σ s) = s := by
+    intro s hs
+    have hin : s - t ∈ Set.Ioo a b := hshiftmem s hs
+    show evIm (shift t (P s)) = s
+    rw [evIm_shift, hPeq s (hshift s hs)]
+    have : evIm (etaleSec hWYo Set.inter_subset_right hψconj ⟨arc (s - t), hshift s hs⟩)
+        = s - t := by
+      show (ConjEtale.eval _).im = s - t
+      rw [eval_etaleSec]
+      show (ψ (arc (s - t))).im = s - t
+      rw [hψarc (s - t) hin, hseg_im]
+    rw [this]; ring
+  -- projection of the section lands in the frontier component
+  have hprojσ : ∀ s ∈ Set.Ioo a' b', ConjEtale.proj (σ s) ∈ C := by
+    intro s hs
+    have hin : s - t ∈ Set.Ioo a b := hshiftmem s hs
+    show ConjEtale.proj (shift t (P s)) ∈ C
+    rw [proj_shift, hPeq s (hshift s hs), proj_etaleSec]
+    exact hsubC (harc_mem (s - t) hin)
+  -- continuity of the section
+  have hcontσ : ContinuousOn σ (Set.Ioo a' b') := by
+    rw [continuousOn_iff_continuous_restrict]
+    have hcont1 : Continuous (fun z : ↥(Set.Ioo a' b') =>
+        (⟨arc (z.1 - t), hshift z.1 z.2⟩ : ↥(W ∩ Y))) := by
+      apply Continuous.subtype_mk
+      have hsub : Continuous (fun z : ↥(Set.Ioo a' b') => z.1 - t) :=
+        continuous_subtype_val.sub continuous_const
+      exact hcont_arc.comp_continuous hsub (fun z => hshiftmem z.1 z.2)
+    have hEq : Set.restrict (Set.Ioo a' b') σ
+        = fun z => shift t (etaleSec hWYo Set.inter_subset_right hψconj
+            ⟨arc (z.1 - t), hshift z.1 z.2⟩) := by
+      funext z
+      show shift t (P z.1) = _
+      rw [hPeq z.1 (hshift z.1 z.2)]
+    rw [hEq]
+    exact (continuous_shift t).comp ((continuous_etaleSec hWYo _ hψconj).comp hcont1)
+  -- the section passes through `q`
+  have hσq : σ (evIm q) = q := by
+    have hin : evIm q - t ∈ Set.Ioo a b := by
+      have he : evIm q - t = m := by rw [hevq]; ring
+      rw [he]; exact ⟨by rw [ha]; linarith, by rw [hb]; linarith⟩
+    have hmem : arc (evIm q - t) ∈ W ∩ Y := harc_WY _ hin
+    have harceq : arc (evIm q - t) = ξ := by
+      have he : evIm q - t = m := by rw [hevq]; ring
+      rw [he]
+      show ψ.symm (seg m) = ξ
+      have hsm : seg m = ψ ξ := by
+        apply Complex.ext
+        · rw [hseg_re]; exact hqre.symm
+        · rw [hseg_im, hm]
+      rw [hsm, ψ.left_inv hξψ]
+    show shift t (P (evIm q)) = q
+    rw [hPeq (evIm q) hmem]
+    refine ConjEtale.injOn_proj_sheet (V := Set.univ)
+      (F := fun x => ψ x + (t : ℂ) * Complex.I) ?_ ?_ harceq
+    · refine ⟨Set.mem_univ _, ?_⟩
+      show Filter.Germ.map (fun z => z + (t : ℂ) * Complex.I)
+          ((fun x => ψ x : Filter.Germ (𝓝 (arc (evIm q - t))) ℂ))
+        = ((fun x => ψ x + (t : ℂ) * Complex.I : X → ℂ) :
+            Filter.Germ (𝓝 (arc (evIm q - t))) ℂ)
+      rw [Filter.Germ.map_coe]; rfl
+    · refine ⟨Set.mem_univ _, ?_⟩
+      rw [hgerm]
+      exact Filter.Germ.coe_eq.mpr ht'
+  refine ⟨a', b', σ, hab', ?_, hcontσ, hσq, hevσ, hprojσ⟩
+  rw [hevq]
+  exact ⟨by rw [ha', ha]; linarith, by rw [hb', hb]; linarith⟩
+
+end LocalChart
 
 end Uniformization
