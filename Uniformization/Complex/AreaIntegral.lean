@@ -7,6 +7,10 @@ import Uniformization.Complex.AreaWinding
 import Mathlib.Analysis.Complex.MeanValue
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The area/shoelace integral identity (Stage B)
@@ -167,6 +171,191 @@ theorem angular_gt (ζ : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρζ : ‖ζ‖ < ρ) 
   rcases mul_eq_zero.mp hci0 with h | h
   · exact absurd h hI
   · exact h
+
+/-- **Cauchy transform of the disk (B1)**: for `‖ζ‖ < R`,
+`∫_{p ∈ ball 0 R} (ζ − p)⁻¹ dp = π · conj ζ`. -/
+theorem cauchyTransform_disk {ζ : ℂ} {R : ℝ} (hζR : ‖ζ‖ < R) :
+    ∫ p in ball (0:ℂ) R, (ζ - p)⁻¹ = ↑π * (starRingEnd ℂ) ζ := by
+  have hR : 0 < R := lt_of_le_of_lt (norm_nonneg ζ) hζR
+  have hsymm : ∀ q : ℝ × ℝ, Complex.polarCoord.symm q = circleMap 0 q.1 q.2 := by
+    intro q
+    rw [Complex.polarCoord_symm_apply]
+    simp only [circleMap, zero_add]
+    rw [Complex.exp_mul_I]; push_cast; ring
+  -- STEP 1: integrability of (ζ - ·)⁻¹ on ball 0 R
+  have hint : IntegrableOn (fun p : ℂ => (ζ - p)⁻¹) (ball 0 R) volume := by
+    have hbig : IntegrableOn (fun q : ℂ => q⁻¹) (ball 0 (‖ζ‖ + R)) volume := by
+      refine integrableOn_ball_of_norm_le_rpow (C := 1) (α := 1) ?_ ?_ ?_ ?_
+      · show (1:ℕ) ≤ Module.finrank ℝ ℂ
+        rw [Complex.finrank_real_complex]; norm_num
+      · show (1:ℝ) < (Module.finrank ℝ ℂ : ℝ)
+        rw [Complex.finrank_real_complex]; norm_num
+      · filter_upwards with x
+        rw [norm_inv, Real.rpow_neg_one, one_mul]
+      · exact measurable_inv.aestronglyMeasurable
+    have hballζ : IntegrableOn (fun q : ℂ => q⁻¹) (ball (-ζ) R) volume := by
+      apply hbig.mono_set
+      apply ball_subset_ball'
+      rw [dist_zero_right, norm_neg]; linarith
+    have hmp : MeasurePreserving (fun p : ℂ => p - ζ) volume volume :=
+      measurePreserving_sub_right volume ζ
+    have hme : MeasurableEmbedding (fun p : ℂ => p - ζ) :=
+      (Homeomorph.subRight ζ).measurableEmbedding
+    have himg : (fun p : ℂ => p - ζ) '' ball 0 R = ball (-ζ) R := by
+      ext q
+      simp only [mem_image, mem_ball_iff_norm]
+      constructor
+      · rintro ⟨p, hp, rfl⟩
+        rw [sub_zero] at hp
+        have : p - ζ - -ζ = p := by ring
+        rw [this]; exact hp
+      · intro hq
+        refine ⟨q + ζ, ?_, by ring⟩
+        rw [sub_zero]
+        have : q + ζ = q - -ζ := by ring
+        rw [this]; exact hq
+    have hiff := (hmp.integrableOn_image (f := fun q : ℂ => q⁻¹) (s := ball 0 R) hme)
+    rw [himg] at hiff
+    have hpz : IntegrableOn (fun p : ℂ => (p - ζ)⁻¹) (ball 0 R) volume := hiff.mp hballζ
+    have heqfun : (fun p : ℂ => (ζ - p)⁻¹) = fun p => -((p - ζ)⁻¹) := by
+      ext p
+      have hpp : ζ - p = -(p - ζ) := by ring
+      rw [hpp, inv_neg]
+    rw [heqfun]
+    exact hpz.neg
+  -- STEP 2a: product integrability of the polar integrand
+  have hprodint : IntegrableOn (fun q : ℝ × ℝ => q.1 • (ζ - circleMap 0 q.1 q.2)⁻¹)
+      (Ioo (0:ℝ) R ×ˢ Ioo (-π) π) (volume.prod volume) := by
+    set g : ℂ → ℂ := fun w => (ζ - w)⁻¹ with hg
+    set hn : ℂ → ENNReal := fun p => ‖(ball (0:ℂ) R).indicator g p‖ₑ with hhn
+    constructor
+    · apply Measurable.aestronglyMeasurable
+      have hcm : Continuous (fun q : ℝ × ℝ => circleMap 0 q.1 q.2) := by
+        unfold circleMap; fun_prop
+      exact measurable_fst.smul (((continuous_const.sub hcm).measurable).inv)
+    · rw [hasFiniteIntegral_iff_enorm, ← Measure.volume_eq_prod]
+      have hsub : (Ioo (0:ℝ) R ×ˢ Ioo (-π) π) ⊆ polarCoord.target := by
+        rw [_root_.polarCoord_target]
+        exact Set.prod_mono Ioo_subset_Ioi_self (le_refl _)
+      calc ∫⁻ q in (Ioo (0:ℝ) R ×ˢ Ioo (-π) π), ‖q.1 • (ζ - circleMap 0 q.1 q.2)⁻¹‖ₑ ∂volume
+          = ∫⁻ q in (Ioo (0:ℝ) R ×ˢ Ioo (-π) π),
+              ENNReal.ofReal q.1 • hn (Complex.polarCoord.symm q) ∂volume := by
+            apply setLIntegral_congr_fun (measurableSet_Ioo.prod measurableSet_Ioo)
+            intro q hq
+            have hr : (0:ℝ) < q.1 := hq.1.1
+            have hlt : q.1 < R := hq.1.2
+            have hmem : circleMap 0 q.1 q.2 ∈ ball (0:ℂ) R := by
+              rw [mem_ball_zero_iff, norm_circleMap_zero, abs_of_pos hr]; exact hlt
+            show ‖q.1 • (ζ - circleMap 0 q.1 q.2)⁻¹‖ₑ
+                = ENNReal.ofReal q.1 • hn (Complex.polarCoord.symm q)
+            rw [hhn]
+            simp only [hsymm, indicator_of_mem hmem, hg]
+            rw [enorm_smul, enorm_of_nonneg hr.le, smul_eq_mul]
+        _ ≤ ∫⁻ q in polarCoord.target,
+              ENNReal.ofReal q.1 • hn (Complex.polarCoord.symm q) ∂volume :=
+            lintegral_mono_set hsub
+        _ = ∫⁻ p, hn p := Complex.lintegral_comp_polarCoord_symm hn
+        _ = ∫⁻ p in ball (0:ℂ) R, ‖g p‖ₑ ∂volume := by
+            simp only [hhn]
+            rw [← lintegral_indicator measurableSet_ball]
+            congr 1
+            funext p
+            by_cases hp : p ∈ ball (0:ℂ) R
+            · rw [indicator_of_mem hp, indicator_of_mem hp]
+            · rw [indicator_of_notMem hp, indicator_of_notMem hp, enorm_zero]
+        _ < ⊤ := by
+            have hfi := hint.hasFiniteIntegral
+            rw [hasFiniteIntegral_iff_enorm] at hfi
+            exact hfi
+  -- STEP 2b: polar change of variables reduces LHS to the product integral
+  have hpolar : ∫ p in ball (0:ℂ) R, (ζ - p)⁻¹
+      = ∫ q in (Ioo (0:ℝ) R ×ˢ Ioo (-π) π), q.1 • (ζ - circleMap 0 q.1 q.2)⁻¹ := by
+    rw [← MeasureTheory.integral_indicator measurableSet_ball]
+    rw [← Complex.integral_comp_polarCoord_symm
+        (fun w => (ball (0:ℂ) R).indicator (fun z => (ζ - z)⁻¹) w)]
+    rw [_root_.polarCoord_target]
+    rw [← MeasureTheory.integral_indicator (measurableSet_Ioi.prod measurableSet_Ioo),
+        ← MeasureTheory.integral_indicator ((measurableSet_Ioo).prod measurableSet_Ioo)]
+    congr 1
+    funext q
+    by_cases hq : q ∈ Ioo (0:ℝ) R ×ˢ Ioo (-π) π
+    · have hqi : q ∈ Ioi (0:ℝ) ×ˢ Ioo (-π) π := ⟨hq.1.1, hq.2⟩
+      rw [indicator_of_mem hqi, indicator_of_mem hq, hsymm]
+      have hr : (0:ℝ) < q.1 := hq.1.1
+      have hmem : circleMap 0 q.1 q.2 ∈ ball (0:ℂ) R := by
+        rw [mem_ball_zero_iff, norm_circleMap_zero, abs_of_pos hr]; exact hq.1.2
+      rw [indicator_of_mem hmem]
+    · rw [indicator_of_notMem hq]
+      by_cases hqi : q ∈ Ioi (0:ℝ) ×ˢ Ioo (-π) π
+      · rw [indicator_of_mem hqi, hsymm]
+        have hr : (0:ℝ) < q.1 := hqi.1
+        have hnotmem : circleMap 0 q.1 q.2 ∉ ball (0:ℂ) R := by
+          rw [mem_ball_zero_iff, norm_circleMap_zero, abs_of_pos hr, not_lt]
+          by_contra hlt
+          exact hq ⟨⟨hr, lt_of_not_ge hlt⟩, hqi.2⟩
+        rw [indicator_of_notMem hnotmem, smul_zero]
+      · rw [indicator_of_notMem hqi]
+  -- STEP 2c: iterate the product integral and reduce the inner integral to `0..2π`
+  have hiter : ∫ q in (Ioo (0:ℝ) R ×ˢ Ioo (-π) π), q.1 • (ζ - circleMap 0 q.1 q.2)⁻¹
+      = ∫ r in Ioo (0:ℝ) R, r • (∫ θ in (0:ℝ)..2*π, (ζ - circleMap 0 r θ)⁻¹) ∂volume := by
+    rw [Measure.volume_eq_prod ℝ ℝ, setIntegral_prod _ hprodint]
+    apply setIntegral_congr_fun measurableSet_Ioo
+    intro r _
+    show ∫ θ in Ioo (-π) π, r • (ζ - circleMap 0 r θ)⁻¹ ∂volume
+        = r • ∫ θ in (0:ℝ)..2*π, (ζ - circleMap 0 r θ)⁻¹
+    rw [MeasureTheory.integral_smul]
+    congr 1
+    have hper : Function.Periodic (fun θ => (ζ - circleMap 0 r θ)⁻¹) (2 * π) := by
+      intro θ; simp only; rw [periodic_circleMap 0 r θ]
+    rw [setIntegral_congr_set Ioo_ae_eq_Ioc]
+    rw [← intervalIntegral.integral_of_le (by linarith [pi_pos] : (-π:ℝ) ≤ π)]
+    have hshift := hper.intervalIntegral_add_eq (-π) 0
+    rw [show (-π) + 2*π = π by ring, show (0:ℝ) + 2*π = 2*π by ring] at hshift
+    rw [hshift]
+  -- STEP 3: radial computation using `angular_lt` / `angular_gt`
+  rw [hpolar, hiter]
+  by_cases hζ0 : ζ = 0
+  · subst hζ0
+    simp only [map_zero, mul_zero]
+    have hz : (∫ r in Ioo (0:ℝ) R, r • (∫ θ in (0:ℝ)..2*π, ((0:ℂ) - circleMap 0 r θ)⁻¹) ∂volume)
+        = ∫ r in Ioo (0:ℝ) R, (0:ℂ) := by
+      apply setIntegral_congr_fun measurableSet_Ioo
+      intro r hr
+      have hr0 : 0 < r := hr.1
+      show r • (∫ θ in (0:ℝ)..2*π, ((0:ℂ) - circleMap 0 r θ)⁻¹) = 0
+      rw [angular_gt (0:ℂ) hr0 (by rw [norm_zero]; exact hr0), smul_zero]
+    rw [hz, MeasureTheory.integral_zero]
+  · have hζpos : 0 < ‖ζ‖ := norm_pos_iff.mpr hζ0
+    set g2 : ℝ → ℂ := fun s => (2 * ↑π / ζ) * (s:ℂ) with hg2
+    have hpne : ∀ᵐ r ∂(volume:Measure ℝ), r ≠ ‖ζ‖ := by
+      rw [ae_iff]; simp only [not_not]
+      rw [show {r : ℝ | r = ‖ζ‖} = {‖ζ‖} from by ext x; simp]
+      exact Real.volume_singleton
+    have hae : (fun r => r • (∫ θ in (0:ℝ)..2*π, (ζ - circleMap 0 r θ)⁻¹))
+        =ᵐ[volume.restrict (Ioo (0:ℝ) R)] (Ioo (0:ℝ) ‖ζ‖).indicator g2 := by
+      rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Ioo]
+      filter_upwards [hpne] with r hrne hrin
+      have hr0 : 0 < r := hrin.1
+      rcases lt_or_gt_of_ne hrne with hlt | hgt
+      · rw [angular_lt ζ (by rw [abs_of_pos hr0]; exact hlt),
+            indicator_of_mem (show r ∈ Ioo (0:ℝ) ‖ζ‖ from ⟨hr0, hlt⟩), hg2, Complex.real_smul]
+        ring
+      · rw [angular_gt ζ hr0 hgt, smul_zero,
+            indicator_of_notMem (show r ∉ Ioo (0:ℝ) ‖ζ‖ from
+              fun h => absurd h.2 (not_lt.mpr hgt.le))]
+    rw [MeasureTheory.integral_congr_ae hae, MeasureTheory.setIntegral_indicator measurableSet_Ioo]
+    rw [show (Ioo (0:ℝ) R) ∩ (Ioo (0:ℝ) ‖ζ‖) = Ioo (0:ℝ) ‖ζ‖ from
+        inter_eq_right.mpr (Ioo_subset_Ioo (le_refl 0) hζR.le)]
+    rw [hg2]
+    simp only
+    rw [MeasureTheory.integral_const_mul]
+    rw [show (∫ r in Ioo (0:ℝ) ‖ζ‖, (r:ℂ)) = ((↑(‖ζ‖^2/2 : ℝ)) : ℂ) from by
+        rw [setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le hζpos.le,
+            intervalIntegral.integral_ofReal, integral_id]; push_cast; ring]
+    have hns : (↑(‖ζ‖^2) : ℂ) = ζ * (starRingEnd ℂ) ζ := by
+      rw [Complex.mul_conj, Complex.sq_norm]
+    have he : ((((‖ζ‖^2/2 : ℝ)) : ℂ)) = (↑(‖ζ‖^2):ℂ)/2 := by push_cast; ring
+    rw [he, hns]; field_simp
 
 /-- **The area/shoelace integral identity (Stage B)**: the area integral of the
 winding number over a disk containing the image circle equals the shoelace contour
