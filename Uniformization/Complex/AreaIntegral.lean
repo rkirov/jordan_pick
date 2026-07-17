@@ -359,13 +359,165 @@ theorem cauchyTransform_disk {ζ : ℂ} {R : ℝ} (hζR : ‖ζ‖ < R) :
 
 /-- **The area/shoelace integral identity (Stage B)**: the area integral of the
 winding number over a disk containing the image circle equals the shoelace contour
-integral.  See the module docstring for the full B1/B2/B3 route; the remaining
-measure-theory assembly (Cauchy transform of the disk + Fubini) is the single
-`sorry`. -/
+integral.  The hypothesis `1 < t` places the integration circle `‖w‖ = t` inside the
+exterior `exteriorUnit = {1 < ‖w‖}`, where `extMap h` (and hence `deriv (extMap h)`) is
+analytic — this is what makes the Fubini integrand jointly integrable.  The proof follows
+the B1/B2/B3 route: unfold `winding`/`shoelace` to `θ`-integrals, swap the `p`- and
+`θ`-integrals via `intervalIntegral_integral_swap` (joint integrability from a uniform
+`1/‖·‖` bound on the disk, reusing the B1 machinery), apply `cauchyTransform_disk` to the
+inner `p`-integral, and match the shoelace convention using `(2πi)⁻¹·π = (2i)⁻¹`. -/
 theorem integral_winding_eq_shoelace (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
-    {t R : ℝ} (ht : 0 < t)
+    {t R : ℝ} (ht : 1 < t)
     (hcurve : ∀ θ : ℝ, ‖extMap h (circleMap 0 t θ)‖ < R) :
     ∫ p in ball (0:ℂ) R, winding h t p = shoelace h t := by
-  sorry
+  have htpos : 0 < t := lt_trans one_pos ht
+  set G : ℂ → ℂ := extMap h with hGdef
+  set G' : ℂ → ℂ := deriv (extMap h) with hG'def
+  set f : ℝ → ℂ → ℂ := fun θ p =>
+    (circleMap 0 t θ * I) * (G' (circleMap 0 t θ) / (G (circleMap 0 t θ) - p)) with hfdef
+  -- winding unfolds to the θ-integral of f
+  have hwind : ∀ p, winding h t p = (2 * ↑π * I)⁻¹ * ∫ θ in (0:ℝ)..2*π, f θ p := by
+    intro p
+    rw [winding]
+    congr 1
+    simp only [circleIntegral]
+    apply intervalIntegral.integral_congr
+    intro θ _
+    simp only [deriv_circleMap, smul_eq_mul, hfdef, hGdef, hG'def]
+  -- joint integrability for Fubini
+  have h_int : Integrable (Function.uncurry f)
+      ((volume.restrict (uIoc 0 (2*π))).prod (volume.restrict (ball (0:ℂ) R))) := by
+    have hRpos : 0 < R := lt_of_le_of_lt (norm_nonneg _) (hcurve 0)
+    have hmem : ∀ θ : ℝ, circleMap 0 t θ ∈ exteriorUnit := by
+      intro θ
+      simp only [exteriorUnit, mem_setOf_eq, norm_circleMap_zero, abs_of_pos htpos]
+      exact ht
+    have hGA : AnalyticOnNhd ℂ (extMap h) exteriorUnit := extMap_analyticOnNhd h hh
+    have hGcont : Continuous (fun θ : ℝ => G (circleMap 0 t θ)) := by
+      rw [hGdef]; exact hGA.continuousOn.comp_continuous (continuous_circleMap 0 t) hmem
+    have hG'cont : Continuous (fun θ : ℝ => G' (circleMap 0 t θ)) := by
+      rw [hG'def]; exact hGA.deriv.continuousOn.comp_continuous (continuous_circleMap 0 t) hmem
+    have hmeasf : Measurable (Function.uncurry f) := by
+      have m1 : Measurable (fun z : ℝ × ℂ => circleMap 0 t z.1 * I) :=
+        (((continuous_circleMap 0 t).comp continuous_fst).mul continuous_const).measurable
+      have m2 : Measurable (fun z : ℝ × ℂ => G' (circleMap 0 t z.1)) :=
+        (hG'cont.comp continuous_fst).measurable
+      have m3 : Measurable (fun z : ℝ × ℂ => G (circleMap 0 t z.1) - z.2) :=
+        ((hGcont.comp continuous_fst).measurable).sub measurable_snd
+      exact m1.mul (m2.div m3)
+    obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0:ℝ)) (b := 2*π)).exists_bound_of_continuousOn
+      hG'cont.continuousOn
+    have hCfin : ∫⁻ q in ball (0:ℂ) (2*R), ‖q⁻¹‖ₑ < ⊤ := by
+      have hib : IntegrableOn (fun q : ℂ => q⁻¹) (ball 0 (2*R)) volume := by
+        refine integrableOn_ball_of_norm_le_rpow (C := 1) (α := 1) ?_ ?_ ?_ ?_
+        · show (1:ℕ) ≤ Module.finrank ℝ ℂ; rw [Complex.finrank_real_complex]; norm_num
+        · show (1:ℝ) < (Module.finrank ℝ ℂ : ℝ); rw [Complex.finrank_real_complex]; norm_num
+        · filter_upwards with x; rw [norm_inv, Real.rpow_neg_one, one_mul]
+        · exact measurable_inv.aestronglyMeasurable
+      have hf := hib.hasFiniteIntegral
+      rw [hasFiniteIntegral_iff_enorm] at hf
+      exact hf
+    have hCbound : ∀ γ : ℂ, ‖γ‖ < R →
+        ∫⁻ p in ball (0:ℂ) R, ‖(γ - p)⁻¹‖ₑ ≤ ∫⁻ q in ball (0:ℂ) (2*R), ‖q⁻¹‖ₑ := by
+      intro γ hγ
+      have hrefl : ∫⁻ p in ball (0:ℂ) R, ‖(γ - p)⁻¹‖ₑ = ∫⁻ p in ball (0:ℂ) R, ‖(p - γ)⁻¹‖ₑ := by
+        apply setLIntegral_congr_fun measurableSet_ball
+        intro p _
+        show ‖(γ - p)⁻¹‖ₑ = ‖(p - γ)⁻¹‖ₑ
+        rw [show γ - p = -(p - γ) from by ring, inv_neg, enorm_neg]
+      rw [hrefl]
+      have hmp : MeasurePreserving (fun p : ℂ => p - γ) volume volume :=
+        measurePreserving_sub_right volume γ
+      have hme : MeasurableEmbedding (fun p : ℂ => p - γ) :=
+        (Homeomorph.subRight γ).measurableEmbedding
+      rw [hmp.setLIntegral_comp_emb hme (fun q => ‖q⁻¹‖ₑ) (ball 0 R)]
+      have himg : (fun p : ℂ => p - γ) '' ball 0 R = ball (-γ) R := by
+        ext q; simp only [mem_image, mem_ball_iff_norm]
+        constructor
+        · rintro ⟨p, hp, rfl⟩; rw [sub_zero] at hp; rw [show p - γ - -γ = p from by ring]; exact hp
+        · intro hq; refine ⟨q + γ, ?_, by ring⟩
+          rw [sub_zero, show q + γ = q - -γ from by ring]; exact hq
+      rw [himg]
+      apply lintegral_mono_set
+      apply ball_subset_ball'
+      rw [dist_zero_right, norm_neg]; linarith
+    refine ⟨hmeasf.aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_enorm, uIoc_of_le (by positivity : (0:ℝ) ≤ 2*π)]
+    rw [lintegral_prod (fun z => ‖Function.uncurry f z‖ₑ) hmeasf.enorm.aemeasurable]
+    calc ∫⁻ θ in Ioc (0:ℝ) (2*π), ∫⁻ p in ball (0:ℂ) R, ‖Function.uncurry f (θ, p)‖ₑ ∂volume ∂volume
+        ≤ ∫⁻ _θ in Ioc (0:ℝ) (2*π),
+            ENNReal.ofReal (t*M) * ∫⁻ q in ball (0:ℂ) (2*R), ‖q⁻¹‖ₑ ∂volume := by
+          apply setLIntegral_mono measurable_const
+          intro θ hθ
+          have hθIcc : θ ∈ Icc (0:ℝ) (2*π) := ⟨le_of_lt hθ.1, hθ.2⟩
+          have hfe : ∀ p : ℂ, ‖Function.uncurry f (θ, p)‖ₑ
+              = ‖circleMap 0 t θ * I * G' (circleMap 0 t θ)‖ₑ * ‖(G (circleMap 0 t θ) - p)⁻¹‖ₑ := by
+            intro p
+            show ‖f θ p‖ₑ = _
+            simp only [hfdef]
+            rw [show (circleMap 0 t θ * I) * (G' (circleMap 0 t θ) / (G (circleMap 0 t θ) - p))
+                = (circleMap 0 t θ * I * G' (circleMap 0 t θ)) * (G (circleMap 0 t θ) - p)⁻¹ from by
+                  rw [div_eq_mul_inv]; ring, enorm_mul]
+          simp_rw [hfe]
+          have hmp2 : Measurable (fun p : ℂ => ‖(G (circleMap 0 t θ) - p)⁻¹‖ₑ) := by
+            apply Measurable.enorm
+            apply Measurable.inv
+            exact measurable_const.sub measurable_id
+          rw [lintegral_const_mul _ hmp2]
+          apply mul_le_mul'
+          · rw [← ofReal_norm]
+            apply ENNReal.ofReal_le_ofReal
+            rw [norm_mul, norm_mul, norm_circleMap_zero, Complex.norm_I, mul_one, abs_of_pos htpos]
+            exact mul_le_mul_of_nonneg_left (hM θ hθIcc) htpos.le
+          · exact hCbound (G (circleMap 0 t θ)) (hcurve θ)
+      _ = ENNReal.ofReal (t*M) * (∫⁻ q in ball (0:ℂ) (2*R), ‖q⁻¹‖ₑ) * volume (Ioc (0:ℝ) (2*π)) := by
+          rw [setLIntegral_const]
+      _ < ⊤ := by
+          apply ENNReal.mul_lt_top
+          · exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top hCfin
+          · rw [Real.volume_Ioc]; exact ENNReal.ofReal_lt_top
+  -- scalar bookkeeping and assembly
+  have hscalar : (2 * ↑π * I)⁻¹ * ↑π = (2 * I)⁻¹ := by
+    have hpi : (↑π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+    have hI : (I : ℂ) ≠ 0 := Complex.I_ne_zero
+    field_simp
+  calc ∫ p in ball (0:ℂ) R, winding h t p
+      = (2 * ↑π * I)⁻¹ * ∫ p in ball (0:ℂ) R, ∫ θ in (0:ℝ)..2*π, f θ p := by
+        simp_rw [hwind]
+        rw [MeasureTheory.integral_const_mul]
+    _ = (2 * ↑π * I)⁻¹ * ∫ θ in (0:ℝ)..2*π, ∫ p in ball (0:ℂ) R, f θ p := by
+        rw [(intervalIntegral_integral_swap h_int).symm]
+    _ = (2 * ↑π * I)⁻¹ * ∫ θ in (0:ℝ)..2*π,
+          (circleMap 0 t θ * I * G' (circleMap 0 t θ))
+            * (↑π * (starRingEnd ℂ) (G (circleMap 0 t θ))) := by
+        congr 1
+        apply intervalIntegral.integral_congr
+        intro θ _
+        show ∫ p in ball (0:ℂ) R, f θ p
+            = (circleMap 0 t θ * I * G' (circleMap 0 t θ))
+              * (↑π * (starRingEnd ℂ) (G (circleMap 0 t θ)))
+        have hinner : ∫ p in ball (0:ℂ) R, f θ p
+            = (circleMap 0 t θ * I * G' (circleMap 0 t θ))
+              * ∫ p in ball (0:ℂ) R, (G (circleMap 0 t θ) - p)⁻¹ := by
+          have hpt : ∀ p : ℂ, f θ p
+              = (circleMap 0 t θ * I * G' (circleMap 0 t θ)) * (G (circleMap 0 t θ) - p)⁻¹ := by
+            intro p; simp only [hfdef]; rw [div_eq_mul_inv]; ring
+          simp_rw [hpt]
+          rw [MeasureTheory.integral_const_mul]
+        rw [hinner, cauchyTransform_disk (hcurve θ)]
+    _ = (2 * ↑π * I)⁻¹ * (↑π * ∫ θ in (0:ℝ)..2*π,
+          (circleMap 0 t θ * I) * ((starRingEnd ℂ) (G (circleMap 0 t θ)) * G' (circleMap 0 t θ))) := by
+        congr 1
+        rw [← intervalIntegral.integral_const_mul]
+        apply intervalIntegral.integral_congr
+        intro θ _
+        ring
+    _ = shoelace h t := by
+        rw [shoelace, ← mul_assoc, hscalar]
+        congr 1
+        simp only [circleIntegral]
+        apply intervalIntegral.integral_congr
+        intro θ _
+        simp only [deriv_circleMap, smul_eq_mul, hGdef, hG'def]
 
 end Uniformization
