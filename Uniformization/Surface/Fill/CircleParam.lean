@@ -773,9 +773,12 @@ theorem margin_at {ξ' : X}
     ∃ (O : Set X) (r : ℝ), IsOpen O ∧ ξ' ∈ O ∧ 0 < r ∧
       ∀ q : ConjEtale f Y, ConjEtale.proj q ∈ O →
         ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀ →
-        Set.Ioo (evIm q - r) (evIm q + r) ⊆
-          evIm '' connectedComponentIn
-            (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q := by
+        ∃ σ : ℝ → ConjEtale f Y,
+          ContinuousOn σ (Set.Ioo (evIm q - r) (evIm q + r)) ∧
+          σ (evIm q) = q ∧
+          (∀ s ∈ Set.Ioo (evIm q - r) (evIm q + r), evIm (σ s) = s) ∧
+          (∀ s ∈ Set.Ioo (evIm q - r) (evIm q + r),
+            ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀) := by
   classical
   set C := connectedComponentIn (frontier V) x₀ with hC
   have hξ'fr : ξ' ∈ frontier V := connectedComponentIn_subset _ _ hξ'C
@@ -956,37 +959,91 @@ theorem margin_at {ξ' : X}
     · refine ⟨Set.mem_univ _, ?_⟩
       rw [hgerm]
       exact Filter.Germ.coe_eq.mpr ht'
-  -- `evIm q` lies in the section interval
-  have hevq_mem : evIm q ∈ Set.Ioo a' b' := by
-    rw [abs_lt] at hzim_bd
-    refine ⟨?_, ?_⟩
-    · rw [ha', ha, hevq]; linarith [hzim_bd.1]
-    · rw [hb', hb, hevq]; linarith [hzim_bd.2]
-  -- the section image lies in the fibre component of `q`
-  have himgsub : σ '' Set.Ioo a' b' ⊆
-      connectedComponentIn (ConjEtale.proj ⁻¹' C) q := by
-    have hpre2 : IsPreconnected (σ '' Set.Ioo a' b') := isPreconnected_Ioo.image σ hcontσ
-    have hqin : q ∈ σ '' Set.Ioo a' b' := ⟨evIm q, hevq_mem, hσq⟩
-    have hsubP : σ '' Set.Ioo a' b' ⊆ ConjEtale.proj ⁻¹' C := by
-      rintro _ ⟨s, hs, rfl⟩; exact hprojσ s hs
-    exact hpre2.subset_connectedComponentIn hqin hsubP
   -- the margin interval is inside the section interval
   have hmargin : Set.Ioo (evIm q - ε / 2) (evIm q + ε / 2) ⊆ Set.Ioo a' b' := by
     rw [abs_lt] at hzim_bd
     apply Set.Ioo_subset_Ioo
     · rw [ha', ha, hevq]; linarith [hzim_bd.1]
     · rw [hb', hb, hevq]; linarith [hzim_bd.2]
-  intro s hs
-  have hsab' : s ∈ Set.Ioo a' b' := hmargin hs
-  exact ⟨σ s, himgsub ⟨s, hsab', rfl⟩, hevσ s hsab'⟩
+  exact ⟨σ, hcontσ.mono hmargin, hσq,
+    fun s hs => hevσ s (hmargin hs), fun s hs => hprojσ s (hmargin hs)⟩
 
 set_option maxHeartbeats 1600000 in
 include hVo hdich hfc hchart hYo hCY in
+/-- **Uniform section over the whole frontier fibre (Checkpoint C1).**  Compactness
+of `C` gives a single positive margin `ℓ` and, through every fibre point `q` over
+`C`, a continuous straightening section over `(evIm q − ℓ, evIm q + ℓ)`.  This is
+the finite-cover heart of the reachability/gluing construction of the global
+section (and of surjectivity). -/
+theorem exists_uniform_section (hVcl : IsCompact (closure V))
+    (hCne : (connectedComponentIn (frontier V) x₀).Nonempty) :
+    ∃ ℓ : ℝ, 0 < ℓ ∧ ∀ q : ConjEtale f Y,
+      ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀ →
+      ∃ σ : ℝ → ConjEtale f Y,
+        ContinuousOn σ (Set.Ioo (evIm q - ℓ) (evIm q + ℓ)) ∧
+        σ (evIm q) = q ∧
+        (∀ s ∈ Set.Ioo (evIm q - ℓ) (evIm q + ℓ), evIm (σ s) = s) ∧
+        (∀ s ∈ Set.Ioo (evIm q - ℓ) (evIm q + ℓ),
+          ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀) := by
+  classical
+  set C := connectedComponentIn (frontier V) x₀ with hC
+  choose! O r hOopen hξO hrpos hsecprop using
+    fun ξ (hξ : ξ ∈ C) => margin_at hVo hdich hfc hchart hYo hCY hξ
+  have hcov : C ⊆ ⋃ ξ ∈ C, O ξ := fun η hη => Set.mem_biUnion hη (hξO η hη)
+  obtain ⟨T, hTsub, hTfin, hTcov⟩ :=
+    (isCompact_component hVcl (x₀ := x₀)).elim_finite_subcover_image hOopen hcov
+  have hTne : T.Nonempty := by
+    obtain ⟨ξ, hξ⟩ := hCne
+    obtain ⟨ζ, hζT, -⟩ := Set.mem_iUnion₂.mp (hTcov hξ)
+    exact ⟨ζ, hζT⟩
+  have hTfne : hTfin.toFinset.Nonempty := (Set.Finite.toFinset_nonempty hTfin).mpr hTne
+  set ℓ := hTfin.toFinset.inf' hTfne r with hℓ
+  have hℓpos : 0 < ℓ := by
+    rw [hℓ, Finset.lt_inf'_iff]
+    intro ξ hξ
+    exact hrpos ξ (hTsub ((hTfin.mem_toFinset).mp hξ))
+  have hℓle : ∀ ξ ∈ T, ℓ ≤ r ξ := fun ξ hξT =>
+    Finset.inf'_le r ((hTfin.mem_toFinset).mpr hξT)
+  refine ⟨ℓ, hℓpos, ?_⟩
+  intro q hqC
+  obtain ⟨ξ, hξT, hqOξ⟩ := Set.mem_iUnion₂.mp (hTcov hqC)
+  obtain ⟨σ, hcont, hσq, hev, hproj⟩ := hsecprop ξ (hTsub hξT) q hqOξ hqC
+  have hsub : Set.Ioo (evIm q - ℓ) (evIm q + ℓ) ⊆ Set.Ioo (evIm q - r ξ) (evIm q + r ξ) :=
+    Set.Ioo_subset_Ioo (by linarith [hℓle ξ hξT]) (by linarith [hℓle ξ hξT])
+  exact ⟨σ, hcont.mono hsub, hσq, fun s hs => hev s (hsub hs), fun s hs => hproj s (hsub hs)⟩
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **Uniform margin (image form).**  From the uniform section, every fibre point
+`q` over `C` has `(evIm q − ℓ, evIm q + ℓ) ⊆ evIm '' (fibre component of `q`)`. -/
+theorem exists_uniform_margin (hVcl : IsCompact (closure V))
+    (hCne : (connectedComponentIn (frontier V) x₀).Nonempty) :
+    ∃ ℓ : ℝ, 0 < ℓ ∧ ∀ q : ConjEtale f Y,
+      ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀ →
+      Set.Ioo (evIm q - ℓ) (evIm q + ℓ) ⊆
+        evIm '' connectedComponentIn
+          (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q := by
+  obtain ⟨ℓ, hℓpos, hsec⟩ := exists_uniform_section hVo hdich hfc hchart hYo hCY hVcl hCne
+  refine ⟨ℓ, hℓpos, ?_⟩
+  intro q hqC
+  obtain ⟨σ, hcont, hσq, hev, hproj⟩ := hsec q hqC
+  have himg : σ '' Set.Ioo (evIm q - ℓ) (evIm q + ℓ) ⊆
+      connectedComponentIn (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q := by
+    have hpre := isPreconnected_Ioo.image σ hcont
+    have hqin : q ∈ σ '' Set.Ioo (evIm q - ℓ) (evIm q + ℓ) :=
+      ⟨evIm q, ⟨by linarith [hℓpos], by linarith [hℓpos]⟩, hσq⟩
+    have hsubP : σ '' Set.Ioo (evIm q - ℓ) (evIm q + ℓ) ⊆
+        ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ := by
+      rintro _ ⟨s, hs, rfl⟩; exact hproj s hs
+    exact hpre.subset_connectedComponentIn hqin hsubP
+  intro w hw
+  exact ⟨σ w, himg ⟨w, hw, rfl⟩, hev w hw⟩
+
+include hVo hdich hfc hchart hYo hCY in
 /-- **Surjectivity of `evIm` on the fibre component (Checkpoint B).**  The image
 `evIm '' Ê` of the fibre component is all of `ℝ`.  Compactness of the frontier
-component `C` gives (finite cover by margin boxes) a *uniform* positive margin
-`ℓ`: every achieved value `v` continues to `(v−ℓ, v+ℓ) ⊆ evIm '' Ê`.  Hence the
-image is clopen and nonempty in the connected line `ℝ`, so it is everything. -/
+component `C` gives a *uniform* positive margin `ℓ`: every achieved value `v`
+continues to `(v−ℓ, v+ℓ) ⊆ evIm '' Ê`.  Hence the image is clopen and nonempty in
+the connected line `ℝ`, so it is everything. -/
 theorem evIm_image_component_eq_univ (hVcl : IsCompact (closure V))
     {q₀ : ConjEtale f Y}
     (hq₀ : ConjEtale.proj q₀ ∈ connectedComponentIn (frontier V) x₀) :
@@ -997,39 +1054,19 @@ theorem evIm_image_component_eq_univ (hVcl : IsCompact (closure V))
   set Ê := connectedComponentIn (ConjEtale.proj ⁻¹' C) q₀ with hÊ
   have hq₀E : q₀ ∈ Ê := mem_connectedComponentIn hq₀
   set S := evIm '' Ê with hS
-  -- cover `C` by the margin boxes
-  choose! O r hOopen hξO hrpos hmarginprop using
-    fun ξ (hξ : ξ ∈ C) => margin_at hVo hdich hfc hchart hYo hCY hξ
-  have hcov : C ⊆ ⋃ ξ ∈ C, O ξ := fun η hη => Set.mem_biUnion hη (hξO η hη)
-  obtain ⟨T, hTsub, hTfin, hTcov⟩ :=
-    (isCompact_component hVcl (x₀ := x₀)).elim_finite_subcover_image hOopen hcov
-  -- a uniform positive margin `ℓ`
-  have hTne : T.Nonempty := by
-    obtain ⟨ξ, hξT, -⟩ := Set.mem_iUnion₂.mp (hTcov hq₀)
-    exact ⟨ξ, hξT⟩
-  have hTfne : hTfin.toFinset.Nonempty := (Set.Finite.toFinset_nonempty hTfin).mpr hTne
-  set ℓ := hTfin.toFinset.inf' hTfne r with hℓ
-  have hℓpos : 0 < ℓ := by
-    rw [hℓ, Finset.lt_inf'_iff]
-    intro ξ hξ
-    exact hrpos ξ (hTsub ((hTfin.mem_toFinset).mp hξ))
-  have hℓle : ∀ ξ ∈ T, ℓ ≤ r ξ := fun ξ hξT =>
-    Finset.inf'_le r ((hTfin.mem_toFinset).mpr hξT)
-  -- the uniform margin property
+  obtain ⟨ℓ, hℓpos, hmarg0⟩ :=
+    exists_uniform_margin hVo hdich hfc hchart hYo hCY hVcl ⟨ConjEtale.proj q₀, hq₀⟩
+  -- the uniform margin property, transported into `S`
   have hmarg : ∀ v ∈ S, Set.Ioo (v - ℓ) (v + ℓ) ⊆ S := by
     rintro v ⟨q, hqE, rfl⟩
     have hqE' : q ∈ connectedComponentIn (ConjEtale.proj ⁻¹' C) q₀ := hÊ ▸ hqE
     have hqP : ConjEtale.proj q ∈ C :=
       Set.mem_preimage.mp (connectedComponentIn_subset (ConjEtale.proj ⁻¹' C) q₀ hqE')
-    obtain ⟨ξ, hξT, hqOξ⟩ := Set.mem_iUnion₂.mp (hTcov hqP)
     have hcomp_eq : connectedComponentIn (ConjEtale.proj ⁻¹' C) q = Ê := by
       rw [hÊ]; exact (connectedComponentIn_eq hqE').symm
-    have hsub1 : Set.Ioo (evIm q - r ξ) (evIm q + r ξ) ⊆ S := by
-      have hmp := hmarginprop ξ (hTsub hξT) q hqOξ hqP
-      rw [hcomp_eq, ← hS] at hmp
-      exact hmp
-    intro w hw
-    exact hsub1 (Set.Ioo_subset_Ioo (by linarith [hℓle ξ hξT]) (by linarith [hℓle ξ hξT]) hw)
+    have hmp := hmarg0 q hqP
+    rw [hcomp_eq, ← hS] at hmp
+    exact hmp
   -- `S` is clopen and nonempty in the connected line `ℝ`
   have hSne : S.Nonempty := ⟨evIm q₀, q₀, hq₀E, rfl⟩
   have hSopen : IsOpen S := by
@@ -1049,6 +1086,291 @@ theorem evIm_image_component_eq_univ (hVcl : IsCompact (closure V))
   have hSclopen : IsClopen S := ⟨isOpen_compl_iff.mp hScompl, hSopen⟩
   exact hSclopen.eq_univ hSne
 
+/-! ### Checkpoint C2 — the global section by clopen reachability -/
+
+/-- **Reachability extension step (C2 core).**  A continuous straightening section
+of `evIm` over the symmetric closed interval `[v₀−n, v₀+n]` (through `q₀`, landing
+in `C`) extends to radius `n + ℓ/2`, by gluing the uniform-margin sections at the
+two endpoints.  The uniform section input `hsec` is `exists_uniform_section`, so
+`ℓ` is fixed across all extension steps.  We require `0 < n` so the two endpoint
+sections do not overlap (edge case handled by starting induction at radius `ℓ/2`). -/
+theorem reach_extend {q₀ : ConjEtale f Y} {ℓ : ℝ} (hℓpos : 0 < ℓ)
+    (hsec : ∀ q : ConjEtale f Y,
+      ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀ →
+      ∃ σ : ℝ → ConjEtale f Y,
+        ContinuousOn σ (Set.Ioo (evIm q - ℓ) (evIm q + ℓ)) ∧
+        σ (evIm q) = q ∧
+        (∀ s ∈ Set.Ioo (evIm q - ℓ) (evIm q + ℓ), evIm (σ s) = s) ∧
+        (∀ s ∈ Set.Ioo (evIm q - ℓ) (evIm q + ℓ),
+          ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀))
+    {v₀ n : ℝ} (hv₀ : evIm q₀ = v₀) (hn : 0 < n)
+    (hR : ∃ σ : ℝ → ConjEtale f Y,
+      ContinuousOn σ (Set.Icc (v₀ - n) (v₀ + n)) ∧
+      (∀ u ∈ Set.Icc (v₀ - n) (v₀ + n), evIm (σ u) = u) ∧
+      (∀ u ∈ Set.Icc (v₀ - n) (v₀ + n),
+        ConjEtale.proj (σ u) ∈ connectedComponentIn (frontier V) x₀) ∧
+      σ v₀ = q₀) :
+    ∃ σ : ℝ → ConjEtale f Y,
+      ContinuousOn σ (Set.Icc (v₀ - (n + ℓ / 2)) (v₀ + (n + ℓ / 2))) ∧
+      (∀ u ∈ Set.Icc (v₀ - (n + ℓ / 2)) (v₀ + (n + ℓ / 2)), evIm (σ u) = u) ∧
+      (∀ u ∈ Set.Icc (v₀ - (n + ℓ / 2)) (v₀ + (n + ℓ / 2)),
+        ConjEtale.proj (σ u) ∈ connectedComponentIn (frontier V) x₀) ∧
+      σ v₀ = q₀ := by
+  classical
+  obtain ⟨σ, hσcont, hσev, hσproj, hσv₀⟩ := hR
+  have hmemL : v₀ - n ∈ Set.Icc (v₀ - n) (v₀ + n) := ⟨le_refl _, by linarith⟩
+  have hmemR : v₀ + n ∈ Set.Icc (v₀ - n) (v₀ + n) := ⟨by linarith, le_refl _⟩
+  have hLproj : ConjEtale.proj (σ (v₀ - n)) ∈ connectedComponentIn (frontier V) x₀ :=
+    hσproj _ hmemL
+  have hLev : evIm (σ (v₀ - n)) = v₀ - n := hσev _ hmemL
+  have hRproj : ConjEtale.proj (σ (v₀ + n)) ∈ connectedComponentIn (frontier V) x₀ :=
+    hσproj _ hmemR
+  have hRev : evIm (σ (v₀ + n)) = v₀ + n := hσev _ hmemR
+  obtain ⟨σL, hσLcont, hσLq, hσLev, hσLproj⟩ := hsec _ hLproj
+  obtain ⟨σR, hσRcont, hσRq, hσRev, hσRproj⟩ := hsec _ hRproj
+  rw [hLev] at hσLcont hσLq hσLev hσLproj
+  rw [hRev] at hσRcont hσRq hσRev hσRproj
+  -- the glued section
+  refine ⟨fun u => if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u,
+    ?_, ?_, ?_, ?_⟩
+  · -- continuity, by gluing on three closed pieces
+    have hbig : Set.Icc (v₀ - (n + ℓ / 2)) (v₀ + (n + ℓ / 2))
+        = (Set.Icc (v₀ - (n + ℓ / 2)) (v₀ - n) ∪ Set.Icc (v₀ - n) (v₀ + n))
+          ∪ Set.Icc (v₀ + n) (v₀ + (n + ℓ / 2)) := by
+      rw [Set.Icc_union_Icc_eq_Icc (by linarith) (by linarith),
+        Set.Icc_union_Icc_eq_Icc (by linarith) (by linarith)]
+    rw [hbig]
+    have hgIL : ContinuousOn (fun u => if u ≤ v₀ - n then σL u else
+        if u ≤ v₀ + n then σ u else σR u) (Set.Icc (v₀ - (n + ℓ / 2)) (v₀ - n)) := by
+      refine (hσLcont.mono ?_).congr ?_
+      · intro u hu; exact ⟨by linarith [hu.1], by linarith [hu.2]⟩
+      · intro u hu
+        show (if u ≤ v₀ - n then σL u else _) = σL u
+        rw [if_pos hu.2]
+    have hgIM : ContinuousOn (fun u => if u ≤ v₀ - n then σL u else
+        if u ≤ v₀ + n then σ u else σR u) (Set.Icc (v₀ - n) (v₀ + n)) := by
+      refine hσcont.congr ?_
+      intro u hu
+      show (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u) = σ u
+      by_cases hle : u ≤ v₀ - n
+      · have hueq : u = v₀ - n := le_antisymm hle hu.1
+        rw [if_pos hle, hueq, hσLq]
+      · rw [if_neg hle, if_pos hu.2]
+    have hgIR : ContinuousOn (fun u => if u ≤ v₀ - n then σL u else
+        if u ≤ v₀ + n then σ u else σR u) (Set.Icc (v₀ + n) (v₀ + (n + ℓ / 2))) := by
+      refine (hσRcont.mono ?_).congr ?_
+      · intro u hu; exact ⟨by linarith [hu.1], by linarith [hu.2]⟩
+      · intro u hu
+        show (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u) = σR u
+        have hle : ¬ u ≤ v₀ - n := by push_neg; linarith [hu.1]
+        by_cases hle2 : u ≤ v₀ + n
+        · have hueq : u = v₀ + n := le_antisymm hle2 hu.1
+          rw [if_neg hle, if_pos hle2, hueq, hσRq]
+        · rw [if_neg hle, if_neg hle2]
+    exact (hgIL.union_of_isClosed hgIM isClosed_Icc isClosed_Icc).union_of_isClosed
+      hgIR (isClosed_Icc.union isClosed_Icc) isClosed_Icc
+  · -- evIm ∘ section = id
+    intro u hu
+    show evIm (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u) = u
+    by_cases hle : u ≤ v₀ - n
+    · rw [if_pos hle]
+      exact hσLev u ⟨by linarith [hu.1], by linarith⟩
+    · rw [if_neg hle]
+      by_cases hle2 : u ≤ v₀ + n
+      · rw [if_pos hle2]; push_neg at hle; exact hσev u ⟨le_of_lt hle, hle2⟩
+      · rw [if_neg hle2]; push_neg at hle2; exact hσRev u ⟨by linarith, by linarith [hu.2]⟩
+  · -- projection lands in `C`
+    intro u hu
+    show ConjEtale.proj (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u)
+      ∈ connectedComponentIn (frontier V) x₀
+    by_cases hle : u ≤ v₀ - n
+    · rw [if_pos hle]
+      exact hσLproj u ⟨by linarith [hu.1], by linarith⟩
+    · rw [if_neg hle]
+      by_cases hle2 : u ≤ v₀ + n
+      · rw [if_pos hle2]; push_neg at hle; exact hσproj u ⟨le_of_lt hle, hle2⟩
+      · rw [if_neg hle2]; push_neg at hle2; exact hσRproj u ⟨by linarith, by linarith [hu.2]⟩
+  · -- value at `v₀`
+    show (if v₀ ≤ v₀ - n then σL v₀ else if v₀ ≤ v₀ + n then σ v₀ else σR v₀) = q₀
+    rw [if_neg (by linarith), if_pos (by linarith)]; exact hσv₀
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **Reachability at every radius (C2).**  Through `q₀` there is, for every radius
+`N`, a continuous straightening section of `evIm` over `[evIm q₀ − N, evIm q₀ + N]`
+landing in `C`.  Proved by induction from radius `ℓ/2` using `reach_extend`, then
+downward closure. -/
+theorem reach_all (hVcl : IsCompact (closure V)) {q₀ : ConjEtale f Y}
+    (hq₀ : ConjEtale.proj q₀ ∈ connectedComponentIn (frontier V) x₀) (N : ℝ) :
+    ∃ σ : ℝ → ConjEtale f Y,
+      ContinuousOn σ (Set.Icc (evIm q₀ - N) (evIm q₀ + N)) ∧
+      (∀ u ∈ Set.Icc (evIm q₀ - N) (evIm q₀ + N), evIm (σ u) = u) ∧
+      (∀ u ∈ Set.Icc (evIm q₀ - N) (evIm q₀ + N),
+        ConjEtale.proj (σ u) ∈ connectedComponentIn (frontier V) x₀) ∧
+      σ (evIm q₀) = q₀ := by
+  classical
+  obtain ⟨ℓ, hℓpos, hsec⟩ :=
+    exists_uniform_section hVo hdich hfc hchart hYo hCY hVcl ⟨_, hq₀⟩
+  let Reach : ℝ → Prop := fun r => ∃ σ : ℝ → ConjEtale f Y,
+    ContinuousOn σ (Set.Icc (evIm q₀ - r) (evIm q₀ + r)) ∧
+    (∀ u ∈ Set.Icc (evIm q₀ - r) (evIm q₀ + r), evIm (σ u) = u) ∧
+    (∀ u ∈ Set.Icc (evIm q₀ - r) (evIm q₀ + r),
+      ConjEtale.proj (σ u) ∈ connectedComponentIn (frontier V) x₀) ∧ σ (evIm q₀) = q₀
+  have hdown : ∀ m r : ℝ, r ≤ m → Reach m → Reach r := by
+    intro m r hrm hPm
+    obtain ⟨σ, hcont, hev, hproj, hv⟩ := hPm
+    have hsub : Set.Icc (evIm q₀ - r) (evIm q₀ + r) ⊆
+        Set.Icc (evIm q₀ - m) (evIm q₀ + m) :=
+      fun u hu => ⟨by linarith [hu.1], by linarith [hu.2]⟩
+    exact ⟨σ, hcont.mono hsub, fun u hu => hev u (hsub hu), fun u hu => hproj u (hsub hu), hv⟩
+  have hbase : Reach (ℓ / 2) := by
+    obtain ⟨σ, hcont, hσq, hev, hproj⟩ := hsec q₀ hq₀
+    refine ⟨σ, hcont.mono ?_, fun u hu => hev u ?_, fun u hu => hproj u ?_, hσq⟩
+    · exact fun u hu => ⟨by linarith [hu.1, hℓpos], by linarith [hu.2, hℓpos]⟩
+    · exact ⟨by linarith [hu.1, hℓpos], by linarith [hu.2, hℓpos]⟩
+    · exact ⟨by linarith [hu.1, hℓpos], by linarith [hu.2, hℓpos]⟩
+  have hind : ∀ k : ℕ, Reach (((k : ℝ) + 1) * (ℓ / 2)) := by
+    intro k
+    induction k with
+    | zero => simpa using hbase
+    | succ k ih =>
+      have hn : 0 < ((k : ℝ) + 1) * (ℓ / 2) := by positivity
+      have hext := reach_extend hℓpos hsec (v₀ := evIm q₀) (n := ((k : ℝ) + 1) * (ℓ / 2))
+        rfl hn ih
+      have harith : ((↑(k + 1) : ℝ) + 1) * (ℓ / 2) = ((k : ℝ) + 1) * (ℓ / 2) + ℓ / 2 := by
+        push_cast; ring
+      rw [harith]
+      exact hext
+  by_cases hN : N ≤ ℓ / 2
+  · exact hdown (ℓ / 2) N hN hbase
+  · obtain ⟨k, hk⟩ := exists_nat_ge (N / (ℓ / 2))
+    have hbig : N ≤ ((k : ℝ) + 1) * (ℓ / 2) := by
+      have h1 : N ≤ (k : ℝ) * (ℓ / 2) := (div_le_iff₀ (half_pos hℓpos)).mp hk
+      have h2 : ((k : ℝ) + 1) * (ℓ / 2) = (k : ℝ) * (ℓ / 2) + ℓ / 2 := by ring
+      linarith [half_pos hℓpos]
+    exact hdown (((k : ℝ) + 1) * (ℓ / 2)) N hbig (hind k)
+
+/-! ### Checkpoint C3 — injectivity and the continuous inverse -/
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **Continuous inverse and injectivity of `evIm` on `Ê` (Checkpoint C3).**  From
+the global reachability sections we assemble a continuous global section
+`E : ℝ → Ê` of `evIm` through `q₀`; its image is clopen in the connected fibre
+component `Ê`, hence all of `Ê`, whence `evIm` is injective on `Ê` and `E` is its
+two-sided inverse. -/
+theorem exists_evIm_inverse (hVcl : IsCompact (closure V)) {q₀ : ConjEtale f Y}
+    (hq₀ : ConjEtale.proj q₀ ∈ connectedComponentIn (frontier V) x₀) :
+    ∃ E : ℝ → ConjEtale f Y, Continuous E ∧ (∀ t, evIm (E t) = t) ∧
+      (∀ t, E t ∈ connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀) ∧
+      (∀ q ∈ connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀, E (evIm q) = q) ∧
+      Set.InjOn evIm (connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀) := by
+  classical
+  haveI : T2Space (ConjEtale f Y) := ConjEtale.t2Space
+  choose F hFcont hFev hFproj hFv₀ using
+    reach_all hVo hdich hfc hchart hYo hCY hVcl hq₀
+  set v₀ := evIm q₀ with hv₀
+  set Ê := connectedComponentIn (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀
+    with hÊ
+  have hq₀Ê : q₀ ∈ Ê := mem_connectedComponentIn hq₀
+  have hÊP : ∀ w, w ∈ Ê → ConjEtale.proj w ∈ connectedComponentIn (frontier V) x₀ :=
+    fun w hw => Set.mem_preimage.mp (connectedComponentIn_subset _ _ (hÊ ▸ hw))
+  -- interval membership helper
+  have hmem : ∀ (N s : ℝ), |s - v₀| ≤ N → s ∈ Set.Icc (v₀ - N) (v₀ + N) := by
+    intro N s hs; rw [abs_le] at hs; exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
+  -- agreement of witnesses on shared radii
+  have hagree : ∀ (N M s : ℝ), s ∈ Set.Icc (v₀ - N) (v₀ + N) →
+      s ∈ Set.Icc (v₀ - M) (v₀ + M) → F N s = F M s := by
+    intro N M s hsN hsM
+    have hN0 : (0 : ℝ) ≤ N := by have := hsN.1; have := hsN.2; linarith
+    have hM0 : (0 : ℝ) ≤ M := by have := hsM.1; have := hsM.2; linarith
+    have hJN : Set.Icc (min v₀ s) (max v₀ s) ⊆ Set.Icc (v₀ - N) (v₀ + N) :=
+      Set.Icc_subset_Icc (le_min (by linarith) hsN.1) (max_le (by linarith) hsN.2)
+    have hJM : Set.Icc (min v₀ s) (max v₀ s) ⊆ Set.Icc (v₀ - M) (v₀ + M) :=
+      Set.Icc_subset_Icc (le_min (by linarith) hsM.1) (max_le (by linarith) hsM.2)
+    have hun := section_unique hVo hdich hfc hchart hYo hCY
+      (J := Set.Icc (min v₀ s) (max v₀ s)) isPreconnected_Icc
+      ((hFcont N).mono hJN) ((hFcont M).mono hJM)
+      (fun t ht => hFev N t (hJN ht)) (fun t ht => hFev M t (hJM ht))
+      (fun t ht => hFproj N t (hJN ht)) (fun t ht => hFproj M t (hJM ht))
+      (t₀ := v₀) ⟨min_le_left _ _, le_max_left _ _⟩ (by rw [hFv₀ N, hFv₀ M])
+    exact hun s ⟨min_le_right _ _, le_max_right _ _⟩
+  -- the global section
+  set E : ℝ → ConjEtale f Y := fun t => F (|t - v₀| + 1) t with hEdef
+  have hrmem : ∀ t, t ∈ Set.Icc (v₀ - (|t - v₀| + 1)) (v₀ + (|t - v₀| + 1)) :=
+    fun t => hmem _ t (by linarith)
+  have hevE : ∀ t, evIm (E t) = t := fun t => hFev _ t (hrmem t)
+  have hEmemÊ : ∀ t, E t ∈ Ê := by
+    intro t
+    have hpre : IsPreconnected (F (|t - v₀| + 1) ''
+        Set.Icc (v₀ - (|t - v₀| + 1)) (v₀ + (|t - v₀| + 1))) :=
+      isPreconnected_Icc.image _ (hFcont _)
+    have hq₀in : q₀ ∈ F (|t - v₀| + 1) ''
+        Set.Icc (v₀ - (|t - v₀| + 1)) (v₀ + (|t - v₀| + 1)) :=
+      ⟨v₀, hmem _ v₀ (by rw [sub_self, abs_zero]; positivity), hFv₀ _⟩
+    have hsubP : F (|t - v₀| + 1) '' Set.Icc (v₀ - (|t - v₀| + 1)) (v₀ + (|t - v₀| + 1)) ⊆
+        ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ := by
+      rintro _ ⟨u, hu, rfl⟩; exact hFproj _ u hu
+    exact (hÊ ▸ hpre.subset_connectedComponentIn hq₀in hsubP) ⟨t, hrmem t, rfl⟩
+  -- continuity of the global section
+  have hEcont : Continuous E := by
+    rw [continuous_iff_continuousAt]
+    intro w
+    have hwint : w ∈ Set.Ioo (v₀ - (|w - v₀| + 1)) (v₀ + (|w - v₀| + 1)) :=
+      ⟨by linarith [neg_abs_le (w - v₀)], by linarith [le_abs_self (w - v₀)]⟩
+    have hloceq : Set.EqOn E (F (|w - v₀| + 1))
+        (Set.Ioo (v₀ - (|w - v₀| + 1)) (v₀ + (|w - v₀| + 1))) := by
+      intro s hs
+      exact hagree _ _ s (hmem _ s (by linarith)) ⟨le_of_lt hs.1, le_of_lt hs.2⟩
+    have hIcc : Set.Icc (v₀ - (|w - v₀| + 1)) (v₀ + (|w - v₀| + 1)) ∈ 𝓝 w :=
+      Filter.mem_of_superset (isOpen_Ioo.mem_nhds hwint) Set.Ioo_subset_Icc_self
+    have hcAt : ContinuousAt (F (|w - v₀| + 1)) w := (hFcont _).continuousAt hIcc
+    exact hcAt.congr (hloceq.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds hwint)).symm
+  -- the section image is all of `Ê` (clopen in the connected component)
+  have himg : ∀ q ∈ Ê, E (evIm q) = q := by
+    have hÊpre : IsPreconnected Ê := by rw [hÊ]; exact isPreconnected_connectedComponentIn
+    haveI : PreconnectedSpace ↥Ê := Subtype.preconnectedSpace hÊpre
+    set A : Set ↥Ê := {q | E (evIm q.1) = q.1} with hA
+    have hAclosed : IsClosed A :=
+      isClosed_eq (hEcont.comp (continuous_evIm.comp continuous_subtype_val))
+        continuous_subtype_val
+    have hAopen : IsOpen A := by
+      rw [isOpen_iff_mem_nhds]
+      intro q hqA
+      have hpP : ConjEtale.proj q.1 ∈ connectedComponentIn (frontier V) x₀ := hÊP _ q.2
+      obtain ⟨U, hUo, hpU, hUinj⟩ := exists_evIm_local_inj hVo hdich hfc hchart hYo hCY hpP
+      have hEp : E (evIm q.1) = q.1 := hqA
+      have hWo : IsOpen (Subtype.val ⁻¹' (U ∩ (fun w => E (evIm w)) ⁻¹' U) : Set ↥Ê) :=
+        (hUo.inter ((hEcont.comp continuous_evIm).isOpen_preimage _ hUo)).preimage
+          continuous_subtype_val
+      have hqW : q ∈ (Subtype.val ⁻¹' (U ∩ (fun w => E (evIm w)) ⁻¹' U) : Set ↥Ê) := by
+        refine ⟨hpU, ?_⟩
+        show E (evIm q.1) ∈ U
+        rw [hEp]; exact hpU
+      refine Filter.mem_of_superset (hWo.mem_nhds hqW) ?_
+      intro q' hq'
+      show E (evIm q'.1) = q'.1
+      have h1 : q'.1 ∈ U ∩ (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) :=
+        ⟨hq'.1, hÊP _ q'.2⟩
+      have h2 : E (evIm q'.1) ∈ U ∩ (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) :=
+        ⟨hq'.2, hÊP _ (hEmemÊ (evIm q'.1))⟩
+      exact hUinj h2 h1 (hevE (evIm q'.1))
+    have hAne : (⟨q₀, hq₀Ê⟩ : ↥Ê) ∈ A := by
+      show E (evIm q₀) = q₀
+      rw [← hv₀]
+      show F (|v₀ - v₀| + 1) v₀ = q₀
+      rw [sub_self, abs_zero, zero_add]; exact hFv₀ 1
+    have hAuniv : A = Set.univ := IsClopen.eq_univ ⟨hAclosed, hAopen⟩ ⟨_, hAne⟩
+    intro q hq
+    have : (⟨q, hq⟩ : ↥Ê) ∈ A := hAuniv ▸ Set.mem_univ _
+    exact this
+  have hInj : Set.InjOn evIm Ê := by
+    intro q hq q' hq' hev
+    rw [← himg q hq, ← himg q' hq', hev]
+  exact ⟨E, hEcont, hevE, hEmemÊ, himg, hInj⟩
+
 end LocalInj
+
 
 end Uniformization
