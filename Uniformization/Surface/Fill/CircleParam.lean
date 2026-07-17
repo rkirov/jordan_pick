@@ -268,6 +268,44 @@ theorem evIm_locally_injective {V : Set X} {c : ℝ}
   · rw [re_eval, re_eval, hfc _ hwfr, hfc _ hqfr]
   · exact hwev
 
+/-- **Injectivity engine.**  Two conjugate germs over the same base point with the
+same evaluation are equal: equal value pins the imaginary constant to `0` by
+rigidity.  Hence `(proj, eval)` is globally injective on the étale space, and on
+the frontier fibre `(proj, evIm)` is injective (since `Re ∘ eval = f`). -/
+theorem eq_of_proj_eq_eval_eq {q₁ q₂ : ConjEtale f Y}
+    (hproj : ConjEtale.proj q₁ = ConjEtale.proj q₂)
+    (heval : ConjEtale.eval q₁ = ConjEtale.eval q₂) : q₁ = q₂ := by
+  obtain ⟨h1Y, V₁, F₁, hV₁o, hq₁V, hV₁Y, hF₁, hg₁⟩ := q₁.2
+  obtain ⟨h2Y, V₂, F₂, hV₂o, hq₂V, hV₂Y, hF₂, hg₂⟩ := q₂.2
+  have hq₂V' : ConjEtale.proj q₁ ∈ V₂ := by rw [hproj]; exact hq₂V
+  obtain ⟨t, ht⟩ :=
+    IsConjugate.eventuallyEq_add_const hV₁o hV₂o hF₁ hF₂ hq₁V hq₂V'
+  have he1 : ConjEtale.eval q₁ = F₁ (ConjEtale.proj q₁) := by
+    simp only [ConjEtale.eval, ConjEtale.proj, hg₁, Rado.germValue_coe]
+  have he2 : ConjEtale.eval q₂ = F₂ (ConjEtale.proj q₂) := by
+    simp only [ConjEtale.eval, ConjEtale.proj, hg₂, Rado.germValue_coe]
+  have hval : F₁ (ConjEtale.proj q₁) = F₂ (ConjEtale.proj q₁) + (t : ℂ) * Complex.I :=
+    ht.self_of_nhds
+  have ht0 : t = 0 := by
+    have h1 : F₁ (ConjEtale.proj q₁) = F₂ (ConjEtale.proj q₂) := by rw [← he1, ← he2, heval]
+    rw [hval, ← hproj] at h1
+    have h2 : (t : ℂ) * Complex.I = 0 := by linear_combination h1
+    simpa only [mul_eq_zero, Complex.I_ne_zero, or_false, Complex.ofReal_eq_zero] using h2
+  have hgeq : F₁ =ᶠ[𝓝 (ConjEtale.proj q₁)] F₂ := by
+    filter_upwards [ht] with z hz; rw [hz, ht0]; simp
+  refine ConjEtale.injOn_proj_sheet (V := Set.univ) (F := F₂) ⟨Set.mem_univ _, ?_⟩
+    ⟨Set.mem_univ _, ?_⟩ hproj
+  · rw [hg₁]; exact Filter.Germ.coe_eq.mpr hgeq
+  · exact hg₂
+
+/-- On the frontier fibre, `(proj, evIm)` is injective. -/
+theorem eq_of_proj_eq_evIm_eq {V : Set X} {c : ℝ} (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    {q₁ q₂ : ConjEtale f Y} (h₁ : ConjEtale.proj q₁ ∈ frontier V)
+    (h₂ : ConjEtale.proj q₂ ∈ frontier V)
+    (hproj : ConjEtale.proj q₁ = ConjEtale.proj q₂) (hev : evIm q₁ = evIm q₂) : q₁ = q₂ := by
+  refine eq_of_proj_eq_eval_eq hproj (Complex.ext ?_ hev)
+  rw [re_eval, re_eval, hfc _ h₁, hfc _ h₂]
+
 end Fibre
 
 /-! ## Local `evIm`-charts on the fibre over a frontier component -/
@@ -468,5 +506,74 @@ theorem exists_evIm_section (hCY : connectedComponentIn (frontier V) x₀ ⊆ Y)
   exact ⟨by rw [ha', ha]; linarith, by rw [hb', hb]; linarith⟩
 
 end LocalChart
+
+/-! ## Stage 2 — the fibre component `Ê` and `evIm : Ê → ℝ` -/
+
+section Monodromy
+
+variable [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+  (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+  (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+  (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+      ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+        (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+  {Y : Set X} (hYo : IsOpen Y) {x₀ : X}
+  (hCY : connectedComponentIn (frontier V) x₀ ⊆ Y)
+
+/-- Abbreviation for the frontier fibre `P = proj⁻¹ C`. -/
+local notation3 "P" => ConjEtale.proj (u := f) (Y := Y) ⁻¹'
+  connectedComponentIn (frontier V) x₀
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **Sections stay in the component.**  The `evIm`-section through a point `q` of
+the fibre `P` (from `exists_evIm_section`) has its whole image inside the connected
+component `connectedComponentIn P q`.  (Its image is a connected subset of `P`
+containing `q`.) -/
+theorem section_subset_component {q : ConjEtale f Y}
+    (hqC : ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀) :
+    ∃ (a b : ℝ) (σ : ℝ → ConjEtale f Y), a < b ∧ evIm q ∈ Set.Ioo a b ∧
+      ContinuousOn σ (Set.Ioo a b) ∧ σ (evIm q) = q ∧
+      (∀ s ∈ Set.Ioo a b, evIm (σ s) = s) ∧
+      σ '' Set.Ioo a b ⊆ connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q := by
+  obtain ⟨a, b, σ, hab, hmem, hcont, hσq, hev, hproj⟩ :=
+    exists_evIm_section hVo hdich hfc hchart hYo hCY hqC
+  refine ⟨a, b, σ, hab, hmem, hcont, hσq, hev, ?_⟩
+  have hpre : IsPreconnected (σ '' Set.Ioo a b) := isPreconnected_Ioo.image σ hcont
+  have hqin : q ∈ σ '' Set.Ioo a b := ⟨evIm q, hmem, hσq⟩
+  have hsubP : σ '' Set.Ioo a b ⊆
+      ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ := by
+    rintro _ ⟨s, hs, rfl⟩; exact hproj s hs
+  exact hpre.subset_connectedComponentIn hqin hsubP
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **`evIm` maps the fibre component to an open set.**  Through each point of
+`Ê = connectedComponentIn P q₀` there is a local section whose image lies in `Ê`
+and whose `evIm`-image is an open interval; hence `evIm '' Ê` is open. -/
+theorem isOpen_evIm_image_component (q₀ : ConjEtale f Y) :
+    IsOpen (evIm '' connectedComponentIn
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro t ⟨q, hqE, rfl⟩
+  have hqP : q ∈ ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ :=
+    connectedComponentIn_subset _ _ hqE
+  have hqC : ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀ := hqP
+  obtain ⟨a, b, σ, hab, hmem, _, hσq, hev, hsub⟩ :=
+    section_subset_component hVo hdich hfc hchart hYo hCY hqC
+  -- the section image lies in `Ê`
+  have hEq : connectedComponentIn
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q
+      = connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀ :=
+    (connectedComponentIn_eq hqE).symm
+  rw [hEq] at hsub
+  -- `Ioo a b ⊆ evIm '' Ê`
+  have hIoo : Set.Ioo a b ⊆ evIm '' connectedComponentIn
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀ := by
+    intro s hs
+    exact ⟨σ s, hsub ⟨s, hs, rfl⟩, hev s hs⟩
+  exact Filter.mem_of_superset (isOpen_Ioo.mem_nhds hmem) hIoo
+
+end Monodromy
 
 end Uniformization
