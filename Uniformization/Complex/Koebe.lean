@@ -7,6 +7,7 @@ import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.Analytic.Order
 import Uniformization.RMT.RiemannMapping
 import Uniformization.Complex.Bieberbach
+import Uniformization.Complex.KoebeDistortion
 
 /-!
 # Koebe growth and quarter theorems for univalent functions
@@ -38,19 +39,11 @@ namespace Uniformization
 theorem koebe_growth {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f (ball 0 1))
     (hinj : InjOn f (ball 0 1)) (h0 : f 0 = 0) (hd : deriv f 0 = 1)
     {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
-    ‖f z‖ ≤ ‖z‖ / (1 - ‖z‖) ^ 2 := by
-  -- Bieberbach `‖a₂‖ ≤ 2` is now available (`Uniformization.bieberbach`), together with
-  -- the coefficient helper `deriv_dslope_zero` (`a₂ = ½ H''(0)`).  What remains for this
-  -- theorem is the classical distortion + double-integration argument, which is the largest
-  -- analytic component of the Koebe chain and is NOT yet formalized:
-  --   1. Apply `bieberbach` to the Koebe transform `T_w f` (schlicht on `ball 0 1`).
-  --      Via `deriv_dslope_zero`, `a₂(T_w f) = ½ (f∘φ_w)''(0)` where `φ_w` is the disk
-  --      automorphism `z ↦ (z+w)/(1+w̄ z)`.  The second-order chain rule gives
-  --      `a₂(T_w f) = ½[(1-|w|²) f''(w)/f'(w) - 2 w̄]`, so `|…| ≤ 4`.
-  --   2. `∂_r log|f'(re^{iθ})| = Re(e^{iθ} f''/f')` is bounded by `(2r+4)/(1-r²)`;
-  --      radial FTC integration gives the distortion bound `|f'(z)| ≤ (1+r)/(1-r)³`.
-  --   3. `f z = ∫₀¹ f'(tz)·z dt` integrates to `|f z| ≤ r/(1-r)²`.
-  sorry
+    ‖f z‖ ≤ ‖z‖ / (1 - ‖z‖) ^ 2 :=
+  -- The distortion + double-integration development is in `Uniformization.Complex.KoebeDistortion`:
+  -- `distortion_bound` (Bieberbach on the Koebe transform), `deriv_norm_le` (radial FTC), and
+  -- `growth_bound` (segment FTC).
+  growth_bound hf hinj h0 hd hz
 
 /-- **Koebe quarter theorem**: the image of a schlicht function contains the
 ball of radius `1/4`. -/
