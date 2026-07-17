@@ -97,6 +97,7 @@ structure CrossingPhase (V : Set X) (f : X → ℝ) (c : ℝ) (C : Set X) where
   N_sub_M : closure N ⊆ M
   f_cont : ContinuousOn f M
   level_iff : ∀ x ∈ M, (f x = c ↔ x ∈ frontier V)
+  pos_iff : ∀ x ∈ M, (c < f x ↔ x ∈ V)
   closureN_frontier : closure N ∩ frontier V = C
   τ_off : ∀ x ∉ N, τ x = 1
   τ_on : ∀ x ∈ N, τ x = Circle.exp (2 * Real.pi * ramp ((f x - c) / δ))
@@ -129,6 +130,120 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 
 open Rado
 
+/-- **Per-frontier-point box with the sign law.**  As `exists_box_nbhd`
+(`EndParity`), but additionally exporting the *positivity* characterisation
+`c < f x ↔ x ∈ V` on the box (the `{re > c}` half is `V`). -/
+theorem exists_box_nbhd_pos [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    {ξ : X} (hξ : ξ ∈ frontier V) :
+    ∃ W : Set X, IsOpen W ∧ ξ ∈ W ∧ ContinuousOn f W ∧
+      (∀ x ∈ W, (f x = c ↔ x ∈ frontier V)) ∧
+      (∀ x ∈ W, (c < f x ↔ x ∈ V)) := by
+  obtain ⟨ψ, δ, ε, hψ, hξψ, hδ, hε, hqre, hbox_tgt, hWopen, hξW, hf_eq, hVeq, hfront⟩ :=
+    exists_straight_box hVo hdich hfc hchart hξ
+  set box := straightBox (ψ ξ) c δ ε with hboxdef
+  set W := ψ.symm '' box with hWdef
+  have hWsrc : W ⊆ ψ.source := by
+    rintro x ⟨z, hz, rfl⟩; exact ψ.map_target (hbox_tgt hz)
+  refine ⟨W, hWopen, hξW, ?_, ?_, ?_⟩
+  · exact (Complex.continuous_re.comp_continuousOn (ψ.continuousOn.mono hWsrc)).congr
+      (fun x hx => (re_eq_f_of_mem_boxImage hbox_tgt hf_eq hx).symm)
+  · -- level law
+    intro x hxW
+    constructor
+    · intro hfx
+      obtain ⟨z, hz, rfl⟩ := hxW
+      have hzre : z.re = c := by rw [← hf_eq z hz]; exact hfx
+      have : ψ.symm z ∈ frontier V ∩ W := by
+        rw [hfront]; exact ⟨z, ⟨hz, hzre⟩, rfl⟩
+      exact this.1
+    · exact fun hxfr => hfc x hxfr
+  · -- sign law
+    intro x hxW
+    constructor
+    · intro hlt
+      obtain ⟨z, hz, rfl⟩ := hxW
+      have hzre : c < z.re := by rw [← hf_eq z hz]; exact hlt
+      have : ψ.symm z ∈ V ∩ W := by rw [hVeq]; exact ⟨z, ⟨hz, hzre⟩, rfl⟩
+      exact this.1
+    · intro hxV
+      have hmem : x ∈ V ∩ W := ⟨hxV, hxW⟩
+      rw [hVeq] at hmem
+      obtain ⟨z', ⟨hz', hz'lt⟩, rfl⟩ := hmem
+      rw [hf_eq z' hz']; exact hz'lt
+
+/-- **Phantom-free collar neighbourhood with the sign law.**  As
+`exists_phantom_free_nbhd`, but the neighbourhood `M` additionally satisfies the
+positivity law `c < f x ↔ x ∈ V`. -/
+theorem exists_phantom_free_pos_nbhd [T2Space X] {V : Set X} (hVo : IsOpen V)
+    (hVcl : IsCompact (closure V)) {f : X → ℝ} {c : ℝ}
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0) :
+    ∃ M : Set X, IsOpen M ∧ frontier V ⊆ M ∧ ContinuousOn f M ∧
+      (∀ x ∈ M, (f x = c ↔ x ∈ frontier V)) ∧
+      (∀ x ∈ M, (c < f x ↔ x ∈ V)) := by
+  classical
+  have hfrcpt : IsCompact (frontier V) :=
+    hVcl.of_isClosed_subset isClosed_frontier frontier_subset_closure
+  choose! Wf hWopen hWmem hWcont hWphantom hWpos using
+    fun ξ (hξ : ξ ∈ frontier V) => exists_box_nbhd_pos hVo hdich hfc hchart hξ
+  obtain ⟨t, htsub, htfin, htcov⟩ := hfrcpt.elim_finite_subcover_image hWopen
+    (fun ξ hξ => Set.mem_biUnion hξ (hWmem ξ hξ))
+  refine ⟨⋃ ξ ∈ t, Wf ξ, isOpen_biUnion (fun ξ hξ => hWopen ξ (htsub hξ)), htcov, ?_, ?_, ?_⟩
+  · intro x hxM
+    obtain ⟨ξ, hξt, hxW⟩ := mem_iUnion₂.mp hxM
+    exact ((hWcont ξ (htsub hξt)).continuousAt
+      ((hWopen ξ (htsub hξt)).mem_nhds hxW)).continuousWithinAt
+  · intro x hxM
+    obtain ⟨ξ, hξt, hxW⟩ := mem_iUnion₂.mp hxM
+    exact hWphantom ξ (htsub hξt) x hxW
+  · intro x hxM
+    obtain ⟨ξ, hξt, hxW⟩ := mem_iUnion₂.mp hxM
+    exact hWpos ξ (htsub hξt) x hxW
+
+/-- **Collar substrate with the sign law.**  As `exists_component_collar_substrate`
+(`EndParity`), but on the phantom-free neighbourhood `M` the sign law
+`c < f x ↔ x ∈ V` holds as well. -/
+theorem exists_component_collar_substrate_pos [T2Space X] {V : Set X} (hVo : IsOpen V)
+    (hVcl : IsCompact (closure V)) {f : X → ℝ} {c : ℝ}
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    {x₀ : X} :
+    ∃ (M N : Set X), IsOpen M ∧ IsOpen N ∧ ContinuousOn f M ∧
+      (∀ x ∈ M, (f x = c ↔ x ∈ frontier V)) ∧
+      (∀ x ∈ M, (c < f x ↔ x ∈ V)) ∧
+      connectedComponentIn (frontier V) x₀ ⊆ N ∧
+      IsCompact (closure N) ∧ closure N ⊆ M ∧
+      closure N ∩ frontier V = connectedComponentIn (frontier V) x₀ ∧
+      (∀ x ∈ frontier N, f x ≠ c) := by
+  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  set C := connectedComponentIn (frontier V) x₀ with hCeq
+  obtain ⟨M, hMopen, hfrM, hfcont, hphantom, hpos⟩ :=
+    exists_phantom_free_pos_nbhd hVo hVcl hdich hfc hchart
+  have hfrcpt : IsCompact (frontier V) :=
+    hVcl.of_isClosed_subset isClosed_frontier frontier_subset_closure
+  have hCcl : IsClosed C := isClosed_frontier.connectedComponentIn
+  have hCsub : C ⊆ frontier V := connectedComponentIn_subset _ _
+  obtain ⟨U, hUo, hCU⟩ := isOpen_component_in_frontier hVo hdich hfc hchart (x₀ := x₀)
+  obtain ⟨N, hNo, hCN, hNcpt, hNM, hNfr⟩ :=
+    exists_open_isCompact_closure_inter_eq hfrcpt hCcl hCsub hUo hCU hMopen (hCsub.trans hfrM)
+  refine ⟨M, N, hMopen, hNo, hfcont, hphantom, hpos, hCN, hNcpt, hNM, hNfr, ?_⟩
+  intro x hxfrN hfx
+  rw [hNo.frontier_eq] at hxfrN
+  have hxfr : x ∈ frontier V := (hphantom x (hNM hxfrN.1)).mp hfx
+  have hxC : x ∈ C := hNfr ▸ ⟨hxfrN.1, hxfr⟩
+  exact hxfrN.2 (hCN hxC)
+
 /-- **Existence of the crossing phase for a frontier component.**  Under the piece
 hypotheses of `Push.exists_push_into`, every frontier point `x₀` gives rise to a
 `CrossingPhase` for its component `connectedComponentIn (frontier V) x₀`. -/
@@ -142,8 +257,8 @@ theorem exists_crossingPhase [T2Space X] {V : Set X} (hVo : IsOpen V)
     {x₀ : X} :
     Nonempty (CrossingPhase V f c (connectedComponentIn (frontier V) x₀)) := by
   classical
-  obtain ⟨M, N, hMopen, hNopen, hfcont, hphantom, hCN, hNcpt, hNM, hNfrEq, hNfr⟩ :=
-    exists_component_collar_substrate hVo hVcl hdich hfc hchart (x₀ := x₀)
+  obtain ⟨M, N, hMopen, hNopen, hfcont, hphantom, hpos, hCN, hNcpt, hNM, hNfrEq, hNfr⟩ :=
+    exists_component_collar_substrate_pos hVo hVcl hdich hfc hchart (x₀ := x₀)
   -- uniform margin `δ` on `frontier N`
   have hfrNcpt : IsCompact (frontier N) :=
     hNcpt.of_isClosed_subset isClosed_frontier frontier_subset_closure
@@ -233,6 +348,7 @@ theorem exists_crossingPhase [T2Space X] {V : Set X} (hVo : IsOpen V)
     N_sub_M := hNM
     f_cont := hfcont
     level_iff := hphantom
+    pos_iff := hpos
     closureN_frontier := hNfrEq
     τ_off := fun x hx => hτ_off x hx
     τ_on := fun x hx => hτ_on x hx
