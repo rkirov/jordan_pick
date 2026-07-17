@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rado Kirov
 -/
 import Mathlib
+import Uniformization.Surface.Limit
 
 /-!
 # Uniformization theorem for Riemann surfaces (Hubbard Theorem 1.1.2)
@@ -39,7 +40,8 @@ variable [SecondCountableTopology X] [ChartedSpace ℂ X] [IsManifold mℂ 1 X]
 
 theorem uniformization_key (hX : ¬ CompactSpace X) [SimplyConnectedSpace X] :
     ∃ D : TopologicalSpace.Opens ℂ, Nonempty (X ≃ₘ⟮mℂ, mℂ⟯ D) := by
-  sorry
+  obtain ⟨ψ, hψ, hinj⟩ := Uniformization.exists_uniformizer hX
+  exact Uniformization.exists_diffeomorph_opens_of_injective hψ hinj
 
 theorem uniformization (hX : ¬ CompactSpace X) (x : X)
     [Subsingleton <| Additive (FundamentalGroup X x) →+ ℝ] :
