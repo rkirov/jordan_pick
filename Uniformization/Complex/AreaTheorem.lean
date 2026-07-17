@@ -7,6 +7,7 @@ import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Topology.Order.OrderClosed
+import Uniformization.Complex.AreaEval
 
 /-!
 # The area theorem (Grönwall) for univalent functions
@@ -49,15 +50,14 @@ Combining, `∑' n, n ‖b n‖² t^{-2n} ≤ t²`, i.e. in interior coordinates
 
 ## Status
 
-The **per-radius inequality** `groenwall_radius` is the sole `sorry`.  It is the
-irreducible geometric core: it depends on `area(E_t) ≥ 0` together with the
-shoelace evaluation, i.e. on Green's theorem for a `C¹` Jordan curve — or, to avoid
-the Jordan curve theorem, on winding numbers of `C¹` loops plus the annulus
-argument principle.  Neither is available in the pinned Mathlib
-(`v4.32.0-rc1`, `360da6f` — `grep` finds no `windingNumber` and no argument
-principle on annuli), and building the winding-number layer is out of scope for
-this file.  Everything downstream of `groenwall_radius` — the truncation and the
-`ρ → 1⁻` limit yielding the finite-form `area_theorem` — is proved unconditionally.
+**Sorry-free.**  The per-radius inequality `groenwall_radius` is discharged from the
+winding/shoelace development: the winding-number layer (A1–A4) is built in
+`AreaWinding.lean`, the area/shoelace Fubini identity (Stage B) in
+`AreaIntegral.lean`, and the shoelace evaluation plus the positivity argument
+(Stages C1–C3) in `AreaEval.lean`, whose `coeff_tsum_le_sq` is exactly the
+exterior-coordinate form `∑' n, n ‖b n‖² t^{-2n} ≤ t²` used here after the
+substitution `t = 1/ρ` and truncation.  The `ρ → 1⁻` limit yielding the
+finite-form `area_theorem` closes the chain.
 
 The coefficient encoding follows the task's "`h` given by a power series" option:
 `hb` supplies the Taylor coefficients `b n` directly as a `HasSum` on the whole ball
@@ -68,7 +68,7 @@ open Set Metric Filter Topology MeasureTheory
 
 namespace Uniformization
 
-/-- **Per-radius Grönwall inequality** (geometric core; the file's only `sorry`).
+/-- **Per-radius Grönwall inequality** (geometric core).
 
 For the univalent `g z = z⁻¹ + h z` with Taylor coefficients `b n` of `h`, and every
 `ρ ∈ (0,1)`, the truncated coefficient energy is bounded by `ρ⁻²`:
@@ -77,16 +77,32 @@ For the univalent `g z = z⁻¹ + h z` with Taylor coefficients `b n` of `h`, an
 
 In exterior coordinates `t = 1/ρ > 1` this is `∑ n, n ‖b n‖² t^{-2n} ≤ t²`, which is
 `area(E_t) ≥ 0` after the shoelace evaluation
-`area(E_t) = π (t² − ∑ n, n ‖b n‖² t^{-2n})` (see the module docstring). -/
+`area(E_t) = π (t² − ∑ n, n ‖b n‖² t^{-2n})` — supplied by `coeff_tsum_le_sq`
+(`AreaEval.lean`). -/
 theorem groenwall_radius {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (Metric.ball 0 1))
     {b : ℕ → ℂ} (hb : ∀ z ∈ Metric.ball (0 : ℂ) 1, HasSum (fun n => b n * z ^ n) (h z))
     (hinj : Set.InjOn (fun z => z⁻¹ + h z) (Metric.ball 0 1 \ {0}))
     (N : ℕ) {ρ : ℝ} (hρ0 : 0 < ρ) (hρ1 : ρ < 1) :
     ∑ n ∈ Finset.range (N + 1), (n : ℝ) * ‖b n‖ ^ 2 * ρ ^ (2 * n) ≤ (ρ ^ 2)⁻¹ := by
-  -- Geometric core: `area(E_t) ≥ 0` with `t = 1/ρ`, via the shoelace evaluation of the
-  -- Jordan-curve area (Green / winding).  Not available in the pinned Mathlib; see the
-  -- module docstring for the full route.  This is the file's single `sorry`.
-  sorry
+  have ht : 1 < ρ⁻¹ := (one_lt_inv₀ hρ0).mpr hρ1
+  -- the full-series bound in exterior coordinates, `t = ρ⁻¹`
+  have hkey := coeff_tsum_le_sq hh hb hinj ht
+  -- summability of the full series (`(ρ⁻¹²)⁻¹ = ρ² < 1`)
+  have h20 : (0 : ℝ) ≤ (ρ⁻¹ ^ 2)⁻¹ := by positivity
+  have h21 : ((ρ⁻¹ ^ 2)⁻¹ : ℝ) < 1 := by
+    rw [inv_lt_one_iff₀]; right; nlinarith
+  have hsummS : Summable (fun n : ℕ => (n : ℝ) * ‖b n‖ ^ 2 * ((ρ⁻¹ ^ 2)⁻¹) ^ n) := by
+    have hs := coeff_sq_summable hb 1 h20 h21
+    simpa using hs
+  have htrunc := hsummS.sum_le_tsum (Finset.range (N + 1)) (fun i _ => by positivity)
+  have hρt : ((ρ⁻¹ ^ 2)⁻¹ : ℝ) = ρ ^ 2 := by rw [inv_pow, inv_inv]
+  calc ∑ n ∈ Finset.range (N + 1), (n : ℝ) * ‖b n‖ ^ 2 * ρ ^ (2 * n)
+      = ∑ n ∈ Finset.range (N + 1), (n : ℝ) * ‖b n‖ ^ 2 * ((ρ⁻¹ ^ 2)⁻¹) ^ n := by
+        refine Finset.sum_congr rfl fun n _ => ?_
+        rw [hρt, pow_mul]
+    _ ≤ ∑' n : ℕ, (n : ℝ) * ‖b n‖ ^ 2 * ((ρ⁻¹ ^ 2)⁻¹) ^ n := htrunc
+    _ ≤ ρ⁻¹ ^ 2 := hkey
+    _ = (ρ ^ 2)⁻¹ := by rw [inv_pow]
 
 /-- **The area theorem** (Grönwall), finite-partial-sum form.
 

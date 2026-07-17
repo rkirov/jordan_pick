@@ -1,4 +1,34 @@
+/-
+Copyright (c) 2026 Rado Kirov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rado Kirov
+-/
 import Uniformization.Complex.AreaIntegral
+import Mathlib.MeasureTheory.Function.Jacobian
+
+/-!
+# Shoelace evaluation and the per-radius coefficient bound (Stage C)
+
+This file closes the analytic core of the Grönwall area theorem.
+
+* **C1** (`shoelace_eval`): termwise circle integration of the Laurent series gives
+    `shoelace h t = π (t² − ∑' n, n ‖b n‖² (t²)⁻ⁿ)`  (a real number, coerced to `ℂ`),
+  for every `t > 1`.  The interchange of `∮` and the series is dominated convergence
+  on the circle (`hasSum_circleIntegral_of_bound`), and each monomial integrates by
+  `∮ w^k = 0` (`k ≠ -1`) / `∮ w⁻¹ = 2πi`; only the diagonal of the double series
+  survives, producing the coefficient energy.
+
+* **C2 + C3** (`coeff_tsum_le_sq`): `∑' n, n ‖b n‖² (t²)⁻ⁿ ≤ t²` for `t > 1`.
+  Route: the image curve `Γ_t = extMap h '' (sphere 0 t)` is volume-null (a
+  differentiable image of a null set, `addHaar_image_eq_zero_of_differentiableOn_…`
+  applied to the null sphere); off `Γ_t` the winding number is `0` or `1`
+  (A4a/A4b of `AreaWinding.lean`, with the Laurent tail bounds discharged by
+  `extMap_grow_bound`/`extMap_num_bound`), so `Re (winding) ≥ 0` a.e.; hence
+  `0 ≤ Re ∫ winding = Re (shoelace) = π (t² − ∑' …)` by the Stage-B identity
+  `integral_winding_eq_shoelace` and C1.
+
+`AreaTheorem.lean` consumes `coeff_tsum_le_sq` to close `groenwall_radius`.
+-/
 
 open Set Metric Complex MeasureTheory Topology Filter Real intervalIntegral
 
@@ -387,5 +417,87 @@ theorem shoelace_eval (hh : AnalyticOnNhd ℂ h (ball 0 1))
   have h2I : (2 * I : ℂ) ≠ 0 := by simp [Complex.I_ne_zero]
   field_simp
   ring
+
+/-- **C2 + C3 (per-radius coefficient bound).**  For the univalent
+`g z = z⁻¹ + h z` with Taylor coefficients `b n` of `h`, and every `t > 1`,
+
+  `∑' n, n ‖b n‖² (t²)⁻ⁿ ≤ t²`.
+
+This is `0 ≤ area(E_t)` after the shoelace evaluation: the winding number of the
+image circle is `0` or `1` off the (null) image curve, so the winding integral has
+nonnegative real part, and by `integral_winding_eq_shoelace` + `shoelace_eval` that
+real part is `π (t² − ∑' n, n ‖b n‖² (t²)⁻ⁿ)`. -/
+theorem coeff_tsum_le_sq (hh : AnalyticOnNhd ℂ h (ball 0 1))
+    (hb : ∀ z ∈ ball (0 : ℂ) 1, HasSum (fun n => b n * z ^ n) (h z))
+    (hinj : Set.InjOn (fun z => z⁻¹ + h z) (ball 0 1 \ {0}))
+    {t : ℝ} (ht : 1 < t) :
+    (∑' n : ℕ, (n : ℝ) * ‖b n‖ ^ 2 * ((t ^ 2)⁻¹) ^ n) ≤ t ^ 2 := by
+  have htpos : 0 < t := lt_trans one_pos ht
+  -- Laurent tail bounds at reference radius `t₁ = t`
+  have hgrow := extMap_grow_bound hb ht
+  have hnum := extMap_num_bound hb ht
+  -- the exterior map on the circle
+  have hGA : AnalyticOnNhd ℂ (extMap h) exteriorUnit := extMap_analyticOnNhd h hh
+  have hsub : sphere (0 : ℂ) t ⊆ exteriorUnit := by
+    intro w hw
+    rw [mem_sphere_zero_iff_norm] at hw
+    simp only [exteriorUnit, mem_setOf_eq]
+    rw [hw]; exact ht
+  have hGcont : ContinuousOn (extMap h) (sphere (0 : ℂ) t) := hGA.continuousOn.mono hsub
+  -- a disk of radius `M + 1` containing the image curve
+  obtain ⟨M, hM⟩ := (isCompact_sphere (0 : ℂ) t).exists_bound_of_continuousOn hGcont
+  have hcurve : ∀ θ : ℝ, ‖extMap h (circleMap 0 t θ)‖ < M + 1 := by
+    intro θ
+    have := hM _ (circleMap_mem_sphere 0 htpos.le θ)
+    linarith
+  -- Stage B and C1
+  have hB := integral_winding_eq_shoelace h hh ht hcurve
+  have hC1 := shoelace_eval hh hb ht
+  -- the image curve is volume-null
+  have hΓnull : volume (extMap h '' sphere (0 : ℂ) t) = 0 := by
+    have hdiffC : DifferentiableOn ℂ (extMap h) (sphere (0 : ℂ) t) :=
+      fun w hw => ((hGA w (hsub hw)).differentiableAt).differentiableWithinAt
+    have hdiffR : DifferentiableOn ℝ (extMap h) (sphere (0 : ℂ) t) :=
+      hdiffC.restrictScalars ℝ
+    have hsph0 : volume (sphere (0 : ℂ) t) = 0 := Measure.addHaar_sphere volume 0 t
+    exact addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero volume hdiffR hsph0
+  -- winding dichotomy off the curve
+  have hdich : ∀ p : ℂ, p ∉ extMap h '' sphere (0 : ℂ) t →
+      winding h t p = 0 ∨ winding h t p = 1 := by
+    intro p hp
+    by_cases hex : ∃ w : ℂ, t ≤ ‖w‖ ∧ extMap h w = p
+    · obtain ⟨w₀, hw₀t, hw₀⟩ := hex
+      have hlt : t < ‖w₀‖ := by
+        rcases lt_or_eq_of_le hw₀t with hlt | heq
+        · exact hlt
+        · exact absurd ⟨w₀, mem_sphere_zero_iff_norm.mpr heq.symm, hw₀⟩ hp
+      exact Or.inl (winding_eq_zero_of_preimage h hh hinj ht hgrow hnum ht hw₀ hlt)
+    · push Not at hex
+      exact Or.inr (winding_eq_one_of_no_preimage h hh ht hgrow hnum ht hex)
+  -- a.e. nonnegativity of the real part of the winding
+  have hae : ∀ᵐ p : ℂ, 0 ≤ (winding h t p).re := by
+    have hΓae : ∀ᵐ p : ℂ, p ∉ extMap h '' sphere (0 : ℂ) t := by
+      rw [ae_iff]
+      simpa only [not_not, setOf_mem_eq] using hΓnull
+    filter_upwards [hΓae] with p hp
+    rcases hdich p hp with h0 | h1
+    · rw [h0]; norm_num
+    · rw [h1]; norm_num
+  -- the winding integral has nonnegative real part
+  have hre : 0 ≤ (∫ p in ball (0 : ℂ) (M + 1), winding h t p).re := by
+    by_cases hInt : IntegrableOn (fun p => winding h t p) (ball (0 : ℂ) (M + 1)) volume
+    · have h1 := Complex.reCLM.integral_comp_comm hInt
+      simp only [Complex.reCLM_apply] at h1
+      rw [← h1]
+      exact setIntegral_nonneg_of_ae (hae.mono fun p hp => hp)
+    · rw [MeasureTheory.integral_undef hInt]
+      simp
+  -- conclude via B + C1
+  rw [hB, hC1, Complex.ofReal_re] at hre
+  by_contra hlt
+  push Not at hlt
+  have hneg : π * ((t ^ 2 : ℝ) - ∑' n : ℕ, (n : ℝ) * ‖b n‖ ^ 2 * ((t ^ 2)⁻¹) ^ n) < 0 :=
+    mul_neg_of_pos_of_neg Real.pi_pos (by linarith)
+  linarith
 
 end Uniformization
