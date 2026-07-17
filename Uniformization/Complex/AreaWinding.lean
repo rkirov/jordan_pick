@@ -46,12 +46,24 @@ is
   `(extMap h)'/(extMap h − p) = (· − w₀)⁻¹ + u'/u` on the two circles, the `(·−w₀)⁻¹`
   part contributing `2πi` on the outer circle and `0` on the inner, and the `u'/u`
   part cancelling by A1-style annulus Cauchy.
+* `winding_eq_one_at_infinity` (**A3**) : for fixed `p`, `winding h t p = 1` for all
+  large `t`.  The argument is `winding h t p − 1 = (2πi)⁻¹ ∮ [(extMap h)'/(extMap h − p)
+  − w⁻¹]`, whose integrand is `O(‖w‖⁻²)`, so the circle integral is `O(1/t) → 0`;
+  combined with A1-constancy of the winding for large `t` this pins the value to `1`.
+* `winding_eq_one_of_no_preimage` (**A4a**) and `winding_eq_zero_of_preimage`
+  (**A4b**) : the indicator dichotomy.  If `p` has no preimage of modulus `≥ t` then
+  `winding h t p = 1` (A1 + A3); if `p = extMap h w₀` with `‖w₀‖ > t` then
+  `winding h t p = 0` (A4a at a larger radius, minus the A2 jump across `w₀`).
+
+  A3/A4 are parameterized by two **Laurent tail bounds** (`hgrow`, `hnum`) at a
+  reference radius `t₁ > 1`, with a translation constant `b0`:
+    `‖extMap h w − w − b0‖ ≤ D` and `‖w·(extMap h)'(w) − extMap h w + b0‖ ≤ D'`.
+  These hold with `b0 = b 0`, `D = ∑_{n≥1}‖bₙ‖t₁^{-n}`, `D' = ∑_{n≥1}(n+1)‖bₙ‖t₁^{-n}`;
+  they encapsulate all use of the coefficient data and are to be discharged from it in
+  the coefficient stage (they are the only inputs A3/A4 need beyond `extMap`/`winding`).
 
 ## Roadmap for the remaining stages (not yet formalized)
 
-* **A3** (value at infinity): for fixed `p`, `winding h t p = 1` for all large `t`.
-* **A4** (winding equals indicator): `winding h t p = 𝟙_{E_t}(p)` a.e., where
-  `E_t := (extMap h '' {‖w‖ > t})ᶜ`, by A1/A2/A3 case analysis + injectivity.
 * **B** (integral identity): `∫_{p ∈ ball 0 R} winding h t p = shoelace h t` where
   `shoelace h t := (2i)⁻¹ ∮_{|w|=t} conj(extMap h w) · (extMap h)'(w) dw`, via Fubini
   and the Cauchy transform of the disk `∫_{ball 0 R} (ζ − p)⁻¹ = π conj ζ`.
@@ -60,7 +72,7 @@ is
   `∑ n, n‖b n‖² t^{-2n} ≤ t²`, i.e. `groenwall_radius` after `ρ = 1/t`.
 -/
 
-open Set Metric Complex MeasureTheory Topology Filter
+open Set Metric Complex MeasureTheory Topology Filter Real
 
 noncomputable section
 
@@ -452,5 +464,192 @@ theorem winding_jump (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
     mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero))
       Complex.I_ne_zero
   rw [← mul_sub, key, inv_mul_cancel₀ hne0]
+
+/-- **A3**: for fixed `p`, the winding number equals `1` at all sufficiently large
+radii.  Parameterized by the Laurent tail bounds `hgrow`/`hnum` (see the module
+docstring); these are the only coefficient inputs the argument needs. -/
+theorem winding_eq_one_at_infinity (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
+    {b0 : ℂ} {D D' t₁ : ℝ} (ht₁ : 1 < t₁)
+    (hgrow : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖extMap h w - w - b0‖ ≤ D)
+    (hnum : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖w * deriv (extMap h) w - extMap h w + b0‖ ≤ D')
+    (p : ℂ) :
+    ∃ t₀ : ℝ, 1 < t₀ ∧ ∀ t : ℝ, t₀ ≤ t → winding h t p = 1 := by
+  set G : ℂ → ℂ := extMap h with hGdef
+  have hGA : AnalyticOnNhd ℂ G exteriorUnit := extMap_analyticOnNhd h hh
+  have hGA' : AnalyticOnNhd ℂ (deriv G) exteriorUnit := hGA.deriv
+  have hne0 : (2 * ↑π * I) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) Complex.I_ne_zero
+  -- constants
+  have hnorm_t1 : ‖((t₁ : ℝ) : ℂ)‖ = t₁ := by
+    rw [Complex.norm_real]; exact abs_of_pos (by linarith : (0:ℝ) < t₁)
+  have hD0 : 0 ≤ D := (norm_nonneg _).trans (hgrow ((t₁ : ℝ) : ℂ) hnorm_t1.ge)
+  have hD'0 : 0 ≤ D' := (norm_nonneg _).trans (hnum ((t₁ : ℝ) : ℂ) hnorm_t1.ge)
+  set ρ : ℝ := ‖b0‖ + D + ‖p‖ with hρ
+  have hρ0 : 0 ≤ ρ := by rw [hρ]; have := norm_nonneg b0; have := norm_nonneg p; linarith
+  set E : ℝ := D' + ‖p‖ + ‖b0‖ with hE
+  have hE0 : 0 ≤ E := by rw [hE]; have := norm_nonneg b0; have := norm_nonneg p; linarith
+  set t₀ : ℝ := max t₁ (2 * ρ + 2) with ht₀def
+  have ht₀1 : 1 < t₀ := lt_of_lt_of_le ht₁ (le_max_left _ _)
+  -- key bounds on ‖w‖ ≥ t₀
+  have hbounds : ∀ w : ℂ, t₀ ≤ ‖w‖ → G w ≠ p ∧ ‖w‖ / 2 ≤ ‖G w - p‖ := by
+    intro w hw
+    have hwt1 : t₁ ≤ ‖w‖ := le_trans (le_max_left _ _) hw
+    have hw2ρ : 2 * ρ + 2 ≤ ‖w‖ := le_trans (le_max_right _ _) hw
+    have hgw : ‖G w - w - b0‖ ≤ D := hgrow w hwt1
+    have t2 : ‖w‖ - ‖b0‖ - ‖p‖ ≤ ‖w + b0 - p‖ := by
+      have e : w + b0 - p = w - (p - b0) := by ring
+      have r := norm_sub_norm_le w (p - b0)
+      have s := norm_sub_le p b0
+      rw [e]; linarith
+    have t1 : ‖w + b0 - p‖ ≤ ‖G w - p‖ + ‖G w - w - b0‖ := by
+      have e : w + b0 - p = (G w - p) - (G w - w - b0) := by ring
+      rw [e]; exact norm_sub_le _ _
+    have hkey1 : ‖w‖ - ρ ≤ ‖G w - p‖ := by rw [hρ]; linarith
+    refine ⟨?_, by linarith⟩
+    intro he; rw [he, sub_self, norm_zero] at hkey1; linarith
+  -- numerator bound
+  have hN : ∀ w : ℂ, t₀ ≤ ‖w‖ → ‖w * deriv G w - G w + p‖ ≤ E := by
+    intro w hw
+    have hwt1 : t₁ ≤ ‖w‖ := le_trans (le_max_left _ _) hw
+    have hnw : ‖w * deriv G w - G w + b0‖ ≤ D' := hnum w hwt1
+    have e : w * deriv G w - G w + p = (w * deriv G w - G w + b0) + (p - b0) := by ring
+    rw [e, hE]
+    calc ‖(w * deriv G w - G w + b0) + (p - b0)‖
+        ≤ ‖w * deriv G w - G w + b0‖ + ‖p - b0‖ := norm_add_le _ _
+      _ ≤ D' + (‖p‖ + ‖b0‖) := by have := norm_sub_le p b0; linarith
+      _ = D' + ‖p‖ + ‖b0‖ := by ring
+  -- bracket analytic on ‖z‖ ≥ t₀
+  have hbr_an : ∀ z : ℂ, t₀ ≤ ‖z‖ → AnalyticAt ℂ (fun w => deriv G w / (G w - p) - w⁻¹) z := by
+    intro z hz
+    have hzext : z ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have hz0 : z ≠ 0 := by intro h0; rw [h0, norm_zero] at hz; linarith
+    have hden : G z - p ≠ 0 := sub_ne_zero.mpr (hbounds z hz).1
+    exact ((hGA' z hzext).div ((hGA z hzext).sub analyticAt_const) hden).sub (analyticAt_inv hz0)
+  have hbr_ci : ∀ τ : ℝ, t₀ ≤ τ → CircleIntegrable (fun w => deriv G w / (G w - p) - w⁻¹) 0 τ := by
+    intro τ hτ
+    have hτ0 : (0:ℝ) < τ := by linarith
+    apply ContinuousOn.circleIntegrable'
+    intro z hz
+    rw [mem_sphere_zero_iff_norm, abs_of_pos hτ0] at hz
+    exact ((hbr_an z (by rw [hz]; exact hτ)).continuousAt).continuousWithinAt
+  have hinv_ci : ∀ τ : ℝ, 0 < τ → CircleIntegrable (fun w : ℂ => w⁻¹) 0 τ := by
+    intro τ hτ0
+    apply ContinuousOn.circleIntegrable'
+    apply ContinuousOn.inv₀ continuousOn_id
+    intro z hz
+    rw [mem_sphere_zero_iff_norm, abs_of_pos hτ0] at hz
+    simp only [id_eq]; intro h0; rw [h0, norm_zero] at hz; linarith
+  have hinv_int : ∀ τ : ℝ, 0 < τ → (∮ w in C(0, τ), w⁻¹) = 2 * ↑π * I := by
+    intro τ hτ0
+    have hmem : (0:ℂ) ∈ ball (0:ℂ) τ := by rw [mem_ball_zero_iff, norm_zero]; exact hτ0
+    simpa using circleIntegral.integral_sub_inv_of_mem_ball hmem
+  -- winding τ - 1 = (2πi)⁻¹ ∮ bracket
+  have hwind_eq : ∀ τ : ℝ, t₀ ≤ τ →
+      winding h τ p - 1 = (2 * ↑π * I)⁻¹ * ∮ w in C(0, τ), (deriv G w / (G w - p) - w⁻¹) := by
+    intro τ hτ
+    have hτ0 : (0:ℝ) < τ := by linarith
+    have hsplit : EqOn (fun w => deriv G w / (G w - p))
+        (fun w => (deriv G w / (G w - p) - w⁻¹) + w⁻¹) (sphere (0:ℂ) τ) :=
+      fun w _ => by simp
+    have hint : (∮ w in C(0, τ), deriv G w / (G w - p))
+        = (∮ w in C(0, τ), (deriv G w / (G w - p) - w⁻¹)) + 2 * ↑π * I := by
+      rw [circleIntegral.integral_congr hτ0.le hsplit,
+        circleIntegral.integral_add (hbr_ci τ hτ) (hinv_ci τ hτ0), hinv_int τ hτ0]
+    have hwd : winding h τ p = (2 * ↑π * I)⁻¹ * ∮ w in C(0, τ), deriv G w / (G w - p) := by
+      simp only [winding]; rw [← hGdef]
+    rw [hwd, hint, mul_add, inv_mul_cancel₀ hne0]; ring
+  -- norm bound: ‖winding τ - 1‖ ≤ 2E/τ
+  have hbound : ∀ τ : ℝ, t₀ ≤ τ → ‖winding h τ p - 1‖ ≤ 2 * E / τ := by
+    intro τ hτ
+    have hτ0 : (0:ℝ) < τ := by linarith
+    rw [hwind_eq τ hτ, ← smul_eq_mul]
+    calc ‖(2 * ↑π * I)⁻¹ • ∮ w in C(0, τ), (deriv G w / (G w - p) - w⁻¹)‖
+        ≤ τ * (2 * E / τ ^ 2) := by
+          apply circleIntegral.norm_two_pi_i_inv_smul_integral_le_of_norm_le_const hτ0.le
+          intro z hz
+          rw [mem_sphere_zero_iff_norm] at hz
+          have hzt0 : t₀ ≤ ‖z‖ := by rw [hz]; exact hτ
+          have hz0 : z ≠ 0 := by intro h0; rw [h0, norm_zero] at hz; linarith
+          have hden : G z - p ≠ 0 := sub_ne_zero.mpr (hbounds z hzt0).1
+          have hbeq : deriv G z / (G z - p) - z⁻¹
+              = (z * deriv G z - G z + p) / (z * (G z - p)) := by field_simp; ring
+          rw [hbeq, norm_div, norm_mul, hz]
+          have hNz : ‖z * deriv G z - G z + p‖ ≤ E := hN z hzt0
+          have hdz : τ / 2 ≤ ‖G z - p‖ := by
+            have := (hbounds z hzt0).2; rw [hz] at this; exact this
+          rw [div_le_div_iff₀ (by positivity) (by positivity)]
+          have h1 : ‖z * deriv G z - G z + p‖ * τ ^ 2 ≤ E * τ ^ 2 :=
+            mul_le_mul_of_nonneg_right hNz (sq_nonneg τ)
+          have h2 : E * τ ^ 2 ≤ 2 * E * (τ * ‖G z - p‖) := by
+            have hp : (0:ℝ) ≤ E * τ * (2 * ‖G z - p‖ - τ) :=
+              mul_nonneg (mul_nonneg hE0 hτ0.le) (by linarith)
+            nlinarith [hp]
+          linarith
+      _ = 2 * E / τ := by field_simp
+  -- constancy + limit ⇒ = 1
+  refine ⟨t₀, ht₀1, ?_⟩
+  intro t ht
+  have hconst : ∀ τ : ℝ, t ≤ τ → winding h τ p = winding h t p := by
+    intro τ hτ
+    exact winding_eq_of_forall_ne h hh (by linarith) hτ
+      (fun w hw1 _ => (hbounds w (le_trans ht hw1)).1)
+  have key : ∀ τ : ℝ, t ≤ τ → ‖winding h t p - 1‖ ≤ 2 * E / τ := by
+    intro τ hτ
+    rw [← hconst τ hτ]
+    exact hbound τ (le_trans ht hτ)
+  have hlim : Tendsto (fun τ : ℝ => 2 * E / τ) atTop (𝓝 0) :=
+    Tendsto.div_atTop tendsto_const_nhds tendsto_id
+  have hle0 : ‖winding h t p - 1‖ ≤ 0 :=
+    le_of_tendsto_of_tendsto tendsto_const_nhds hlim (eventually_atTop.mpr ⟨t, key⟩)
+  exact sub_eq_zero.mp (norm_le_zero_iff.mp hle0)
+
+/-- **A4a**: if `p` has no preimage of modulus `≥ t` (in particular if `p` lies in
+the complement `E_t`), then `winding h t p = 1`. -/
+theorem winding_eq_one_of_no_preimage (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
+    {b0 : ℂ} {D D' t₁ : ℝ} (ht₁ : 1 < t₁)
+    (hgrow : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖extMap h w - w - b0‖ ≤ D)
+    (hnum : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖w * deriv (extMap h) w - extMap h w + b0‖ ≤ D')
+    {p : ℂ} {t : ℝ} (ht : 1 < t)
+    (hno : ∀ w : ℂ, t ≤ ‖w‖ → extMap h w ≠ p) :
+    winding h t p = 1 := by
+  obtain ⟨t₀, ht₀1, ht₀⟩ := winding_eq_one_at_infinity h hh ht₁ hgrow hnum p
+  have hTt : t ≤ max t t₀ := le_max_left _ _
+  have hTt₀ : t₀ ≤ max t t₀ := le_max_right _ _
+  have h1 : winding h (max t t₀) p = 1 := ht₀ _ hTt₀
+  have h2 : winding h (max t t₀) p = winding h t p :=
+    winding_eq_of_forall_ne h hh ht hTt (fun w hw1 _ => hno w hw1)
+  exact h2.symm.trans h1
+
+/-- **A4b**: if `p = extMap h w₀` with `‖w₀‖ > t`, then `winding h t p = 0`
+(the preimage lies strictly outside the disk of radius `t`). -/
+theorem winding_eq_zero_of_preimage (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
+    (hinj : Set.InjOn (fun z => z⁻¹ + h z) (ball 0 1 \ {0}))
+    {b0 : ℂ} {D D' t₁ : ℝ} (ht₁ : 1 < t₁)
+    (hgrow : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖extMap h w - w - b0‖ ≤ D)
+    (hnum : ∀ w : ℂ, t₁ ≤ ‖w‖ → ‖w * deriv (extMap h) w - extMap h w + b0‖ ≤ D')
+    {p w₀ : ℂ} {t : ℝ} (ht : 1 < t)
+    (hw₀ : extMap h w₀ = p) (hw₀t : t < ‖w₀‖) :
+    winding h t p = 0 := by
+  have hw₀ext : w₀ ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+  set T : ℝ := max (‖w₀‖ + 1) t₁ with hTdef
+  have hTw : ‖w₀‖ < T := lt_of_lt_of_le (by linarith) (le_max_left _ _)
+  have hTt1 : t₁ ≤ T := le_max_right _ _
+  have hT1 : 1 < T := lt_of_lt_of_le ht₁ hTt1
+  have htT : t < T := lt_trans hw₀t hTw
+  have hno : ∀ w : ℂ, T ≤ ‖w‖ → extMap h w ≠ p := by
+    intro w hw he
+    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have : w = w₀ := extMap_injOn h hinj hwext hw₀ext (he.trans hw₀.symm)
+    rw [this] at hw; linarith
+  have hwT1 : winding h T p = 1 :=
+    winding_eq_one_of_no_preimage h hh ht₁ hgrow hnum hT1 hno
+  have huniq : ∀ w : ℂ, t ≤ ‖w‖ → ‖w‖ ≤ T → extMap h w = p → w = w₀ := by
+    intro w hw1 _ he
+    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    exact extMap_injOn h hinj hwext hw₀ext (he.trans hw₀.symm)
+  have hjump : winding h T p - winding h t p = 1 :=
+    winding_jump h hh hinj ht htT hw₀ hw₀t hTw huniq
+  rw [hwT1] at hjump
+  exact sub_eq_self.mp hjump
 
 end Uniformization
