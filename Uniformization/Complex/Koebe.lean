@@ -6,6 +6,7 @@ Authors: Rado Kirov
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.Analytic.Order
 import Uniformization.RMT.RiemannMapping
+import Uniformization.Complex.Bieberbach
 
 /-!
 # Koebe growth and quarter theorems for univalent functions
@@ -28,7 +29,7 @@ bound `‖g w‖ ≤ ‖w‖ / (1 - ‖w‖/r)² ≤ 4‖w‖` for `‖w‖ ≤ 
 uniform boundedness that Montel needs.
 -/
 
-open Set Metric
+open Set Metric Filter Topology
 
 namespace Uniformization
 
@@ -38,11 +39,17 @@ theorem koebe_growth {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f (ball 0 1))
     (hinj : InjOn f (ball 0 1)) (h0 : f 0 = 0) (hd : deriv f 0 = 1)
     {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
     ‖f z‖ ≤ ‖z‖ / (1 - ‖z‖) ^ 2 := by
-  -- BLOCKED on the area theorem / Bieberbach `‖a₂‖ ≤ 2`.  Route once Bieberbach is
-  -- available: apply it to the Koebe transform of `f` at `w`, giving
-  -- `|(1-|w|²) f''(w)/f'(w) - 2 w̄| ≤ 4`; integrate the resulting bound on
-  -- `∂_r log|f'|` radially (distortion `|f'| ≤ (1+|w|)/(1-|w|)³`), then integrate
-  -- once more radially for the growth bound.  See report for the area-theorem status.
+  -- Bieberbach `‖a₂‖ ≤ 2` is now available (`Uniformization.bieberbach`), together with
+  -- the coefficient helper `deriv_dslope_zero` (`a₂ = ½ H''(0)`).  What remains for this
+  -- theorem is the classical distortion + double-integration argument, which is the largest
+  -- analytic component of the Koebe chain and is NOT yet formalized:
+  --   1. Apply `bieberbach` to the Koebe transform `T_w f` (schlicht on `ball 0 1`).
+  --      Via `deriv_dslope_zero`, `a₂(T_w f) = ½ (f∘φ_w)''(0)` where `φ_w` is the disk
+  --      automorphism `z ↦ (z+w)/(1+w̄ z)`.  The second-order chain rule gives
+  --      `a₂(T_w f) = ½[(1-|w|²) f''(w)/f'(w) - 2 w̄]`, so `|…| ≤ 4`.
+  --   2. `∂_r log|f'(re^{iθ})| = Re(e^{iθ} f''/f')` is bounded by `(2r+4)/(1-r²)`;
+  --      radial FTC integration gives the distortion bound `|f'(z)| ≤ (1+r)/(1-r)³`.
+  --   3. `f z = ∫₀¹ f'(tz)·z dt` integrates to `|f z| ≤ r/(1-r)²`.
   sorry
 
 /-- **Koebe quarter theorem**: the image of a schlicht function contains the
@@ -50,10 +57,108 @@ ball of radius `1/4`. -/
 theorem koebe_quarter {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f (ball 0 1))
     (hinj : InjOn f (ball 0 1)) (h0 : f 0 = 0) (hd : deriv f 0 = 1) :
     ball (0 : ℂ) (1 / 4) ⊆ f '' ball 0 1 := by
-  -- BLOCKED on the area theorem / Bieberbach `‖a₂‖ ≤ 2`.  Route once Bieberbach is
-  -- available: if `c ∉ f '' ball 0 1` then `h := f/(1 - f/c)` is schlicht with second
-  -- coefficient `a₂ + 1/c`; Bieberbach on `h` and `f` give `‖1/c‖ ≤ 4`, i.e. `‖c‖ ≥ 1/4`.
-  sorry
+  have hmem0 : (0 : ℂ) ∈ ball (0 : ℂ) 1 := mem_ball_self one_pos
+  have hballnhd : ball (0 : ℂ) 1 ∈ 𝓝 (0 : ℂ) := isOpen_ball.mem_nhds hmem0
+  have hbf := bieberbach hf hinj h0 hd
+  intro c hc
+  rw [mem_ball_zero_iff] at hc
+  by_cases hc0 : c = 0
+  · exact ⟨0, hmem0, by rw [h0, hc0]⟩
+  · by_contra hcni
+    -- `c ∉ f '' ball 0 1`
+    have hfc : ∀ z ∈ ball (0 : ℂ) 1, f z ≠ c := by
+      intro z hz hfz
+      exact hcni ⟨z, hz, hfz⟩
+    have hcfne : ∀ z ∈ ball (0 : ℂ) 1, c - f z ≠ 0 := by
+      intro z hz
+      exact sub_ne_zero.mpr (fun h => hfc z hz h.symm)
+    set g : ℂ → ℂ := fun z => c * f z / (c - f z) with hgdef
+    -- `g` differentiable
+    have hg_diff : DifferentiableOn ℂ g (ball 0 1) := by
+      rw [hgdef]
+      exact ((differentiableOn_const c).mul hf).div
+        ((differentiableOn_const c).sub hf) hcfne
+    -- `g 0 = 0`
+    have hg0 : g 0 = 0 := by simp [hgdef, h0]
+    -- `deriv g 0 = 1`
+    have hfderiv : HasDerivAt f 1 0 := by
+      have := (hf.differentiableAt hballnhd).hasDerivAt
+      rwa [hd] at this
+    have hg_hasderiv : HasDerivAt g 1 0 := by
+      have hnum : HasDerivAt (fun z => c * f z) (c * 1) 0 := hfderiv.const_mul c
+      have hden : HasDerivAt (fun z => c - f z) (0 - 1) 0 :=
+        (hasDerivAt_const 0 c).sub hfderiv
+      have hden0 : (c - f 0) ≠ 0 := hcfne 0 hmem0
+      have hval : (c * 1 * (c - f 0) - c * f 0 * (0 - 1)) / (c - f 0) ^ 2 = 1 := by
+        rw [h0]; field_simp; ring
+      have hq := hnum.div hden hden0
+      rw [hval] at hq
+      exact hq
+    have hderiv_g0 : deriv g 0 = 1 := hg_hasderiv.deriv
+    -- `g` injective
+    have hg_inj : InjOn g (ball 0 1) := by
+      intro a ha b hb hab
+      simp only [hgdef] at hab
+      have hda := hcfne a ha
+      have hdb := hcfne b hb
+      rw [div_eq_div_iff hda hdb] at hab
+      -- hab : c * f a * (c - f b) = c * f b * (c - f a)
+      have hcc : c * c ≠ 0 := mul_ne_zero hc0 hc0
+      have hzero : c * c * (f a - f b) = 0 := by linear_combination hab
+      have : f a = f b := by
+        rcases mul_eq_zero.mp hzero with h | h
+        · exact absurd h hcc
+        · exact sub_eq_zero.mp h
+      exact hinj ha hb this
+    -- Bieberbach on `g`
+    have hbg := bieberbach hg_diff hg_inj hg0 hderiv_g0
+    -- `dslope g 0 = P` near 0 with `deriv P 0 = a₂(f) + 1/c`
+    set P : ℂ → ℂ := fun z => c * dslope f 0 z / (c - f z) with hPdef
+    have hEq : EqOn (dslope g 0) P (ball 0 1) := by
+      intro z hz
+      by_cases hz0 : z = 0
+      · subst hz0
+        rw [dslope_same, hderiv_g0, hPdef]
+        simp [dslope_same, hd, h0, hc0]
+      · have hcfz := hcfne z hz
+        rw [dslope_of_ne g hz0, slope_def_field, hg0, sub_zero, sub_zero]
+        simp only [hgdef, hPdef, dslope_of_ne f hz0, slope_def_field, h0, sub_zero]
+        field_simp
+    have hEqev : dslope g 0 =ᶠ[𝓝 0] P := hEq.eventuallyEq_of_mem hballnhd
+    have ha2g : deriv (dslope g 0) 0 = deriv (dslope f 0) 0 + 1 / c := by
+      rw [hEqev.deriv_eq]
+      -- deriv P 0
+      have hu_hd : HasDerivAt (dslope f 0) (deriv (dslope f 0) 0) 0 := by
+        have hv_diff : DifferentiableOn ℂ (dslope f 0) (ball 0 1) :=
+          (Complex.differentiableOn_dslope hballnhd).mpr hf
+        exact (hv_diff.differentiableAt hballnhd).hasDerivAt
+      have hu0 : dslope f 0 0 = 1 := by rw [dslope_same, hd]
+      have hnum : HasDerivAt (fun z => c * dslope f 0 z) (c * deriv (dslope f 0) 0) 0 :=
+        hu_hd.const_mul c
+      have hden : HasDerivAt (fun z => c - f z) (0 - 1) 0 :=
+        (hasDerivAt_const 0 c).sub hfderiv
+      have hden0 : (c - f 0) ≠ 0 := hcfne 0 hmem0
+      have hP : HasDerivAt P
+          ((c * deriv (dslope f 0) 0 * (c - f 0) - c * dslope f 0 0 * (0 - 1)) / (c - f 0) ^ 2) 0 := by
+        rw [hPdef]; exact hnum.div hden hden0
+      rw [hP.deriv, hu0, h0]
+      field_simp [hc0]
+      ring
+    -- combine the two Bieberbach bounds
+    rw [ha2g] at hbg
+    have hkey : ‖(1 : ℂ) / c‖ ≤ 4 := by
+      have h1 : ‖deriv (dslope f 0) 0 + 1 / c‖ ≤ 2 := hbg
+      have h2 : ‖deriv (dslope f 0) 0‖ ≤ 2 := hbf
+      have hid : (1 : ℂ) / c = (deriv (dslope f 0) 0 + 1 / c) - deriv (dslope f 0) 0 := by ring
+      rw [hid]
+      calc ‖(deriv (dslope f 0) 0 + 1 / c) - deriv (dslope f 0) 0‖
+          ≤ ‖deriv (dslope f 0) 0 + 1 / c‖ + ‖deriv (dslope f 0) 0‖ := norm_sub_le _ _
+        _ ≤ 4 := by linarith
+    -- `‖1/c‖ = 1/‖c‖ ≥ 4` contradicts `‖c‖ < 1/4`
+    rw [norm_div, norm_one] at hkey
+    have hcnorm : 0 < ‖c‖ := by rw [norm_pos_iff]; exact hc0
+    rw [div_le_iff₀ hcnorm] at hkey
+    linarith
 
 /-- Scaled growth bound on `ball 0 r`, in the convenient form for the
 uniformization limit assembly: `‖g w‖ ≤ 4‖w‖` on the half-radius ball. -/
