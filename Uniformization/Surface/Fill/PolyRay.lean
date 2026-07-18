@@ -159,6 +159,89 @@ theorem exists_cStep_chain {O : Set X} (hO : IsOpen O) (hOc : IsPreconnected O)
   have : y ∈ CReach O x := by rw [creach_eq hO hOc hx]; exact hy
   exact this
 
+/-! ## Polyline segments: the data model for pruning -/
+
+/-- **A single chart-straight segment inside `O`.**  The building block of a
+chart polyline: a maximal-atlas chart `e` and straight endpoints `a, b` whose
+segment lies in `e.target` and whose image lies in `O`.  This is the data-bearing
+form of `CStep`. -/
+structure PLSeg (O : Set X) where
+  /-- The carrying chart. -/
+  e : OpenPartialHomeomorph X ℂ
+  /-- The chart is in the maximal atlas. -/
+  he : e ∈ riemannAtlas X
+  /-- Start endpoint in the chart. -/
+  a : ℂ
+  /-- End endpoint in the chart. -/
+  b : ℂ
+  /-- The straight segment lies in the chart target. -/
+  htgt : segment ℝ a b ⊆ e.target
+  /-- The segment's image lies in `O`. -/
+  hsub : e.symm '' (segment ℝ a b) ⊆ O
+
+namespace PLSeg
+
+variable {O : Set X} (s : PLSeg O)
+
+/-- Image of the segment in `X`. -/
+def img : Set X := s.e.symm '' (segment ℝ s.a s.b)
+/-- Start point in `X`. -/
+def p0 : X := s.e.symm s.a
+/-- End point in `X`. -/
+def p1 : X := s.e.symm s.b
+
+theorem p0_mem : s.p0 ∈ s.img := ⟨s.a, left_mem_segment ℝ _ _, rfl⟩
+theorem p1_mem : s.p1 ∈ s.img := ⟨s.b, right_mem_segment ℝ _ _, rfl⟩
+theorem img_sub : s.img ⊆ O := s.hsub
+
+theorem symm_contOn : ContinuousOn s.e.symm (segment ℝ s.a s.b) :=
+  s.e.continuousOn_symm.mono s.htgt
+
+theorem img_compact : IsCompact s.img := by
+  have h : IsCompact (segment ℝ s.a s.b) := by
+    rw [segment_eq_image_lineMap]; exact isCompact_Icc.image (by fun_prop)
+  exact h.image_of_continuousOn s.symm_contOn
+
+theorem img_conn : IsConnected s.img :=
+  ((convex_segment s.a s.b).isConnected ⟨s.a, left_mem_segment ℝ _ _⟩).image _ s.symm_contOn
+
+/-- Left sub-segment `[a, c]` for `c` in the segment; a chart-straight segment. -/
+def splitL (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : PLSeg O where
+  e := s.e; he := s.he; a := s.a; b := c
+  htgt := ((convex_segment s.a s.b).segment_subset (left_mem_segment ℝ _ _) hc).trans s.htgt
+  hsub := (Set.image_mono ((convex_segment s.a s.b).segment_subset
+    (left_mem_segment ℝ _ _) hc)).trans s.hsub
+
+/-- Right sub-segment `[c, b]`; a chart-straight segment. -/
+def splitR (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : PLSeg O where
+  e := s.e; he := s.he; a := c; b := s.b
+  htgt := ((convex_segment s.a s.b).segment_subset hc (right_mem_segment ℝ _ _)).trans s.htgt
+  hsub := (Set.image_mono ((convex_segment s.a s.b).segment_subset
+    hc (right_mem_segment ℝ _ _))).trans s.hsub
+
+theorem splitL_img_sub (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) :
+    (s.splitL c hc).img ⊆ s.img :=
+  Set.image_mono ((convex_segment s.a s.b).segment_subset (left_mem_segment ℝ _ _) hc)
+
+theorem splitR_img_sub (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) :
+    (s.splitR c hc).img ⊆ s.img :=
+  Set.image_mono ((convex_segment s.a s.b).segment_subset hc (right_mem_segment ℝ _ _))
+
+@[simp] theorem splitL_p0 (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : (s.splitL c hc).p0 = s.p0 := rfl
+@[simp] theorem splitL_p1 (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) :
+    (s.splitL c hc).p1 = s.e.symm c := rfl
+@[simp] theorem splitR_p0 (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) :
+    (s.splitR c hc).p0 = s.e.symm c := rfl
+@[simp] theorem splitR_p1 (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : (s.splitR c hc).p1 = s.p1 := rfl
+
+/-- A `CStep` yields a segment datum with the expected endpoints. -/
+theorem _root_.Rado.CStep.toPLSeg {O : Set X} {y z : X} (h : CStep O y z) :
+    ∃ s : PLSeg O, s.p0 = y ∧ s.p1 = z := by
+  obtain ⟨e, he, hy, hz, htgt, hsub⟩ := h
+  exact ⟨⟨e, he, e y, e z, htgt, hsub⟩, e.left_inv hy, e.left_inv hz⟩
+
+end PLSeg
+
 end Rado
 
 /-! ## The embedded proper chart-polyline ray -/
@@ -224,37 +307,253 @@ structure PolyRay (Z : Set X) (z₀ : X) where
       ∀ m : ℕ, (U ∩ (e m).symm '' (segment ℝ (a m) (b m))).Nonempty →
         (m + 1 = n ∨ m = n ∨ n + 1 = m)
 
-/-- **Existence of an embedded proper chart-polyline ray (W7 step A1).**  A
-noncompact complement end `Z = connectedComponentIn (closure V)ᶜ x₀` admits, from
-any base point `z₀ ∈ Z`, a `PolyRay`.
+/-! ## The pruning target and the assembly -/
+
+/-- **Simple ray data: the combinatorial output of the pruning.**  An
+ℕ-indexed family of *nondegenerate* chart-straight segments (`hab`, `htgt`, `hZ`)
+that chain up (`hchain`) from `z₀` (`hstart`) and are **simple**:
+
+* consecutive segments meet only at their shared endpoint (`hadj`);
+* segments at least two apart are disjoint (`hfar`);
+
+is **escaping** (`hesc`: each compact `K ⊆ Z` is met by only a tail-bounded set of
+segments) and carries the **shell separation** directly (`hshell`).
+
+`polyRay_of_simple` assembles this into a `PolyRay`.  This is exactly the data the
+last-exit pruning (P1 within a stage, P2 across stages) plus the metric separation
+(P3) must produce; it plays the role `TubeData` plays for `RayCollar`. -/
+structure SimpleRayData (Z : Set X) (z₀ : X) where
+  /-- The chart carrying the `n`-th segment. -/
+  e : ℕ → OpenPartialHomeomorph X ℂ
+  /-- Each chart is in the maximal atlas. -/
+  he : ∀ n, e n ∈ riemannAtlas X
+  /-- Start endpoint of the `n`-th segment (in the chart). -/
+  a : ℕ → ℂ
+  /-- End endpoint of the `n`-th segment (in the chart). -/
+  b : ℕ → ℂ
+  /-- Each segment is nondegenerate. -/
+  hab : ∀ n, a n ≠ b n
+  /-- The `n`-th segment lies in the chart target. -/
+  htgt : ∀ n, segment ℝ (a n) (b n) ⊆ (e n).target
+  /-- The `n`-th segment's image lies in `Z`. -/
+  hZ : ∀ n, (e n).symm '' (segment ℝ (a n) (b n)) ⊆ Z
+  /-- Consecutive endpoints chain. -/
+  hchain : ∀ n, (e n).symm (b n) = (e (n + 1)).symm (a (n + 1))
+  /-- The first segment starts at `z₀`. -/
+  hstart : (e 0).symm (a 0) = z₀
+  /-- Consecutive segments meet only at their shared endpoint. -/
+  hadj : ∀ n, (e n).symm '' segment ℝ (a n) (b n)
+      ∩ (e (n + 1)).symm '' segment ℝ (a (n + 1)) (b (n + 1)) ⊆ {(e n).symm (b n)}
+  /-- Segments at least two apart are disjoint. -/
+  hfar : ∀ m n, m + 2 ≤ n → Disjoint ((e m).symm '' segment ℝ (a m) (b m))
+      ((e n).symm '' segment ℝ (a n) (b n))
+  /-- The family escapes every compact subset of `Z`. -/
+  hesc : ∀ K : Set X, IsCompact K → K ⊆ Z →
+      ∃ N : ℕ, ∀ n ≥ N, Disjoint ((e n).symm '' segment ℝ (a n) (b n)) K
+  /-- The shell separation, delivered directly. -/
+  hshell : ∀ n : ℕ, ∃ U : Set X, IsOpen U ∧
+      (e n).symm '' (segment ℝ (a n) (b n)) ⊆ U ∧
+      ∀ m : ℕ, (U ∩ (e m).symm '' (segment ℝ (a m) (b m))).Nonempty →
+        (m + 1 = n ∨ m = n ∨ n + 1 = m)
+
+/-- **Assembly: simple ray data yields an embedded proper chart-polyline ray.**
+The ray `δ (n + u) = (e n).symm (lineMap (a n) (b n) u)` is continuous (floor
+glue), starts at `z₀`, is **injective** — cross-segment collisions are excluded by
+`hadj`/`hfar` and within-segment ones by nondegeneracy (`hab`) — and **proper**
+via `hesc`.  The shell separation is carried over. -/
+noncomputable def polyRay_of_simple {Z : Set X} {z₀ : X} (d : SimpleRayData Z z₀) :
+    PolyRay Z z₀ where
+  e := d.e
+  he := d.he
+  a := d.a
+  b := d.b
+  δ := fun t => (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - ⌊t⌋₊))
+  hseg_tgt := d.htgt
+  hseg_Z := d.hZ
+  hchain := d.hchain
+  hstart := d.hstart
+  hshell := d.hshell
+  hδ := by
+    intro n u hu
+    rcases eq_or_lt_of_le hu.2 with hu1 | hu1
+    · subst hu1
+      have hfloor : ⌊(n : ℝ) + 1⌋₊ = n + 1 := by
+        rw [show (n : ℝ) + 1 = ((n + 1 : ℕ) : ℝ) by push_cast; ring, Nat.floor_natCast]
+      simp only [hfloor]
+      rw [show ((n : ℝ) + 1 - ((n + 1 : ℕ) : ℝ)) = 0 by push_cast; ring,
+        AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, ← d.hchain n]
+    · have hfloor : ⌊(n : ℝ) + u⌋₊ = n := by
+        rw [Nat.floor_eq_iff (add_nonneg (Nat.cast_nonneg n) hu.1)]
+        refine ⟨by simpa using hu.1, ?_⟩
+        · linarith [hu.1]
+      simp only [hfloor]
+      rw [show ((n : ℝ) + u - (n : ℝ)) = u by ring]
+  hδ0 := by
+    show (d.e ⌊(0:ℝ)⌋₊).symm
+      (AffineMap.lineMap (d.a ⌊(0:ℝ)⌋₊) (d.b ⌊(0:ℝ)⌋₊) ((0:ℝ) - ⌊(0:ℝ)⌋₊)) = z₀
+    rw [Nat.floor_zero]
+    simp only [Nat.cast_zero, sub_zero, AffineMap.lineMap_apply_zero]
+    exact d.hstart
+  hcont := by
+    have hcover : Set.Ici (0 : ℝ) = ⋃ n : ℕ, Set.Icc (n : ℝ) (n + 1) := by
+      ext t
+      simp only [Set.mem_Ici, Set.mem_iUnion, Set.mem_Icc]
+      constructor
+      · intro ht; exact ⟨⌊t⌋₊, Nat.floor_le ht, (Nat.lt_floor_add_one t).le⟩
+      · rintro ⟨n, hn, _⟩; exact le_trans (Nat.cast_nonneg n) hn
+    have hlf : LocallyFinite (fun n : ℕ => Set.Icc (n : ℝ) (n + 1)) := by
+      intro x
+      refine ⟨Set.Ioo (x - 1) (x + 1), Ioo_mem_nhds (by linarith) (by linarith), ?_⟩
+      apply Set.Finite.subset (Set.finite_Iic (⌊x + 1⌋₊ : ℕ))
+      intro n hn
+      obtain ⟨y, ⟨hy1, _⟩, _, hy4⟩ := hn
+      rw [Set.mem_Iic]
+      exact Nat.le_floor (le_of_lt (lt_of_le_of_lt hy1 hy4))
+    have hcont_piece : ∀ N : ℕ, ContinuousOn
+        (fun t : ℝ => (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - ⌊t⌋₊)))
+        (Set.Icc (N : ℝ) (N + 1)) := by
+      intro N
+      have hmaps : Set.MapsTo (fun t : ℝ => AffineMap.lineMap (d.a N) (d.b N) (t - N))
+          (Set.Icc (N : ℝ) (N + 1)) (d.e N).target := by
+        intro t ht
+        apply d.htgt N
+        rw [segment_eq_image_lineMap]
+        exact ⟨t - N, ⟨by linarith [ht.1], by linarith [ht.2]⟩, rfl⟩
+      have hcont_hn : ContinuousOn (fun t : ℝ => (d.e N).symm
+          (AffineMap.lineMap (d.a N) (d.b N) (t - N))) (Set.Icc (N : ℝ) (N + 1)) :=
+        (d.e N).continuousOn_symm.comp (by fun_prop) hmaps
+      apply hcont_hn.congr
+      intro t ht
+      rcases lt_or_eq_of_le ht.2 with hlt | heq
+      · have hfloor : ⌊t⌋₊ = N := by
+          rw [Nat.floor_eq_iff (le_trans (Nat.cast_nonneg N) ht.1)]; exact ⟨ht.1, hlt⟩
+        show (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - (⌊t⌋₊ : ℝ)))
+          = (d.e N).symm (AffineMap.lineMap (d.a N) (d.b N) (t - N))
+        rw [hfloor]
+      · show (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - (⌊t⌋₊ : ℝ)))
+          = (d.e N).symm (AffineMap.lineMap (d.a N) (d.b N) (t - N))
+        have hfloor : ⌊t⌋₊ = N + 1 := by
+          rw [heq, show (N : ℝ) + 1 = ((N + 1 : ℕ) : ℝ) by push_cast; ring, Nat.floor_natCast]
+        rw [hfloor, heq, show ((N : ℝ) + 1 - ((N + 1 : ℕ) : ℝ)) = 0 by push_cast; ring,
+          show ((N : ℝ) + 1 - (N : ℝ)) = 1 by ring, AffineMap.lineMap_apply_zero,
+          AffineMap.lineMap_apply_one, ← d.hchain N]
+    rw [hcover]
+    exact hlf.continuousOn_iUnion (fun _ => isClosed_Icc) hcont_piece
+  hinj := by
+    have hu01 : ∀ t : ℝ, 0 ≤ t → 0 ≤ t - (⌊t⌋₊:ℝ) ∧ t - (⌊t⌋₊:ℝ) < 1 := by
+      intro t ht
+      exact ⟨sub_nonneg.mpr (Nat.floor_le ht), by linarith [Nat.lt_floor_add_one t]⟩
+    have hmemseg : ∀ t : ℝ, 0 ≤ t →
+        AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - (⌊t⌋₊:ℝ))
+          ∈ segment ℝ (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) := by
+      intro t ht
+      rw [segment_eq_image_lineMap]
+      exact ⟨t - ⌊t⌋₊, ⟨(hu01 t ht).1, (hu01 t ht).2.le⟩, rfl⟩
+    have hlm_tgt : ∀ t : ℝ, 0 ≤ t →
+        AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - (⌊t⌋₊:ℝ)) ∈ (d.e ⌊t⌋₊).target :=
+      fun t ht => d.htgt _ (hmemseg t ht)
+    have hδmem : ∀ t : ℝ, 0 ≤ t →
+        (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - ⌊t⌋₊))
+          ∈ (d.e ⌊t⌋₊).symm '' segment ℝ (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) :=
+      fun t ht => ⟨_, hmemseg t ht, rfl⟩
+    have hinjsymm : ∀ (n : ℕ) {c c' : ℂ}, c ∈ (d.e n).target → c' ∈ (d.e n).target →
+        (d.e n).symm c = (d.e n).symm c' → c = c' := by
+      intro n c c' hc hc' h
+      exact ((d.e n).symm_source ▸ (d.e n).symm.injOn) hc hc' h
+    have key : ∀ s t : ℝ, 0 ≤ s → 0 ≤ t → s ≤ t →
+        (d.e ⌊s⌋₊).symm (AffineMap.lineMap (d.a ⌊s⌋₊) (d.b ⌊s⌋₊) (s - ⌊s⌋₊))
+          = (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - ⌊t⌋₊)) → s = t := by
+      intro s t hs ht hst hδst
+      have hnm : ⌊s⌋₊ ≤ ⌊t⌋₊ := Nat.floor_le_floor hst
+      rcases eq_or_lt_of_le hnm with heq | hlt
+      · rw [← heq] at hδst
+        have hlm : AffineMap.lineMap (d.a ⌊s⌋₊) (d.b ⌊s⌋₊) (s - (⌊s⌋₊:ℝ))
+            = AffineMap.lineMap (d.a ⌊s⌋₊) (d.b ⌊s⌋₊) (t - (⌊s⌋₊:ℝ)) := by
+          apply hinjsymm ⌊s⌋₊ (hlm_tgt s hs) (heq ▸ hlm_tgt t ht) hδst
+        rcases (AffineMap.lineMap_eq_lineMap_iff (k := ℝ) (V1 := ℂ)).mp hlm with hc | hc
+        · exact absurd hc (d.hab _)
+        · linarith [hc]
+      · exfalso
+        set n := ⌊s⌋₊ with hn
+        set m := ⌊t⌋₊ with hm
+        rcases Nat.lt_or_ge (n + 1) m with hgap | hle2
+        · have h2 : n + 2 ≤ m := by omega
+          exact Set.disjoint_left.mp (d.hfar n m h2) (hδmem s hs) (hm ▸ hδst ▸ hδmem t ht)
+        · have hmeq : m = n + 1 := by omega
+          have hmem_s : (d.e n).symm (AffineMap.lineMap (d.a n) (d.b n) (s - n))
+              ∈ (d.e n).symm '' segment ℝ (d.a n) (d.b n) := hδmem s hs
+          have hmem_t : (d.e n).symm (AffineMap.lineMap (d.a n) (d.b n) (s - n))
+              ∈ (d.e (n+1)).symm '' segment ℝ (d.a (n+1)) (d.b (n+1)) := by
+            have h1 := hδmem t ht
+            rw [← hm, hmeq] at h1
+            rw [hδst, hmeq]
+            exact h1
+          have hshared := d.hadj n ⟨hmem_s, hmem_t⟩
+          rw [Set.mem_singleton_iff] at hshared
+          have hlmb : AffineMap.lineMap (d.a n) (d.b n) (s - (n:ℝ)) = d.b n := by
+            apply hinjsymm n (hlm_tgt s hs) (d.htgt n (right_mem_segment ℝ _ _)) hshared
+          rcases (AffineMap.lineMap_eq_right_iff (k := ℝ) (V1 := ℂ)).mp hlmb with hc | hc
+          · exact (d.hab n) hc
+          · have := (hu01 s hs).2; rw [hn] at hc; linarith
+    intro s hs t ht h
+    rcases le_total s t with hle | hle
+    · exact key s t hs ht hle h
+    · exact (key t s ht hs hle h.symm).symm
+  hproper := by
+    intro K hK hKZ
+    obtain ⟨N, hN⟩ := d.hesc K hK hKZ
+    refine ⟨(N : ℝ), fun t htN => ?_⟩
+    have hfloorN : N ≤ ⌊t⌋₊ := Nat.le_floor htN
+    have ht0 : 0 ≤ t := le_trans (Nat.cast_nonneg N) htN
+    have hmem : (d.e ⌊t⌋₊).symm (AffineMap.lineMap (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) (t - ⌊t⌋₊))
+        ∈ (d.e ⌊t⌋₊).symm '' segment ℝ (d.a ⌊t⌋₊) (d.b ⌊t⌋₊) := by
+      refine ⟨_, ?_, rfl⟩
+      rw [segment_eq_image_lineMap]
+      exact ⟨t - ⌊t⌋₊, ⟨by simp [Nat.floor_le ht0], by linarith [Nat.lt_floor_add_one t]⟩, rfl⟩
+    exact Set.disjoint_left.mp (hN ⌊t⌋₊ hfloorN) hmem
+
+/-- **The pruning obligation (P1–P3), frozen.**  A noncompact complement end
+`Z = connectedComponentIn (closure V)ᶜ x₀` admits, from any base point `z₀ ∈ Z`,
+`SimpleRayData` — the embedded, escaping, shell-separated chart-polyline family.
 
 **Construction.**  Reuse the Ends machinery (`exists_noncompact_subcomponent`) to
 refine a compact exhaustion `Qₙ` of `↥Z` into a decreasing chain of
 noncompact-closure complement components `Cₙ` with escaping points `zₙ ∈ Cₙ`,
 `zₙ ∉ Qₙ`.  Inside each open connected `Cₙ` connect `zₙ → zₙ₊₁` by a chart
-polyline (`Rado.exists_cStep_chain`), then extract embeddedness in two levels:
+polyline (`Rado.exists_cStep_chain`, as segment data `Rado.PLSeg`), then:
 
-* **within a stage**, prune the finite polyline to an injective one by the
-  *last-exit* trick (the hit set of the next straight segment against the compact
-  injective prefix is compact; truncate the prefix at its supremum hit and append
-  the residual tail, which meets the truncated prefix only at that point);
-* **across stages**, prune globally against the accumulated arc, keeping the
-  invariants: the arc starts at `z₀`, ends after stage `n` at `zₙ₊₁`, is
-  injective, and its stage-`n`-onward tail lies in `Z \ Qₙ` (properness).
+* **(P1)** within a stage, prune the finite polyline to a *simple* one by the
+  last-exit trick — the hit set of the next straight segment against the compact
+  prefix image is compact (use `Rado.PLSeg.img_compact`); truncate the prefix at
+  its supremum hit (splitting the hit segment via `Rado.PLSeg.splitL`) and append
+  the residual tail (`Rado.PLSeg.splitR`), which meets the truncated prefix only
+  at that point;
+* **(P2)** across stages, repeat the last-exit pruning against the accumulated
+  arc, keeping the weaker invariants (start `z₀`, endpoint-at-stage-`n` = `zₙ₊₁`,
+  simplicity, and stage-`m` material `⊆ Cₘ` — truncation only shrinks it — so the
+  tail beyond the stage-`n` junction lies in `⋃_{m≥n} Cₘ ⊆ Z \ Qₙ`, giving
+  `hesc`);
+* **(P3)** derive `hshell` from simplicity + local finiteness (a compact meets
+  finitely many stages) + metrizability of `X` (`SecondCountableTopology` ⇒
+  `MetrizableSpace`, as in `RayCollar.lean`): non-adjacent segments are disjoint,
+  hence at positive distance, so a metric thickening meets only neighbours.
 
-Embeddedness + local finiteness (a compact meets finitely many stages) +
-metrizability of `X` (`SecondCountableTopology` ⇒ `MetrizableSpace`) then makes
-the `hshell` separation automatic: distinct non-adjacent segments are disjoint
-(injectivity), hence at positive distance, so a metric thickening of each segment
-meets only its neighbours.
+*Status: frozen — the last-exit pruning builds arcwise connectedness, absent from
+mathlib at this pin.  All downstream packaging (`polyRay_of_simple`) is
+sorry-free.* -/
+theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ : X}
+    (hZnc : ¬ IsCompact (connectedComponentIn (closure V)ᶜ x₀))
+    {z₀ : X} (hz₀ : z₀ ∈ connectedComponentIn (closure V)ᶜ x₀) :
+    Nonempty (SimpleRayData (connectedComponentIn (closure V)ᶜ x₀) z₀) := by
+  sorry
 
-*Status: statement frozen (proof pending — the injective pruning and separation
-build arcwise connectedness, absent from mathlib at this pin).* -/
+/-- **An embedded, proper, chart-polyline ray exists in a noncompact end
+(W7 step A1).**  Immediate from `polyRay_of_simple` and `nonempty_simpleRayData`. -/
 theorem exists_polyRay [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ : X}
     (hZnc : ¬ IsCompact (connectedComponentIn (closure V)ᶜ x₀))
     {z₀ : X} (hz₀ : z₀ ∈ connectedComponentIn (closure V)ᶜ x₀) :
-    Nonempty (PolyRay (connectedComponentIn (closure V)ᶜ x₀) z₀) := by
-  sorry
+    Nonempty (PolyRay (connectedComponentIn (closure V)ᶜ x₀) z₀) :=
+  ⟨polyRay_of_simple (nonempty_simpleRayData hZnc hz₀).some⟩
 
 end Uniformization
 
