@@ -778,7 +778,10 @@ theorem margin_at {ξ' : X}
           σ (evIm q) = q ∧
           (∀ s ∈ Set.Ioo (evIm q - r) (evIm q + r), evIm (σ s) = s) ∧
           (∀ s ∈ Set.Ioo (evIm q - r) (evIm q + r),
-            ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀) := by
+            ConjEtale.proj (σ s) ∈ connectedComponentIn (frontier V) x₀) ∧
+          ∃ U : Set X, IsOpen U ∧ ConjEtale.proj q ∈ U ∧
+            ∀ y ∈ connectedComponentIn (frontier V) x₀ ∩ U,
+              ∃ s ∈ Set.Ioo (evIm q - r) (evIm q + r), ConjEtale.proj (σ s) = y := by
   classical
   set C := connectedComponentIn (frontier V) x₀ with hC
   have hξ'fr : ξ' ∈ frontier V := connectedComponentIn_subset _ _ hξ'C
@@ -965,8 +968,54 @@ theorem margin_at {ξ' : X}
     apply Set.Ioo_subset_Ioo
     · rw [ha', ha, hevq]; linarith [hzim_bd.1]
     · rw [hb', hb, hevq]; linarith [hzim_bd.2]
-  exact ⟨σ, hcontσ.mono hmargin, hσq,
-    fun s hs => hevσ s (hmargin hs), fun s hs => hprojσ s (hmargin hs)⟩
+  -- exact projection formula for the section
+  have hprojσ_eq : ∀ s ∈ Set.Ioo a' b', ConjEtale.proj (σ s) = arc (s - t) := by
+    intro s hs
+    show ConjEtale.proj (shift t (Pf s)) = arc (s - t)
+    rw [proj_shift, hPeq s (hshift s hs), proj_etaleSec]
+  refine ⟨σ, hcontσ.mono hmargin, hσq,
+    fun s hs => hevσ s (hmargin hs), fun s hs => hprojσ s (hmargin hs), ?_⟩
+  -- the arc-neighbourhood coverage clause: the small box at `z` is traced by `σ`
+  have hbox_z : straightBox z c δ (ε / 2) ⊆ box := by
+    intro w hw
+    rw [mem_straightBox] at hw
+    rw [hbox, mem_straightBox]
+    refine ⟨hw.1, ?_⟩
+    rw [← hm]
+    calc |w.im - m| = |(w.im - z.im) + (z.im - m)| := by congr 1; ring
+      _ ≤ |w.im - z.im| + |z.im - m| := abs_add_le _ _
+      _ < ε / 2 + ε / 2 := add_lt_add hw.2 hzim_bd
+      _ = ε := by ring
+  have hbox_z_tgt : straightBox z c δ (ε / 2) ⊆ ψ.target := hbox_z.trans hbox_tgt
+  have hUopen : IsOpen (ψ.symm '' straightBox z c δ (ε / 2)) :=
+    ψ.symm.isOpen_image_of_subset_source (isOpen_straightBox _ _ _ _)
+      (by rw [OpenPartialHomeomorph.symm_source]; exact hbox_z_tgt)
+  have hzmem : z ∈ straightBox z c δ (ε / 2) := by
+    rw [mem_straightBox]
+    exact ⟨by rw [hzre, sub_self, abs_zero]; exact hδ,
+           by rw [sub_self, abs_zero]; exact half_pos hε⟩
+  refine ⟨ψ.symm '' straightBox z c δ (ε / 2), hUopen, ⟨z, hzmem, hyz⟩, ?_⟩
+  rintro y' ⟨hy'C, w, hw_z, rfl⟩
+  have hwbox : w ∈ box := hbox_z hw_z
+  have hy'fr : ψ.symm w ∈ frontier V := connectedComponentIn_subset _ _ hy'C
+  have hwre : w.re = c := by
+    have h1 : f (ψ.symm w) = w.re := hf_eq w hwbox
+    rw [← h1]; exact hfc _ hy'fr
+  rw [mem_straightBox] at hw_z
+  have hw_z2 := abs_lt.mp hw_z.2
+  have hs_mem : w.im + t ∈ Set.Ioo (evIm q - ε / 2) (evIm q + ε / 2) := by
+    constructor
+    · rw [hevq]; linarith [hw_z2.1]
+    · rw [hevq]; linarith [hw_z2.2]
+  refine ⟨w.im + t, hs_mem, ?_⟩
+  rw [hprojσ_eq _ (hmargin hs_mem)]
+  have h4 : w.im + t - t = w.im := by ring
+  rw [h4]
+  show ψ.symm (seg w.im) = ψ.symm w
+  congr 1
+  apply Complex.ext
+  · rw [hseg_re, hwre]
+  · rw [hseg_im]
 
 set_option maxHeartbeats 1600000 in
 include hVo hdich hfc hchart hYo hCY in
@@ -1007,7 +1056,7 @@ theorem exists_uniform_section (hVcl : IsCompact (closure V))
   refine ⟨ℓ, hℓpos, ?_⟩
   intro q hqC
   obtain ⟨ξ, hξT, hqOξ⟩ := Set.mem_iUnion₂.mp (hTcov hqC)
-  obtain ⟨σ, hcont, hσq, hev, hproj⟩ := hsecprop ξ (hTsub hξT) q hqOξ hqC
+  obtain ⟨σ, hcont, hσq, hev, hproj, -⟩ := hsecprop ξ (hTsub hξT) q hqOξ hqC
   have hsub : Set.Ioo (evIm q - ℓ) (evIm q + ℓ) ⊆ Set.Ioo (evIm q - r ξ) (evIm q + r ξ) :=
     Set.Ioo_subset_Ioo (by linarith [hℓle ξ hξT]) (by linarith [hℓle ξ hξT])
   exact ⟨σ, hcont.mono hsub, hσq, fun s hs => hev s (hsub hs), fun s hs => hproj s (hsub hs)⟩
@@ -1370,7 +1419,478 @@ theorem exists_evIm_inverse (hVcl : IsCompact (closure V)) {q₀ : ConjEtale f Y
     rw [← himg q hq, ← himg q' hq', hev]
   exact ⟨E, hEcont, hevE, hEmemÊ, himg, hInj⟩
 
+/-! ### Stage 3 — deck transformations and the periodic parametrisation -/
+
+/-- **Fibre transitivity of the deck action.**  Two conjugate germs over the same
+base point differ by the imaginary shift of their `evIm`-difference (the real
+parts of the evaluations agree automatically, both being `f` at the base). -/
+theorem shift_eq_of_proj_eq {q q' : ConjEtale f Y}
+    (hproj : ConjEtale.proj q = ConjEtale.proj q') :
+    q' = shift (evIm q' - evIm q) q := by
+  symm
+  apply eq_of_proj_eq_eval_eq
+  · rw [proj_shift]; exact hproj
+  · rw [eval_shift]
+    apply Complex.ext
+    · have h1 : ((((evIm q' - evIm q) : ℝ) : ℂ) * Complex.I).re = 0 := by
+        simp [Complex.mul_re]
+      rw [Complex.add_re, h1, add_zero, re_eval, re_eval, hproj]
+    · have h2 : ((((evIm q' - evIm q) : ℝ) : ℂ) * Complex.I).im = evIm q' - evIm q := by
+        simp [Complex.mul_im]
+      rw [Complex.add_im, h2]
+      show evIm q + (evIm q' - evIm q) = evIm q'
+      ring
+
+/-- **The deck action permutes fibre components.**  `shift r` is a homeomorphism
+preserving the fibre `proj⁻¹ C`, so it maps the component of `q` onto the
+component of `shift r q`. -/
+theorem shift_image_component (r : ℝ) {q : ConjEtale f Y}
+    (hq : ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀) :
+    shift r '' connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q
+      = connectedComponentIn
+        (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) (shift r q) := by
+  have hcoe : ⇑(shiftHomeo (f := f) (Y := Y) r) = shift (f := f) (Y := Y) r := rfl
+  have hpre : shiftHomeo (f := f) (Y := Y) r ''
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀)
+      = ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ := by
+    rw [hcoe]
+    apply Set.Subset.antisymm
+    · rintro _ ⟨p, hp, rfl⟩
+      simp only [Set.mem_preimage, proj_shift]
+      exact hp
+    · intro p hp
+      refine ⟨shift (-r) p, ?_, shift_shift_neg r p⟩
+      simp only [Set.mem_preimage, proj_shift]
+      exact hp
+  have h := (shiftHomeo (f := f) (Y := Y) r).image_connectedComponentIn
+    (s := ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) (x := q) hq
+  rw [hpre, hcoe] at h
+  exact h
+
+include hVo hdich hfc hchart hYo hCY in
+/-- **The fibre component projects onto an arc neighbourhood.**  Every fibre point
+`q` over the frontier component `C` has an open `U ∋ proj q` such that all of
+`C ∩ U` is traced by the local section through `q` (hence lies in the projection
+of the fibre component of `q`), with a uniform `evIm`-bound `r`. -/
+theorem exists_proj_arc_nbhd {q : ConjEtale f Y}
+    (hqC : ConjEtale.proj q ∈ connectedComponentIn (frontier V) x₀) :
+    ∃ (r : ℝ) (U : Set X), 0 < r ∧ IsOpen U ∧ ConjEtale.proj q ∈ U ∧
+      ∀ y ∈ connectedComponentIn (frontier V) x₀ ∩ U,
+        ∃ w ∈ connectedComponentIn
+          (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q,
+          ConjEtale.proj w = y ∧ |evIm w - evIm q| < r := by
+  obtain ⟨O, r, hOo, hqO, hrpos, hprop⟩ := margin_at hVo hdich hfc hchart hYo hCY hqC
+  obtain ⟨σ, hcont, hσq, hev, hproj, U, hUo, hqU, hcov⟩ := hprop q hqO hqC
+  have himgsub : σ '' Set.Ioo (evIm q - r) (evIm q + r) ⊆
+      connectedComponentIn (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q := by
+    have hpre := isPreconnected_Ioo.image σ hcont
+    have hqin : q ∈ σ '' Set.Ioo (evIm q - r) (evIm q + r) :=
+      ⟨evIm q, ⟨by linarith, by linarith⟩, hσq⟩
+    have hsubP : σ '' Set.Ioo (evIm q - r) (evIm q + r) ⊆
+        ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀ := by
+      rintro _ ⟨s, hs, rfl⟩; exact hproj s hs
+    exact hpre.subset_connectedComponentIn hqin hsubP
+  refine ⟨r, U, hrpos, hUo, hqU, ?_⟩
+  intro y hy
+  obtain ⟨s, hs, hsy⟩ := hcov y hy
+  refine ⟨σ s, himgsub ⟨s, hs, rfl⟩, hsy, ?_⟩
+  rw [hev s hs, abs_lt]
+  exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
+
+set_option maxHeartbeats 1600000 in
+include hVo hdich hfc hchart hYo hCY in
+/-- **The fibre component projects onto the whole frontier component.**
+Membership in `proj '' Ê` is locally constant on `C` (via arc neighbourhoods and
+the transitive deck action on fibres), so `proj '' Ê` is clopen and nonempty in
+the connected `C`, hence equal to `C`. -/
+theorem proj_image_component_eq (hfY : SurfaceHarmonicOn f Y) {q₀ : ConjEtale f Y}
+    (hq₀C : ConjEtale.proj q₀ ∈ connectedComponentIn (frontier V) x₀) :
+    ConjEtale.proj '' connectedComponentIn
+      (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀
+    = connectedComponentIn (frontier V) x₀ := by
+  classical
+  set C := connectedComponentIn (frontier V) x₀ with hC
+  set Ê := connectedComponentIn (ConjEtale.proj ⁻¹' C) q₀ with hÊ
+  have hÊsub : Ê ⊆ ConjEtale.proj ⁻¹' C := connectedComponentIn_subset _ _
+  have hsub : ConjEtale.proj '' Ê ⊆ C := by rintro _ ⟨p, hp, rfl⟩; exact hÊsub hp
+  -- membership in `proj '' Ê` is locally constant on `C`
+  have hloc : ∀ y ∈ C, ∃ U : Set X, IsOpen U ∧ y ∈ U ∧
+      ∀ y' ∈ C ∩ U, (y ∈ ConjEtale.proj '' Ê ↔ y' ∈ ConjEtale.proj '' Ê) := by
+    intro y hyC
+    have hyY : y ∈ Y := hCY hyC
+    obtain ⟨q, hqy⟩ := ConjEtale.exists_mk hfY hYo hyY
+    have hqC : ConjEtale.proj q ∈ C := by rw [hqy]; exact hyC
+    obtain ⟨r, U, hr, hUo, hqU, hcov⟩ :=
+      exists_proj_arc_nbhd hVo hdich hfc hchart hYo hCY hqC
+    refine ⟨U, hUo, by rw [← hqy]; exact hqU, ?_⟩
+    intro y' hy'
+    obtain ⟨w, hw, hwy', -⟩ := hcov y' hy'
+    constructor
+    · rintro ⟨p, hpÊ, hpy⟩
+      have hpq : ConjEtale.proj p = ConjEtale.proj q := by rw [hpy, hqy]
+      have h1 : q = shift (evIm q - evIm p) p := shift_eq_of_proj_eq hpq
+      have hpC : ConjEtale.proj p ∈ C := hÊsub hpÊ
+      have h2 : shift (evIm q - evIm p) '' connectedComponentIn (ConjEtale.proj ⁻¹' C) p
+          = connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift (evIm q - evIm p) p) :=
+        shift_image_component _ hpC
+      have hcompp : connectedComponentIn (ConjEtale.proj ⁻¹' C) p = Ê := by
+        rw [hÊ]; exact (connectedComponentIn_eq hpÊ).symm
+      rw [hcompp, ← h1] at h2
+      have hw' : w ∈ shift (evIm q - evIm p) '' Ê := by rw [h2]; exact hw
+      obtain ⟨p', hp'Ê, hp'w⟩ := hw'
+      exact ⟨p', hp'Ê, by rw [← hwy', ← hp'w, proj_shift]⟩
+    · rintro ⟨p', hp'Ê, hp'y'⟩
+      have hwp' : ConjEtale.proj w = ConjEtale.proj p' := by rw [hwy', hp'y']
+      have h1 : p' = shift (evIm p' - evIm w) w := shift_eq_of_proj_eq hwp'
+      have hwC : ConjEtale.proj w ∈ C :=
+        Set.mem_preimage.mp (connectedComponentIn_subset (ConjEtale.proj ⁻¹' C) q hw)
+      have h2 : shift (evIm p' - evIm w) '' connectedComponentIn (ConjEtale.proj ⁻¹' C) w
+          = connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift (evIm p' - evIm w) w) :=
+        shift_image_component _ hwC
+      have hcompw : connectedComponentIn (ConjEtale.proj ⁻¹' C) w
+          = connectedComponentIn (ConjEtale.proj ⁻¹' C) q :=
+        (connectedComponentIn_eq hw).symm
+      have hcompp' : connectedComponentIn (ConjEtale.proj ⁻¹' C)
+          (shift (evIm p' - evIm w) w) = Ê := by
+        rw [← h1, hÊ]; exact (connectedComponentIn_eq hp'Ê).symm
+      rw [hcompw, hcompp'] at h2
+      have hq' : shift (evIm p' - evIm w) q ∈ Ê := by
+        rw [← h2]
+        exact ⟨q, mem_connectedComponentIn hqC, rfl⟩
+      exact ⟨shift (evIm p' - evIm w) q, hq', by rw [proj_shift, hqy]⟩
+  -- clopen argument in the connected subtype `↥C`
+  have hCpre : IsPreconnected C := isPreconnected_connectedComponentIn
+  haveI : PreconnectedSpace ↥C := Subtype.preconnectedSpace hCpre
+  set S : Set ↥C := Subtype.val ⁻¹' (ConjEtale.proj '' Ê) with hSdef
+  have hSopen : IsOpen S := by
+    rw [isOpen_iff_mem_nhds]
+    rintro ⟨y, hyC⟩ hyS
+    obtain ⟨U, hUo, hyU, hiff⟩ := hloc y hyC
+    refine Filter.mem_of_superset
+      ((hUo.preimage continuous_subtype_val).mem_nhds hyU) ?_
+    rintro ⟨y', hy'C⟩ hy'U
+    exact (hiff y' ⟨hy'C, hy'U⟩).mp hyS
+  have hScompl : IsOpen Sᶜ := by
+    rw [isOpen_iff_mem_nhds]
+    rintro ⟨y, hyC⟩ hyS
+    obtain ⟨U, hUo, hyU, hiff⟩ := hloc y hyC
+    refine Filter.mem_of_superset
+      ((hUo.preimage continuous_subtype_val).mem_nhds hyU) ?_
+    rintro ⟨y', hy'C⟩ hy'U hy'S
+    exact hyS ((hiff y' ⟨hy'C, hy'U⟩).mpr hy'S)
+  have hSne : S.Nonempty :=
+    ⟨⟨ConjEtale.proj q₀, hq₀C⟩, ⟨q₀, mem_connectedComponentIn hq₀C, rfl⟩⟩
+  have huniv := IsClopen.eq_univ ⟨isOpen_compl_iff.mp hScompl, hSopen⟩ hSne
+  apply Set.Subset.antisymm hsub
+  intro y hyC
+  have : (⟨y, hyC⟩ : ↥C) ∈ S := huniv ▸ Set.mem_univ _
+  exact this
+
+set_option maxHeartbeats 1600000 in
+include hVo hdich hfc hchart hYo hCY in
+/-- **Periodic parametrisation, collar form (Stage 3).**  Given the collar data
+over `Y ⊇ C` and compactness of `closure V`, the frontier component `C` through
+`x₀` is the range of a continuous `1`-periodic curve, injective on `[0,1)`. -/
+theorem exists_periodic_param_aux (hVcl : IsCompact (closure V))
+    (hfY : SurfaceHarmonicOn f Y) (hx₀fr : x₀ ∈ frontier V) :
+    ∃ γ : ℝ → X, Continuous γ ∧ Function.Periodic γ 1 ∧
+      Set.range γ = connectedComponentIn (frontier V) x₀ ∧
+      Set.InjOn γ (Set.Ico (0:ℝ) 1) := by
+  classical
+  set C := connectedComponentIn (frontier V) x₀ with hC
+  have hx₀C : x₀ ∈ C := mem_connectedComponentIn hx₀fr
+  have hx₀Y : x₀ ∈ Y := hCY hx₀C
+  obtain ⟨q₀, hq₀proj⟩ := ConjEtale.exists_mk hfY hYo hx₀Y
+  have hq₀C : ConjEtale.proj q₀ ∈ C := by rw [hq₀proj]; exact hx₀C
+  set Ê := connectedComponentIn (ConjEtale.proj ⁻¹' C) q₀ with hÊ
+  have hq₀Ê : q₀ ∈ Ê := mem_connectedComponentIn hq₀C
+  have hÊsub : Ê ⊆ ConjEtale.proj ⁻¹' C := connectedComponentIn_subset _ _
+  obtain ⟨E, hEcont, hevE, hEmem, hEinv, hInj⟩ :=
+    exists_evIm_inverse hVo hdich hfc hchart hYo hCY hVcl hq₀C
+  -- deck-group closure properties
+  have hshiftÊ : ∀ r : ℝ, shift r q₀ ∈ Ê → shift r '' Ê = Ê := by
+    intro r hr
+    have h1 : shift r '' Ê = connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift r q₀) :=
+      shift_image_component r hq₀C
+    rw [h1, hÊ]
+    exact (connectedComponentIn_eq hr).symm
+  have hGzero : shift 0 q₀ ∈ Ê := by rw [shift_zero]; exact hq₀Ê
+  have hGadd : ∀ r s : ℝ, shift r q₀ ∈ Ê → shift s q₀ ∈ Ê → shift (r + s) q₀ ∈ Ê := by
+    intro r s hr hs
+    have h1 : shift (r + s) q₀ = shift r (shift s q₀) := (shift_shift r s q₀).symm
+    rw [h1, ← hshiftÊ r hr]
+    exact ⟨shift s q₀, hs, rfl⟩
+  have hGneg : ∀ r : ℝ, shift r q₀ ∈ Ê → shift (-r) q₀ ∈ Ê := by
+    intro r hr
+    have h1 : shift (-r) '' Ê = connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift (-r) q₀) :=
+      shift_image_component (-r) hq₀C
+    have h2 : q₀ ∈ shift (-r) '' Ê := ⟨shift r q₀, hr, shift_neg_shift r q₀⟩
+    rw [h1] at h2
+    have h3 := connectedComponentIn_eq h2
+    have h4 : ConjEtale.proj (shift (-r) q₀) ∈ C := by rw [proj_shift]; exact hq₀C
+    have h5 : shift (-r) q₀ ∈ connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift (-r) q₀) :=
+      mem_connectedComponentIn h4
+    rw [h3] at h5
+    exact h5
+  set G : AddSubgroup ℝ :=
+    { carrier := {r : ℝ | shift r q₀ ∈ Ê},
+      zero_mem' := hGzero,
+      add_mem' := fun {a b} ha hb => hGadd a b ha hb,
+      neg_mem' := fun {a} ha => hGneg a ha } with hGdef
+  have hmemG : ∀ r : ℝ, r ∈ G ↔ shift r q₀ ∈ Ê := fun r => Iff.rfl
+  -- fibre transitivity into the deck group
+  have hfibG : ∀ q ∈ Ê, ∀ q' ∈ Ê, ConjEtale.proj q = ConjEtale.proj q' →
+      evIm q' - evIm q ∈ G := by
+    intro q hq q' hq' hproj
+    have h1 : q' = shift (evIm q' - evIm q) q := shift_eq_of_proj_eq hproj
+    have hqC' : ConjEtale.proj q ∈ C :=
+      Set.mem_preimage.mp (hÊsub hq)
+    have h2 : shift (evIm q' - evIm q) '' connectedComponentIn (ConjEtale.proj ⁻¹' C) q
+        = connectedComponentIn (ConjEtale.proj ⁻¹' C) (shift (evIm q' - evIm q) q) :=
+      shift_image_component _ hqC'
+    have hcompq : connectedComponentIn (ConjEtale.proj ⁻¹' C) q = Ê := by
+      rw [hÊ]; exact (connectedComponentIn_eq hq).symm
+    have hcompq' : connectedComponentIn (ConjEtale.proj ⁻¹' C)
+        (shift (evIm q' - evIm q) q) = Ê := by
+      rw [← h1, hÊ]; exact (connectedComponentIn_eq hq').symm
+    rw [hcompq, hcompq'] at h2
+    show shift (evIm q' - evIm q) q₀ ∈ Ê
+    rw [← h2]
+    exact ⟨q₀, hq₀Ê, rfl⟩
+  -- deck-equivariance of the global section
+  have hEshift : ∀ r ∈ G, ∀ t : ℝ, E (t + r) = shift r (E t) := by
+    intro r hr t
+    have h1 : shift r (E t) ∈ Ê := by
+      rw [← hshiftÊ r hr]
+      exact ⟨E t, hEmem t, rfl⟩
+    refine hInj (hEmem (t + r)) h1 ?_
+    rw [hevE, evIm_shift, hevE]
+  -- the projected curve
+  set γ₀ : ℝ → X := fun t => ConjEtale.proj (E t) with hγ₀def
+  have hγ₀cont : Continuous γ₀ := ConjEtale.continuous_proj.comp hEcont
+  have hγ₀C : ∀ t, γ₀ t ∈ C := fun t => Set.mem_preimage.mp (hÊsub (hEmem t))
+  have hprojÊ : ConjEtale.proj '' Ê = C :=
+    proj_image_component_eq hVo hdich hfc hchart hYo hCY hfY hq₀C
+  have hrangeC : Set.range γ₀ = C := by
+    apply Set.Subset.antisymm
+    · rintro _ ⟨t, rfl⟩; exact hγ₀C t
+    · intro y hy
+      obtain ⟨p, hpÊ, hpy⟩ : y ∈ ConjEtale.proj '' Ê := hprojÊ ▸ hy
+      refine ⟨evIm p, ?_⟩
+      show ConjEtale.proj (E (evIm p)) = y
+      rw [hEinv p hpÊ]
+      exact hpy
+  -- G is nontrivial
+  have hGne : ∃ r ∈ G, r ≠ 0 := by
+    by_contra hcon
+    push_neg at hcon
+    have hprojinj : Set.InjOn ConjEtale.proj Ê := by
+      intro p hp p' hp' hproj
+      have hr := hfibG p hp p' hp' hproj
+      have h0 : evIm p' - evIm p = 0 := hcon _ hr
+      have : evIm p = evIm p' := by linarith
+      exact hInj hp hp' this
+    have hγ₀inj : Function.Injective γ₀ := by
+      intro t t' h
+      have h1 : E t = E t' := hprojinj (hEmem t) (hEmem t') h
+      have h2 := congrArg evIm h1
+      rwa [hevE, hevE] at h2
+    -- finite cover of `C` by arc neighbourhoods traced by `γ₀`
+    have hexists : ∀ y ∈ C, ∃ (t r : ℝ) (U : Set X), 0 < r ∧ IsOpen U ∧ y ∈ U ∧
+        ∀ y' ∈ C ∩ U, ∃ s : ℝ, |s - t| < r ∧ γ₀ s = y' := by
+      intro y hy
+      obtain ⟨p, hpÊ, hpy⟩ : y ∈ ConjEtale.proj '' Ê := hprojÊ ▸ hy
+      have hpC : ConjEtale.proj p ∈ C := Set.mem_preimage.mp (hÊsub hpÊ)
+      obtain ⟨r, U, hr, hUo, hpU, hcov⟩ :=
+        exists_proj_arc_nbhd hVo hdich hfc hchart hYo hCY hpC
+      refine ⟨evIm p, r, U, hr, hUo, by rw [← hpy]; exact hpU, ?_⟩
+      intro y' hy'
+      obtain ⟨w, hw, hwproj, hwbd⟩ := hcov y' hy'
+      have hwÊ : w ∈ Ê := by
+        have hcomp : connectedComponentIn (ConjEtale.proj ⁻¹' C) p = Ê := by
+          rw [hÊ]; exact (connectedComponentIn_eq hpÊ).symm
+        rw [← hcomp]; exact hw
+      refine ⟨evIm w, hwbd, ?_⟩
+      show ConjEtale.proj (E (evIm w)) = y'
+      rw [hEinv w hwÊ]; exact hwproj
+    choose! tf rf Uf hrf hUfo hyUf hUfcov using hexists
+    have hcovC : C ⊆ ⋃ y ∈ C, Uf y := fun y hy => Set.mem_biUnion hy (hyUf y hy)
+    obtain ⟨T, hTsub, hTfin, hTcov⟩ :=
+      (isCompact_component hVcl (x₀ := x₀)).elim_finite_subcover_image
+        (fun y hy => hUfo y hy) hcovC
+    have hTne : T.Nonempty := by
+      obtain ⟨y₁, hy₁T, -⟩ := Set.mem_iUnion₂.mp (hTcov hx₀C)
+      exact ⟨y₁, hy₁T⟩
+    have hTfne : hTfin.toFinset.Nonempty := (Set.Finite.toFinset_nonempty hTfin).mpr hTne
+    set M := hTfin.toFinset.sup' hTfne (fun y => |tf y| + rf y) with hM
+    have hbound : ∀ y' ∈ C, ∃ s : ℝ, |s| ≤ M ∧ γ₀ s = y' := by
+      intro y' hy'
+      obtain ⟨y, hyT, hy'U⟩ := Set.mem_iUnion₂.mp (hTcov hy')
+      obtain ⟨s, hsbd, hsy⟩ := hUfcov y (hTsub hyT) y' ⟨hy', hy'U⟩
+      refine ⟨s, ?_, hsy⟩
+      have h1 : |tf y| + rf y ≤ M :=
+        Finset.le_sup' (fun y => |tf y| + rf y) (hTfin.mem_toFinset.mpr hyT)
+      have h2 : |s| ≤ |tf y| + |s - tf y| := by
+        calc |s| = |tf y + (s - tf y)| := by congr 1; ring
+          _ ≤ |tf y| + |s - tf y| := abs_add_le _ _
+      linarith
+    have hMpos : 0 < M := by
+      obtain ⟨y₁, hy₁T⟩ := hTne
+      have h1 : |tf y₁| + rf y₁ ≤ M :=
+        Finset.le_sup' (fun y => |tf y| + rf y) (hTfin.mem_toFinset.mpr hy₁T)
+      have h2 : 0 < rf y₁ := hrf y₁ (hTsub hy₁T)
+      have h3 : 0 ≤ |tf y₁| := abs_nonneg _
+      linarith
+    obtain ⟨s, hsM, hs⟩ := hbound (γ₀ (M + 1)) (hγ₀C (M + 1))
+    have hseq : s = M + 1 := hγ₀inj hs
+    rw [hseq] at hsM
+    have : |M + 1| = M + 1 := abs_of_pos (by linarith)
+    linarith [this ▸ hsM]
+  -- G is not dense
+  have hnotdense : ¬ Dense (G : Set ℝ) := by
+    intro hdense
+    have hclosed : IsClosed {t' : ℝ | γ₀ t' = γ₀ 0} := isClosed_eq hγ₀cont continuous_const
+    have hsubset : (G : Set ℝ) ⊆ {t' : ℝ | γ₀ t' = γ₀ 0} := by
+      intro rr hrr
+      show γ₀ rr = γ₀ 0
+      show ConjEtale.proj (E rr) = ConjEtale.proj (E 0)
+      have h1 : E rr = E (0 + rr) := by norm_num
+      rw [h1, hEshift rr hrr 0, proj_shift]
+    have hconst : ∀ t' : ℝ, γ₀ t' = γ₀ 0 := by
+      intro t'
+      have h1 : t' ∈ closure (G : Set ℝ) := hdense t'
+      exact closure_minimal hsubset hclosed h1
+    -- but C contains two distinct points (a local boundary arc)
+    obtain ⟨W', a, b, arc, linv, hW'o, hx₀W', hab, harcx₀, hcarc, hclinv,
+      harcmem, hlinvarc, harclinv, hlinvmem, himg, hpre, hx₀sl, hslsub⟩ :=
+      exists_local_arc_in_component hVo hdich hfc hchart (mem_connectedComponentIn hx₀fr)
+    set s₁ := a + (b - a) / 3 with hs₁
+    set s₂ := a + 2 * (b - a) / 3 with hs₂
+    have hs₁m : s₁ ∈ Set.Ioo a b := ⟨by rw [hs₁]; linarith, by rw [hs₁]; linarith⟩
+    have hs₂m : s₂ ∈ Set.Ioo a b := ⟨by rw [hs₂]; linarith, by rw [hs₂]; linarith⟩
+    have hne12 : arc s₁ ≠ arc s₂ := by
+      intro hcontra
+      have h1 : s₁ = s₂ := by
+        rw [← hlinvarc s₁ hs₁m, ← hlinvarc s₂ hs₂m, hcontra]
+      rw [hs₁, hs₂] at h1
+      have : b - a > 0 := by linarith
+      linarith
+    have h₁C : arc s₁ ∈ C := hslsub (harcmem s₁ hs₁m)
+    have h₂C : arc s₂ ∈ C := hslsub (harcmem s₂ hs₂m)
+    -- C = range γ₀ is a singleton, contradiction
+    obtain ⟨u₁, hu₁⟩ : arc s₁ ∈ Set.range γ₀ := hrangeC ▸ h₁C
+    obtain ⟨u₂, hu₂⟩ : arc s₂ ∈ Set.range γ₀ := hrangeC ▸ h₂C
+    apply hne12
+    rw [← hu₁, ← hu₂, hconst u₁, hconst u₂]
+  -- G is cyclic with positive generator t₀
+  obtain ⟨g, hGg⟩ := (AddSubgroup.dense_or_cyclic G).resolve_left hnotdense
+  have hgne : g ≠ 0 := by
+    rintro rfl
+    obtain ⟨r, hrG, hrne⟩ := hGne
+    have hbot : G = ⊥ := by
+      rw [hGg]
+      refine le_antisymm ((AddSubgroup.closure_le ⊥).mpr ?_) bot_le
+      simp
+    rw [hbot, AddSubgroup.mem_bot] at hrG
+    exact hrne hrG
+  set t₀ := |g| with ht₀
+  have ht₀pos : 0 < t₀ := abs_pos.mpr hgne
+  have hgG : g ∈ G := by rw [hGg]; exact AddSubgroup.subset_closure rfl
+  have ht₀G : t₀ ∈ G := by
+    rcases abs_choice g with h | h
+    · rw [ht₀, h]; exact hgG
+    · rw [ht₀, h]; exact neg_mem hgG
+  have hmemt₀ : ∀ r ∈ G, ∃ n : ℤ, r = n * t₀ := by
+    intro r hrG
+    rw [hGg] at hrG
+    obtain ⟨n, hn⟩ := AddSubgroup.mem_closure_singleton.mp hrG
+    rcases abs_choice g with h | h
+    · exact ⟨n, by rw [← hn, zsmul_eq_mul, ht₀, h]⟩
+    · refine ⟨-n, ?_⟩
+      rw [← hn, zsmul_eq_mul, ht₀, h]
+      push_cast
+      ring
+  -- periodicity of γ₀
+  have hper₀ : ∀ t, γ₀ (t + t₀) = γ₀ t := by
+    intro t
+    show ConjEtale.proj (E (t + t₀)) = ConjEtale.proj (E t)
+    rw [hEshift t₀ ht₀G t, proj_shift]
+  -- injectivity of γ₀ on a fundamental domain
+  have hinj₀ : Set.InjOn γ₀ (Set.Ico 0 t₀) := by
+    intro s hs s' hs' hss
+    have h1 : evIm (E s') - evIm (E s) ∈ G := hfibG (E s) (hEmem s) (E s') (hEmem s') hss
+    rw [hevE, hevE] at h1
+    obtain ⟨n, hn⟩ := hmemt₀ _ h1
+    have hb : |s' - s| < t₀ := by
+      rw [abs_lt]
+      exact ⟨by linarith [hs.2, hs'.1], by linarith [hs'.2, hs.1]⟩
+    rw [hn, abs_mul, abs_of_pos ht₀pos] at hb
+    have hn1 : |(n : ℝ)| < 1 := by
+      by_contra hcontra
+      push_neg at hcontra
+      nlinarith
+    have hn0 : n = 0 := by
+      by_contra hcontra
+      have h2 : (1 : ℤ) ≤ |n| := Int.one_le_abs hcontra
+      have h2' : ((1 : ℤ) : ℝ) ≤ ((|n| : ℤ) : ℝ) := Int.cast_le.mpr h2
+      rw [Int.cast_abs, Int.cast_one] at h2'
+      linarith
+    have h4 : s' - s = 0 := by rw [hn, hn0]; push_cast; ring
+    linarith
+  -- rescale to period 1
+  refine ⟨fun t => γ₀ (t₀ * t), hγ₀cont.comp (continuous_const.mul continuous_id), ?_, ?_, ?_⟩
+  · intro t
+    show γ₀ (t₀ * (t + 1)) = γ₀ (t₀ * t)
+    have h1 : t₀ * (t + 1) = t₀ * t + t₀ := by ring
+    rw [h1, hper₀]
+  · rw [← hrangeC]
+    apply Set.Subset.antisymm
+    · rintro _ ⟨t, rfl⟩; exact ⟨t₀ * t, rfl⟩
+    · rintro _ ⟨t, rfl⟩
+      refine ⟨t / t₀, ?_⟩
+      show γ₀ (t₀ * (t / t₀)) = γ₀ t
+      rw [mul_comm, div_mul_cancel₀ _ (ne_of_gt ht₀pos)]
+  · intro s hs s' hs' hss
+    have h1 : t₀ * s ∈ Set.Ico 0 t₀ := by
+      constructor
+      · exact mul_nonneg (le_of_lt ht₀pos) hs.1
+      · calc t₀ * s < t₀ * 1 := by
+              exact mul_lt_mul_of_pos_left hs.2 ht₀pos
+          _ = t₀ := mul_one t₀
+    have h2 : t₀ * s' ∈ Set.Ico 0 t₀ := by
+      constructor
+      · exact mul_nonneg (le_of_lt ht₀pos) hs'.1
+      · calc t₀ * s' < t₀ * 1 := mul_lt_mul_of_pos_left hs'.2 ht₀pos
+          _ = t₀ := mul_one t₀
+    have h3 : t₀ * s = t₀ * s' := hinj₀ h1 h2 hss
+    exact mul_left_cancel₀ (ne_of_gt ht₀pos) h3
+
 end LocalInj
+
+/-! ## The frozen W7 target -/
+
+/-- **Periodic parametrisation of a frontier component (W7).**  Under the collar
+hypotheses — `V` open with compact closure, `f` harmonic on an open `A ⊇ ∂V`,
+the dichotomy `hdich`, the level condition `hfc`, and the straightening germ
+payload `hchart` — the connected component of `frontier V` through `x₀` is a
+topological circle: the range of a continuous `1`-periodic curve `γ : ℝ → X`
+injective on the fundamental domain `[0,1)`. -/
+theorem exists_periodic_param [T2Space X] {V : Set X} (hVo : IsOpen V)
+    (hVcl : IsCompact (closure V)) {f : X → ℝ} {c : ℝ}
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    {A : Set X} (hharm : Rado.SurfaceHarmonicOn f A) (hAo : IsOpen A) (hfrA : frontier V ⊆ A)
+    {x₀ : X} (hx₀ : x₀ ∈ frontier V) :
+    ∃ γ : ℝ → X, Continuous γ ∧ Function.Periodic γ 1 ∧
+      Set.range γ = connectedComponentIn (frontier V) x₀ ∧
+      Set.InjOn γ (Set.Ico (0:ℝ) 1) := by
+  obtain ⟨Y, hYo, hYc, hx₀Y, hfY, hCY, -⟩ :=
+    exists_collar_component hdich hharm hAo hfrA hx₀
+  exact exists_periodic_param_aux hVo hdich hfc hchart hYo hCY hVcl hfY hx₀
 
 
 end Uniformization
