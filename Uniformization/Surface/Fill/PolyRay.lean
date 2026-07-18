@@ -512,6 +512,523 @@ noncomputable def polyRay_of_simple {Z : Set X} {z₀ : X} (d : SimpleRayData Z 
       exact ⟨t - ⌊t⌋₊, ⟨by simp [Nat.floor_le ht0], by linarith [Nat.lt_floor_add_one t]⟩, rfl⟩
     exact Set.disjoint_left.mp (hN ⌊t⌋₊ hfloorN) hmem
 
+/-! ## The noncompact-subcomponent step (copied from `Ends.lean`, which keeps it
+`private`).  Abstract topology on a space `W` with the right instances. -/
+
+/-- **Key existence step for the escaping ray.**  In a locally compact, locally
+connected, preconnected Hausdorff space `W` with a compact exhaustion `Kex`, if
+`C = connectedComponentIn (Kex n)ᶜ a` is a complement component whose closure is
+*not* compact, then inside `C` there is a point `b` outside `Kex (n+1)` whose
+component in `(Kex (n+1))ᶜ` again has noncompact closure. -/
+private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
+    [T2Space W] [LocallyCompactSpace W] [LocallyConnectedSpace W] [PreconnectedSpace W]
+    (Kex : CompactExhaustion W) {n : ℕ} {a : W} (_ha : a ∉ Kex n)
+    (hnc : ¬ IsCompact (closure (connectedComponentIn (Kex n)ᶜ a))) :
+    ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
+      ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) := by
+  classical
+  set C := connectedComponentIn (Kex n)ᶜ a with hCdef
+  haveI : Nonempty W := ⟨a⟩
+  have hWnc : ¬ CompactSpace W := by
+    intro hc; haveI := hc; exact hnc isClosed_closure.isCompact
+  have hFopen : IsOpen ((Kex (n + 1))ᶜ) := (Kex.isCompact (n + 1)).isClosed.isOpen_compl
+  by_contra hcon
+  push Not at hcon
+  have hesc : ∀ m, ∃ x, x ∈ C ∧ x ∉ Kex m := by
+    intro m
+    by_contra h
+    push Not at h
+    exact hnc ((Kex.isCompact m).of_isClosed_subset isClosed_closure
+      (closure_minimal (fun x hx => h x hx) (Kex.isCompact m).isClosed))
+  choose c hcC hcK using hesc
+  set D : ℕ → Set W := fun m => connectedComponentIn (Kex (n + 1))ᶜ (c m) with hDdef
+  have hcF : ∀ m, n + 1 ≤ m → c m ∈ (Kex (n + 1))ᶜ := by
+    intro m hm hmem
+    exact hcK m (Kex.subset hm hmem)
+  have hcD : ∀ m, n + 1 ≤ m → c m ∈ D m := fun m hm => mem_connectedComponentIn (hcF m hm)
+  have hDcompact : ∀ m, n + 1 ≤ m → IsCompact (closure (D m)) := by
+    intro m hm
+    exact hcon (c m) (hcF m hm) (hcC m)
+  set R : Set (Set W) := {D' | ∃ m, n + 2 ≤ m ∧ D' = D m} with hRdef
+  have hRinf : R.Infinite := by
+    intro hRfin
+    have hUcompact : IsCompact (⋃ D' ∈ R, closure D') := by
+      refine hRfin.isCompact_biUnion ?_
+      rintro D' ⟨m, hm, rfl⟩
+      exact hDcompact m (by omega)
+    obtain ⟨p, hp⟩ := Kex.exists_superset_of_isCompact hUcompact
+    set m := max p (n + 2) with hmdef
+    have hm2 : n + 2 ≤ m := le_max_right _ _
+    have hmp : p ≤ m := le_max_left _ _
+    have hcmDm : c m ∈ D m := hcD m (by omega)
+    have hcmU : c m ∈ ⋃ D' ∈ R, closure D' :=
+      mem_biUnion ⟨m, hm2, rfl⟩ (subset_closure hcmDm)
+    exact hcK m (Kex.subset hmp (hp hcmU))
+  have hcross : ∀ D' ∈ R, (D' ∩ frontier (Kex (n + 2))).Nonempty := by
+    rintro D' ⟨m, hm, rfl⟩
+    have hDopen : IsOpen (D m) := hFopen.connectedComponentIn
+    have hcmDm : c m ∈ D m := hcD m (by omega)
+    have hfrsub : frontier (D m) ⊆ Kex (n + 1) := by
+      have h1 : frontier (D m) ⊆ frontier ((Kex (n + 1))ᶜ) :=
+        frontier_connectedComponentIn_subset (U := (Kex (n + 1))ᶜ) (x := c m) hFopen
+      rw [frontier_compl] at h1
+      exact h1.trans (Kex.isCompact (n + 1)).isClosed.frontier_subset
+    have hfrint : frontier (D m) ⊆ interior (Kex (n + 2)) :=
+      hfrsub.trans (Kex.subset_interior_succ (n + 1))
+    have hfrne : (frontier (D m)).Nonempty := by
+      by_contra hemp
+      rw [Set.not_nonempty_iff_eq_empty] at hemp
+      have hclopen : IsClopen (D m) := isClopen_iff_frontier_eq_empty.mpr hemp
+      rcases isClopen_iff.mp hclopen with h | h
+      · exact absurd (h ▸ hcmDm) (Set.notMem_empty _)
+      · refine hWnc ?_
+        rw [← isCompact_univ_iff]
+        have := hDcompact m (by omega)
+        rwa [h, closure_univ] at this
+    obtain ⟨w, hwfr⟩ := hfrne
+    have hwcl : w ∈ closure (D m) := hwfr.1
+    obtain ⟨w', hw'int, hw'D⟩ :=
+      _root_.mem_closure_iff.mp hwcl (interior (Kex (n + 2))) isOpen_interior (hfrint hwfr)
+    have hcmnot : c m ∉ Kex (n + 2) := fun h => hcK m (Kex.subset hm h)
+    have hpre : IsPreconnected (D m) := isPreconnected_connectedComponentIn
+    have hdisj : Disjoint (interior (Kex (n + 2))) ((Kex (n + 2))ᶜ) :=
+      disjoint_compl_right.mono_left interior_subset
+    have hnotsub : ¬ (D m ⊆ interior (Kex (n + 2)) ∪ (Kex (n + 2))ᶜ) := by
+      intro hsub
+      rcases hpre.subset_or_subset isOpen_interior
+          (Kex.isCompact (n + 2)).isClosed.isOpen_compl hdisj hsub with h | h
+      · exact hcmnot (interior_subset (h hcmDm))
+      · exact (h hw'D) (interior_subset hw'int)
+    obtain ⟨z, hzD, hznotU⟩ := Set.not_subset.mp hnotsub
+    rw [Set.mem_union, not_or] at hznotU
+    obtain ⟨hzni, hznc⟩ := hznotU
+    have hzK : z ∈ Kex (n + 2) := not_not.mp hznc
+    have hzfr : z ∈ frontier (Kex (n + 2)) := by
+      rw [(Kex.isCompact (n + 2)).isClosed.frontier_eq]
+      exact ⟨hzK, hzni⟩
+    exact ⟨z, hzD, hzfr⟩
+  choose! Dpt hDpt using hcross
+  set Y : Set W := Dpt '' R with hYdef
+  have hYsub : Y ⊆ frontier (Kex (n + 2)) := by
+    rintro _ ⟨D', hD'R, rfl⟩; exact (hDpt D' hD'R).2
+  have hInjOn : Set.InjOn Dpt R := by
+    rintro D₁ h₁ D₂ h₂ heq
+    obtain ⟨m₁, hm₁, rfl⟩ := h₁
+    obtain ⟨m₂, hm₂, rfl⟩ := h₂
+    have hw1 : Dpt (D m₁) ∈ D m₁ := (hDpt (D m₁) ⟨m₁, hm₁, rfl⟩).1
+    have hw2 : Dpt (D m₂) ∈ D m₂ := (hDpt (D m₂) ⟨m₂, hm₂, rfl⟩).1
+    have e1 : D m₁ = connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₁)) :=
+      connectedComponentIn_eq hw1
+    have e2 : D m₂ = connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₂)) :=
+      connectedComponentIn_eq hw2
+    rw [e1, e2, heq]
+  have hYinf : Y.Infinite := (Set.infinite_image_iff hInjOn).mpr hRinf
+  have hSphcpt : IsCompact (frontier (Kex (n + 2))) :=
+    (Kex.isCompact (n + 2)).of_isClosed_subset isClosed_frontier
+      (frontier_subset_closure.trans (Kex.isCompact (n + 2)).isClosed.closure_eq.subset)
+  obtain ⟨ys, hysmem, hAcc⟩ := hYinf.exists_accPt_of_subset_isCompact hSphcpt hYsub
+  have hysint : ys ∉ interior (Kex (n + 2)) := by
+    have := (Kex.isCompact (n + 2)).isClosed.frontier_eq ▸ hysmem
+    exact this.2
+  have hysF : ys ∈ (Kex (n + 1))ᶜ := fun hy =>
+    hysint (Kex.subset_interior_succ (n + 1) hy)
+  obtain ⟨N, ⟨hNo, hysN, hNconn⟩, hNF⟩ :=
+    (LocallyConnectedSpace.open_connected_basis ys).mem_iff.mp (hFopen.mem_nhds hysF)
+  have hND : N ⊆ connectedComponentIn (Kex (n + 1))ᶜ ys :=
+    hNconn.isPreconnected.subset_connectedComponentIn hysN hNF
+  have hAcc2 : AccPt ys (𝓟 (Y ∩ N)) := by
+    rw [accPt_iff_nhds] at hAcc ⊢
+    intro U hU
+    obtain ⟨w, ⟨hwU, hwY⟩, hwne⟩ := hAcc (U ∩ N) (Filter.inter_mem hU (hNo.mem_nhds hysN))
+    exact ⟨w, ⟨hwU.1, hwY, hwU.2⟩, hwne⟩
+  have hYNinf : (Y ∩ N).Infinite := Set.Infinite.of_accPt hAcc2
+  have hSub : (Y ∩ N).Subsingleton := by
+    intro w₁ hw₁ w₂ hw₂
+    obtain ⟨hw₁Y, hw₁N⟩ := hw₁
+    obtain ⟨hw₂Y, hw₂N⟩ := hw₂
+    obtain ⟨D₁, hD₁R, rfl⟩ := hw₁Y
+    obtain ⟨D₂, hD₂R, rfl⟩ := hw₂Y
+    have hd1 : Dpt D₁ ∈ D₁ := (hDpt D₁ hD₁R).1
+    have hd2 : Dpt D₂ ∈ D₂ := (hDpt D₂ hD₂R).1
+    obtain ⟨m₁, _, rfl⟩ := hD₁R
+    obtain ⟨m₂, _, rfl⟩ := hD₂R
+    have e1 : D m₁ = connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₁)) :=
+      connectedComponentIn_eq hd1
+    have e2 : D m₂ = connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₂)) :=
+      connectedComponentIn_eq hd2
+    have f1 : connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₁))
+        = connectedComponentIn (Kex (n + 1))ᶜ ys :=
+      (connectedComponentIn_eq (hND hw₁N)).symm
+    have f2 : connectedComponentIn (Kex (n + 1))ᶜ (Dpt (D m₂))
+        = connectedComponentIn (Kex (n + 1))ᶜ ys :=
+      (connectedComponentIn_eq (hND hw₂N)).symm
+    have : D m₁ = D m₂ := by rw [e1, f1, ← f2, ← e2]
+    rw [this]
+  exact hYNinf hSub.finite
+
+/-! ## Simplicity infrastructure for the pruning -/
+
+/-- A nondegenerate chart segment has distinct image endpoints. -/
+theorem _root_.Rado.PLSeg.p0_ne_p1 {O : Set X} (s : PLSeg O) (h : s.a ≠ s.b) :
+    s.p0 ≠ s.p1 := by
+  have ha : s.a ∈ s.e.target := s.htgt (left_mem_segment ℝ _ _)
+  have hb : s.b ∈ s.e.target := s.htgt (right_mem_segment ℝ _ _)
+  intro heq
+  exact h ((s.e.symm_source ▸ s.e.symm.injOn) ha hb heq)
+
+/-- **Extraction of `hadj`/`hfar` from the "meets-earlier-union-only-at-start"
+invariant.**  If an ℕ-indexed family of nondegenerate chained segments has the
+property that each segment meets the union of the earlier ones only at its start
+point, then consecutive segments meet only at their shared endpoint and segments
+at least two apart are disjoint. -/
+theorem simple_family_adj_far {O : Set X} (f : ℕ → PLSeg O)
+    (hne : ∀ i, (f i).p0 ≠ (f i).p1)
+    (hch : ∀ i, (f i).p1 = (f (i + 1)).p0)
+    (hsimp : ∀ i, (f i).img ∩ (⋃ j ∈ Finset.range i, (f j).img) ⊆ {(f i).p0}) :
+    (∀ i, (f i).img ∩ (f (i + 1)).img ⊆ {(f i).p1}) ∧
+    (∀ m n, m + 2 ≤ n → Disjoint ((f m).img) ((f n).img)) := by
+  refine ⟨?_, ?_⟩
+  · intro i
+    have hmem : (f i).img ⊆ ⋃ j ∈ Finset.range (i + 1), (f j).img :=
+      fun x hx => Set.mem_biUnion (Finset.mem_range.mpr (Nat.lt_succ_self i)) hx
+    calc (f i).img ∩ (f (i + 1)).img
+        ⊆ (f (i + 1)).img ∩ (⋃ j ∈ Finset.range (i + 1), (f j).img) := by
+          rw [Set.inter_comm]; exact Set.inter_subset_inter_right _ hmem
+      _ ⊆ {(f (i + 1)).p0} := hsimp (i + 1)
+      _ = {(f i).p1} := by rw [hch i]
+  · intro m n hmn
+    obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    have hmn' : m < n' := by omega
+    rw [Set.disjoint_left]
+    intro x hxm hxn
+    -- `x = (f (n'+1)).p0 = (f n').p1`
+    have hx1 : x ∈ ({(f (n' + 1)).p0} : Set X) := by
+      refine hsimp (n' + 1) ⟨hxn, ?_⟩
+      exact Set.mem_biUnion (Finset.mem_range.mpr (by omega)) hxm
+    rw [Set.mem_singleton_iff, ← hch n'] at hx1
+    -- now `x = (f n').p1 ∈ (f n').img ∩ (f m).img ⊆ {(f n').p0}`
+    have hxfn' : x ∈ (f n').img := hx1 ▸ (f n').p1_mem
+    have hx2 : x ∈ ({(f n').p0} : Set X) := by
+      refine hsimp n' ⟨hxfn', ?_⟩
+      exact Set.mem_biUnion (Finset.mem_range.mpr (by omega)) hxm
+    rw [Set.mem_singleton_iff] at hx2
+    exact hne n' (hx2 ▸ hx1)
+
+/-- **Simplicity of a finite chart polyline (tail-first).**  Each segment meets
+the union of the *earlier* segments only at its own start point.  This is the
+invariant maintained by the last-exit pruning; `simple_family_adj_far` turns its
+ℕ-indexed analogue into the `hadj`/`hfar` disjointness data. -/
+def SimpleList {O : Set X} (L : List (PLSeg O)) : Prop :=
+  ∀ i (h : i < L.length), L[i].img ∩ (⋃ t ∈ L.take i, t.img) ⊆ {L[i].p0}
+
+theorem simpleList_nil {O : Set X} : SimpleList ([] : List (PLSeg O)) :=
+  fun i h => absurd h (by simp)
+
+/-- Appending a segment that meets the current union only at its start preserves
+simplicity. -/
+theorem SimpleList.snoc {O : Set X} {L : List (PLSeg O)} (hL : SimpleList L)
+    {s : PLSeg O} (hs : s.img ∩ (⋃ t ∈ L, t.img) ⊆ {s.p0}) :
+    SimpleList (L ++ [s]) := by
+  intro i hi
+  rw [List.length_append, List.length_singleton] at hi
+  rcases Nat.lt_or_ge i L.length with hlt | hge
+  · -- element `i` is inside `L`
+    rw [List.getElem_append_left hlt, List.take_append_of_le_length (Nat.le_of_lt hlt)]
+    exact hL i hlt
+  · -- element `i` is the appended `s`
+    have hieq : i = L.length := by omega
+    subst hieq
+    rw [List.getElem_concat_length rfl, List.take_left]
+    exact hs
+
+/-- The image union of a polyline splits over its last segment. -/
+theorem biUnion_img_concat {O : Set X} (L : List (PLSeg O)) (s : PLSeg O) :
+    (⋃ t ∈ L ++ [s], t.img) = (⋃ t ∈ L, t.img) ∪ s.img := by
+  ext y
+  simp only [Set.mem_iUnion, List.mem_append, List.mem_singleton, Set.mem_union, exists_prop]
+  constructor
+  · rintro ⟨t, ht | rfl, hy⟩
+    · exact Or.inl ⟨t, ht, hy⟩
+    · exact Or.inr hy
+  · rintro (⟨t, ht, hy⟩ | hy)
+    · exact ⟨t, Or.inl ht, hy⟩
+    · exact ⟨s, Or.inr rfl, hy⟩
+
+/-- A segment's image is contained in the polyline's image union. -/
+theorem img_subset_biUnion {O : Set X} {L : List (PLSeg O)} {t : PLSeg O} (ht : t ∈ L) :
+    t.img ⊆ ⋃ t' ∈ L, t'.img :=
+  fun y hy => Set.mem_iUnion.mpr ⟨t, Set.mem_iUnion.mpr ⟨ht, hy⟩⟩
+
+/-- The image union of a polyline is compact. -/
+theorem biUnion_img_isCompact {O : Set X} (L : List (PLSeg O)) :
+    IsCompact (⋃ t ∈ L, t.img) := by
+  induction L with
+  | nil => simp
+  | cons s L ih =>
+    have hsplit : (⋃ t ∈ s :: L, t.img) = s.img ∪ (⋃ t ∈ L, t.img) := by
+      ext y
+      simp only [List.mem_cons, Set.mem_iUnion, Set.mem_union, exists_prop]
+      constructor
+      · rintro ⟨t, rfl | ht, hy⟩
+        · exact Or.inl hy
+        · exact Or.inr ⟨t, ht, hy⟩
+      · rintro (hy | ⟨t, ht, hy⟩)
+        · exact ⟨s, Or.inl rfl, hy⟩
+        · exact ⟨t, Or.inr ht, hy⟩
+    rw [hsplit]; exact s.img_compact.union ih
+
+/-- Dropping the last segment preserves simplicity. -/
+theorem SimpleList.of_concat {O : Set X} {L : List (PLSeg O)} {s : PLSeg O}
+    (h : SimpleList (L ++ [s])) : SimpleList L := by
+  intro i hi
+  have hi' : i < (L ++ [s]).length := by rw [List.length_append]; omega
+  have hh := h i hi'
+  rwa [List.getElem_append_left hi, List.take_append_of_le_length (Nat.le_of_lt hi)] at hh
+
+/-- In a simple polyline, the last segment meets the union of the earlier ones only
+at its start point. -/
+theorem SimpleList.last_meets {O : Set X} {L : List (PLSeg O)} {s : PLSeg O}
+    (h : SimpleList (L ++ [s])) : s.img ∩ (⋃ t ∈ L, t.img) ⊆ {s.p0} := by
+  have hlen : L.length < (L ++ [s]).length := by rw [List.length_append]; simp
+  have hh := h L.length hlen
+  rwa [List.getElem_concat_length rfl, List.take_left] at hh
+
+/-- **Last-exit truncation of a simple polyline.**  Given a simple chained polyline
+starting at `src` and a point `x` on it, there is a simple chained polyline starting
+at `src` and *ending at* `x`, whose image is contained in the original one. -/
+theorem exists_truncate {O : Set X} {src : X} :
+    ∀ {L : List (PLSeg O)}, SimpleList L → List.IsChain (fun s t => s.p1 = t.p0) L →
+      L.head?.elim True (fun s => s.p0 = src) → (∀ s ∈ L, s.a ≠ s.b) →
+      ∀ {x : X}, x ∈ (⋃ t ∈ L, t.img) →
+      ∃ L' : List (PLSeg O), SimpleList L' ∧
+        List.IsChain (fun s t => s.p1 = t.p0) L' ∧
+        L'.head?.elim True (fun s => s.p0 = src) ∧ (∀ s ∈ L', s.a ≠ s.b) ∧
+        (⋃ t ∈ L', t.img) ⊆ (⋃ t ∈ L, t.img) ∧
+        L'.getLast?.elim (x = src) (fun s => s.p1 = x) := by
+  intro L
+  induction L using List.reverseRecOn with
+  | nil => intro _ _ _ _ x hx; simp only [List.not_mem_nil, Set.iUnion_of_empty,
+      Set.iUnion_empty, Set.mem_empty_iff_false] at hx
+  | append_singleton L₀ s ih =>
+    intro hsimple hchain hstart hnd x hx
+    have hsimple₀ : SimpleList L₀ := hsimple.of_concat
+    have hchain₀ : List.IsChain (fun s t => s.p1 = t.p0) L₀ :=
+      (List.isChain_append.mp hchain).1
+    have hconn : ∀ g ∈ L₀.getLast?, g.p1 = s.p0 := by
+      intro g hg
+      exact (List.isChain_append.mp hchain).2.2 g hg s (by simp)
+    have hstart₀ : L₀.head?.elim True (fun t => t.p0 = src) := by
+      cases L₀ with
+      | nil => trivial
+      | cons a t => simpa using hstart
+    have hnd₀ : ∀ t ∈ L₀, t.a ≠ t.b := fun t ht => hnd t (List.mem_append_left _ ht)
+    have hlast_meets : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hsimple.last_meets
+    rw [biUnion_img_concat] at hx
+    by_cases hxs : x ∈ s.img
+    · -- the point is on the last segment: cut it here
+      obtain ⟨d, hd, hdx⟩ := hxs
+      by_cases hda : d = s.a
+      · -- degenerate cut at the start of `s`: drop `s`
+        refine ⟨L₀, hsimple₀, hchain₀, hstart₀, hnd₀, ?_, ?_⟩
+        · rw [biUnion_img_concat]; exact Set.subset_union_left
+        · have hxp0 : x = s.p0 := by rw [← hdx, hda]; rfl
+          cases hlast : L₀.getLast? with
+          | none => simp only [hlast, Option.elim]
+                    have hL0nil : L₀ = [] := List.getLast?_eq_none_iff.mp hlast
+                    subst hL0nil
+                    simpa [hxp0] using hstart
+          | some g => simp only [hlast, Option.elim]
+                      rw [hxp0]; exact hconn g hlast
+      · -- proper cut inside `s`: keep `s.splitL d`
+        have hsL : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hlast_meets
+        have hsplit_meets : (s.splitL d hd).img ∩ (⋃ t ∈ L₀, t.img) ⊆ {(s.splitL d hd).p0} := by
+          intro y hy
+          exact hsL ⟨s.splitL_img_sub d hd hy.1, hy.2⟩
+        refine ⟨L₀ ++ [s.splitL d hd], hsimple₀.snoc hsplit_meets, ?_, ?_, ?_, ?_, ?_⟩
+        · refine List.IsChain.append hchain₀ (List.IsChain.singleton _) ?_
+          intro g hg y hy
+          rw [List.head?_singleton, Option.mem_some_iff] at hy
+          rw [← hy]
+          exact hconn g hg
+        · cases L₀ with
+          | nil => simp only [List.nil_append, List.head?_cons, Option.elim]
+                   have : (s.splitL d hd).p0 = s.p0 := rfl
+                   rw [this]; simpa using hstart
+          | cons a t => simpa using hstart₀
+        · intro t ht
+          rcases List.mem_append.mp ht with ht' | ht'
+          · exact hnd₀ t ht'
+          · rw [List.mem_singleton] at ht'; subst ht'
+            exact fun h => hda h.symm
+        · rw [biUnion_img_concat, biUnion_img_concat]
+          exact Set.union_subset_union_right _ (s.splitL_img_sub d hd)
+        · simp only [List.getLast?_concat, Option.elim]
+          show (s.splitL d hd).p1 = x
+          rw [PLSeg.splitL_p1]; exact hdx
+    · -- the point is on an earlier segment: recurse
+      have hx0 : x ∈ (⋃ t ∈ L₀, t.img) := hx.resolve_right hxs
+      obtain ⟨L', h1, h2, h3, h4, h5, h6⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
+      refine ⟨L', h1, h2, h3, h4, ?_, h6⟩
+      rw [biUnion_img_concat]
+      exact h5.trans Set.subset_union_left
+
+/-- **Last-exit point of a chart segment from a compact set.**  If a straight
+chart segment `σ` starts inside a compact set `K`, there is a *last* parameter
+`T ∈ [0,1]` at which the segment lies in `K`: `σ` at `T` is in `K`, and for every
+parameter beyond `T` the segment has left `K`.  (The supremum of the hit set.) -/
+theorem exists_last_exit [T2Space X] {O : Set X} (σ : PLSeg O) {K : Set X}
+    (hK : IsCompact K)
+    (h0 : σ.e.symm (AffineMap.lineMap σ.a σ.b (0 : ℝ)) ∈ K) :
+    ∃ T ∈ Set.Icc (0 : ℝ) 1,
+      σ.e.symm (AffineMap.lineMap σ.a σ.b T) ∈ K ∧
+      ∀ u ∈ Set.Ioc T 1, σ.e.symm (AffineMap.lineMap σ.a σ.b u) ∉ K := by
+  set g : ℝ → X := fun u => σ.e.symm (AffineMap.lineMap σ.a σ.b u) with hg
+  have hmaps : Set.MapsTo (AffineMap.lineMap σ.a σ.b) (Set.Icc (0 : ℝ) 1) σ.e.target :=
+    fun u hu => σ.htgt (lineMap_mem_segment (𝕜 := ℝ) σ.a σ.b hu)
+  have hgcont : ContinuousOn g (Set.Icc (0 : ℝ) 1) :=
+    σ.e.continuousOn_symm.comp (by fun_prop) hmaps
+  set H : Set ℝ := Set.Icc (0 : ℝ) 1 ∩ g ⁻¹' K with hH
+  have hHcl : IsClosed H := hgcont.preimage_isClosed_of_isClosed isClosed_Icc hK.isClosed
+  have hHne : H.Nonempty := ⟨0, ⟨le_refl 0, zero_le_one⟩, h0⟩
+  have hHbdd : BddAbove H := bddAbove_Icc.mono Set.inter_subset_left
+  have hTmem : sSup H ∈ H := hHcl.csSup_mem hHne hHbdd
+  refine ⟨sSup H, hTmem.1, hTmem.2, ?_⟩
+  intro u hu hmem
+  have huH : u ∈ H := ⟨⟨le_trans hTmem.1.1 (le_of_lt hu.1), hu.2⟩, hmem⟩
+  exact absurd (le_csSup hHbdd huH) (not_le.mpr hu.1)
+
+/-- The residual tail `σ.splitR cT` beyond the last-exit parameter `T` meets the
+compact set `K` only at the exit point itself. -/
+theorem splitR_meets_last_exit {O : Set X} (σ : PLSeg O) {T : ℝ} (hT1 : T ≤ 1)
+    (hcT : AffineMap.lineMap σ.a σ.b T ∈ segment ℝ σ.a σ.b) {K : Set X}
+    (hlast : ∀ u ∈ Set.Ioc T 1, σ.e.symm (AffineMap.lineMap σ.a σ.b u) ∉ K) :
+    (σ.splitR (AffineMap.lineMap σ.a σ.b T) hcT).img ∩ K ⊆
+      {σ.e.symm (AffineMap.lineMap σ.a σ.b T)} := by
+  rintro y ⟨hyimg, hyK⟩
+  obtain ⟨v, hv, rfl⟩ := hyimg
+  rw [show (σ.splitR (AffineMap.lineMap σ.a σ.b T) hcT).b = σ.b from rfl,
+    show (σ.splitR (AffineMap.lineMap σ.a σ.b T) hcT).a = AffineMap.lineMap σ.a σ.b T from rfl,
+    segment_eq_image_lineMap] at hv
+  obtain ⟨r, hr, rfl⟩ := hv
+  set u : ℝ := AffineMap.lineMap T (1 : ℝ) r with hu
+  have hval : AffineMap.lineMap (AffineMap.lineMap σ.a σ.b T) σ.b r
+      = AffineMap.lineMap σ.a σ.b u := by
+    rw [hu, AffineMap.apply_lineMap, AffineMap.lineMap_apply_one]
+  have humem : u ∈ Set.Icc T 1 := by
+    rw [← segment_eq_Icc hT1]; exact lineMap_mem_segment (𝕜 := ℝ) T 1 hr
+  rw [hval] at hyK ⊢
+  rcases eq_or_lt_of_le humem.1 with huT | huT
+  · rw [← huT]; exact Set.mem_singleton_iff.mpr rfl
+  · exact absurd hyK (hlast u ⟨huT, humem.2⟩)
+
+/-- **P1: single last-exit prune step.**  Appending one straight raw segment `σ`
+(starting where the accumulated simple arc ends) to a simple chained polyline, then
+pruning by the last-exit trick, yields a simple chained polyline from the same start
+to `σ.p1`.  The material only grows by (part of) `σ.img`, and every surviving
+segment's image lies in the old union or in `σ.img`. -/
+theorem prune_step [T2Space X] {O : Set X} {src p : X}
+    {L : List (PLSeg O)} (hsimple : SimpleList L)
+    (hchain : List.IsChain (fun s t => s.p1 = t.p0) L)
+    (hstart : L.head?.elim True (fun s => s.p0 = src)) (hnd : ∀ s ∈ L, s.a ≠ s.b)
+    (hend : L.getLast?.elim (src = p) (fun s => s.p1 = p))
+    (σ : PLSeg O) (hσ0 : σ.p0 = p) :
+    ∃ L' : List (PLSeg O), SimpleList L' ∧
+      List.IsChain (fun s t => s.p1 = t.p0) L' ∧
+      L'.head?.elim True (fun s => s.p0 = src) ∧ (∀ s ∈ L', s.a ≠ s.b) ∧
+      L'.getLast?.elim (src = σ.p1) (fun s => s.p1 = σ.p1) ∧
+      (⋃ t ∈ L', t.img) ⊆ (⋃ t ∈ L, t.img) ∪ σ.img ∧
+      (∀ s ∈ L', s.img ⊆ (⋃ t ∈ L, t.img) ∨ s.img ⊆ σ.img) := by
+  set K : Set X := ⋃ t ∈ L, t.img with hKdef
+  by_cases hdeg : σ.p0 = σ.p1
+  · -- degenerate raw segment: keep the arc unchanged
+    have hp : p = σ.p1 := hσ0.symm.trans hdeg
+    refine ⟨L, hsimple, hchain, hstart, hnd, ?_, Set.subset_union_left,
+      fun s hs => Or.inl (img_subset_biUnion hs)⟩
+    rw [hp] at hend; exact hend
+  -- nondegenerate raw segment
+  have hσab : σ.a ≠ σ.b := by
+    intro h; exact hdeg (by show σ.e.symm σ.a = σ.e.symm σ.b; rw [h])
+  by_cases hLnil : L = []
+  · -- empty accumulator: start the arc with `σ`
+    subst hLnil
+    have hsp : src = p := by simpa using hend
+    refine ⟨[σ], (simpleList_nil.snoc (by simp)), List.IsChain.singleton σ, ?_,
+      ?_, ?_, ?_, ?_⟩
+    · show σ.p0 = src; rw [hσ0, hsp]
+    · intro s hs; rw [List.mem_singleton] at hs; subst hs; exact hσab
+    · show σ.p1 = σ.p1; rfl
+    · simp
+    · intro s hs; rw [List.mem_singleton] at hs; subst hs; exact Or.inr (le_refl _)
+  -- nonempty accumulator: last-exit prune
+  have hKcompact : IsCompact K := biUnion_img_isCompact L
+  have hg : L.getLast hLnil ∈ L := List.getLast_mem hLnil
+  have hgl : L.getLast? = some (L.getLast hLnil) := List.getLast?_eq_some_getLast hLnil
+  rw [hgl] at hend
+  have hpK : p ∈ K := hend ▸ (img_subset_biUnion hg (L.getLast hLnil).p1_mem)
+  have h0 : σ.e.symm (AffineMap.lineMap σ.a σ.b (0 : ℝ)) ∈ K := by
+    rw [AffineMap.lineMap_apply_zero]; show σ.p0 ∈ K; rw [hσ0]; exact hpK
+  obtain ⟨T, hT, hcTK, hlast⟩ := exists_last_exit σ hKcompact h0
+  have hcTseg : AffineMap.lineMap σ.a σ.b T ∈ segment ℝ σ.a σ.b :=
+    lineMap_mem_segment (𝕜 := ℝ) σ.a σ.b hT
+  set x : X := σ.e.symm (AffineMap.lineMap σ.a σ.b T) with hxdef
+  have hxK : x ∈ ⋃ t ∈ L, t.img := hcTK
+  obtain ⟨L', hS', hC', hH', hN', hU', hE'⟩ :=
+    exists_truncate (src := src) hsimple hchain hstart hnd hxK
+  have hU'K : (⋃ t ∈ L', t.img) ⊆ K := hU'
+  rcases eq_or_lt_of_le hT.2 with hTeq | hTlt
+  · -- the whole raw segment is absorbed: `L'` already ends at `σ.p1`
+    have hxp1 : x = σ.p1 := by
+      rw [hxdef, hTeq, AffineMap.lineMap_apply_one]; rfl
+    refine ⟨L', hS', hC', hH', hN', ?_, hU'.trans Set.subset_union_left,
+      fun s hs => Or.inl ((img_subset_biUnion hs).trans hU'K)⟩
+    rw [hxp1] at hE'
+    cases hgl' : L'.getLast? with
+    | none => simp only [hgl', Option.elim] at hE' ⊢; exact hE'.symm
+    | some g => simp only [hgl', Option.elim] at hE' ⊢; exact hE'
+  · -- genuine residual tail: append `σ.splitR`
+    set σ' : PLSeg O := σ.splitR (AffineMap.lineMap σ.a σ.b T) hcTseg with hσ'def
+    have hσ'0 : σ'.p0 = x := rfl
+    have hσ'1 : σ'.p1 = σ.p1 := rfl
+    have hmeetK : σ'.img ∩ K ⊆ {x} :=
+      splitR_meets_last_exit σ hT.2 hcTseg hlast
+    have hmeetL' : σ'.img ∩ (⋃ t ∈ L', t.img) ⊆ {σ'.p0} := by
+      rw [hσ'0]
+      exact fun y hy => hmeetK ⟨hy.1, hU'K hy.2⟩
+    have hconn : ∀ g ∈ L'.getLast?, g.p1 = σ'.p0 := by
+      intro g hg'
+      rw [hσ'0]
+      have := hE'
+      rw [(by exact hg' : L'.getLast? = some g)] at this
+      exact this
+    refine ⟨L' ++ [σ'], hS'.snoc hmeetL', ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · refine List.IsChain.append hC' (List.IsChain.singleton _) ?_
+      intro g hg' y hy
+      rw [List.head?_singleton, Option.mem_some_iff] at hy
+      rw [← hy]; exact hconn g hg'
+    · rcases eq_or_ne L' [] with hL'nil | hL'ne
+      · subst hL'nil
+        show σ'.p0 = src
+        rw [hσ'0]; simpa using hE'
+      · rw [List.head?_append_of_ne_nil L' hL'ne]; exact hH'
+    · intro s hs
+      rcases List.mem_append.mp hs with hs' | hs'
+      · exact hN' s hs'
+      · rw [List.mem_singleton] at hs'; subst hs'
+        show AffineMap.lineMap σ.a σ.b T ≠ σ.b
+        intro h
+        rcases (AffineMap.lineMap_eq_right_iff (k := ℝ) (V1 := ℂ)).mp h with hc | hc
+        · exact hσab hc
+        · exact absurd hc (ne_of_lt hTlt)
+    · simp only [List.getLast?_concat, Option.elim]; exact hσ'1
+    · rw [biUnion_img_concat]
+      refine Set.union_subset (hU'.trans Set.subset_union_left) ?_
+      exact (σ.splitR_img_sub _ hcTseg).trans Set.subset_union_right
+    · intro s hs
+      rcases List.mem_append.mp hs with hs' | hs'
+      · exact Or.inl ((img_subset_biUnion hs').trans hU'K)
+      · rw [List.mem_singleton] at hs'; subst hs'
+        exact Or.inr (σ.splitR_img_sub _ hcTseg)
+
 /-- **The pruning obligation (P1–P3), frozen.**  A noncompact complement end
 `Z = connectedComponentIn (closure V)ᶜ x₀` admits, from any base point `z₀ ∈ Z`,
 `SimpleRayData` — the embedded, escaping, shell-separated chart-polyline family.
@@ -545,6 +1062,102 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     (hZnc : ¬ IsCompact (connectedComponentIn (closure V)ᶜ x₀))
     {z₀ : X} (hz₀ : z₀ ∈ connectedComponentIn (closure V)ᶜ x₀) :
     Nonempty (SimpleRayData (connectedComponentIn (closure V)ᶜ x₀) z₀) := by
+  classical
+  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  haveI : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
+  set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
+  have hZopen : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
+  have hZconn : IsConnected Z := ⟨⟨z₀, hz₀⟩, isPreconnected_connectedComponentIn⟩
+  -- subspace instances on `↥Z`
+  haveI hWlc : LocallyCompactSpace ↥Z := hZopen.locallyCompactSpace
+  haveI hWsc : SecondCountableTopology ↥Z := inferInstance
+  haveI hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
+  haveI hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
+  haveI hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
+  have hWncs : ¬ CompactSpace ↥Z := fun hc => hZnc (isCompact_iff_compactSpace.mpr hc)
+  -- compact exhaustion of `↥Z` with `Kex 0 = ∅`
+  set Kex : CompactExhaustion ↥Z := (default : CompactExhaustion ↥Z).shiftr with hKexdef
+  have hK0 : (Kex 0 : Set ↥Z) = ∅ := rfl
+  have hbase0 : (⟨z₀, hz₀⟩ : ↥Z) ∉ Kex 0 := by rw [hK0]; exact Set.notMem_empty _
+  have hbase : ¬ IsCompact (closure (connectedComponentIn (Kex 0)ᶜ (⟨z₀, hz₀⟩ : ↥Z))) := by
+    rw [hK0, compl_empty, connectedComponentIn_univ,
+      PreconnectedSpace.connectedComponent_eq_univ, closure_univ, isCompact_univ_iff]
+    exact hWncs
+  -- the decreasing chain of noncompact-closure complement components
+  let A : (m : ℕ) →
+      {x : ↥Z // x ∉ Kex m ∧ ¬ IsCompact (closure (connectedComponentIn (Kex m)ᶜ x))} :=
+    fun m => Nat.rec
+      (motive := fun m =>
+        {x : ↥Z // x ∉ Kex m ∧ ¬ IsCompact (closure (connectedComponentIn (Kex m)ᶜ x))})
+      ⟨⟨z₀, hz₀⟩, hbase0, hbase⟩
+      (fun k ih => ⟨(exists_noncompact_subcomponent Kex ih.2.1 ih.2.2).choose,
+        (exists_noncompact_subcomponent Kex ih.2.1 ih.2.2).choose_spec.1,
+        (exists_noncompact_subcomponent Kex ih.2.1 ih.2.2).choose_spec.2.2⟩)
+      m
+  set a : ℕ → ↥Z := fun m => (A m).1 with hadef
+  have ha_not : ∀ m, a m ∉ Kex m := fun m => (A m).2.1
+  have hlink : ∀ m, a (m + 1) ∈ connectedComponentIn (Kex m)ᶜ (a m) := fun m =>
+    (exists_noncompact_subcomponent Kex (A m).2.1 (A m).2.2).choose_spec.2.1
+  -- the components in `↥Z`
+  set C : ℕ → Set ↥Z := fun m => connectedComponentIn (Kex m)ᶜ (a m) with hCdef
+  have hCopen : ∀ m, IsOpen (C m) := fun m =>
+    ((Kex.isCompact m).isClosed.isOpen_compl).connectedComponentIn
+  have hanC : ∀ m, a m ∈ C m := fun m => mem_connectedComponentIn (ha_not m)
+  have hCconn : ∀ m, IsConnected (C m) := fun m => ⟨⟨a m, hanC m⟩, isPreconnected_connectedComponentIn⟩
+  have hCsub : ∀ m, C m ⊆ (Kex m)ᶜ := fun m => connectedComponentIn_subset _ _
+  have haC1 : ∀ m, a (m + 1) ∈ C m := hlink
+  -- image sets in `X`: `Om m := Subtype.val '' C m`, open and preconnected in `X`
+  have hemb : IsOpenEmbedding (Subtype.val : ↥Z → X) := hZopen.isOpenEmbedding_subtypeVal
+  set Om : ℕ → Set X := fun m => Subtype.val '' (C m) with hOmdef
+  have hOmopen : ∀ m, IsOpen (Om m) := fun m => hemb.isOpenMap _ (hCopen m)
+  have hOmpre : ∀ m, IsPreconnected (Om m) := fun m =>
+    (hCconn m).isPreconnected.image _ continuous_subtype_val.continuousOn
+  have hOmsubZ : ∀ m, Om m ⊆ Z := by
+    intro m
+    rintro _ ⟨y, _, rfl⟩; exact y.2
+  have haOm : ∀ m, (a m : X) ∈ Om m := fun m => ⟨a m, hanC m, rfl⟩
+  have ha1Om : ∀ m, (a (m + 1) : X) ∈ Om m := fun m => ⟨a (m + 1), haC1 m, rfl⟩
+  -- per-stage raw chart-polyline chains from `a m` to `a (m+1)` inside `Om m`
+  have hrawchain : ∀ m, Relation.ReflTransGen (CStep (Om m)) (a m : X) (a (m + 1) : X) :=
+    fun m => exists_cStep_chain (hOmopen m) (hOmpre m) (haOm m) (ha1Om m)
+  -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
+  --
+  -- The SETUP above is complete and sorry-free.  The context now provides, from any
+  -- base point `z₀ ∈ Z`, the decreasing escaping chain of open connected sets
+  -- `Om m = Subtype.val '' C m ⊆ Z` (`hOmopen`, `hOmpre`, `hOmsubZ`) with
+  -- `C m ⊆ (Kex m)ᶜ` (`hCsub`), endpoints `(a m : X) ∈ Om m`, `(a (m+1) : X) ∈ Om m`
+  -- (`haOm`, `ha1Om`), and, crucially, a *raw* finite chart-polyline chain
+  -- `hrawchain m : Relation.ReflTransGen (CStep (Om m)) (a m) (a (m+1))` inside each
+  -- `Om m`.  Turning `hrawchain m` into a `List (PLSeg (Om m))` is
+  -- `Rado.CStep.toPLSeg` + `List.exists_isChain_cons_of_relationReflTransGen`.
+  --
+  -- STATUS: **P1 is complete and sorry-free** (`prune_step`, built from
+  -- `exists_last_exit` + `exists_truncate` + `SimpleList.snoc`): appending one raw
+  -- segment to a simple accumulated arc and last-exit–pruning yields a simple arc to
+  -- the new endpoint, with every surviving segment's image in the old union or in the
+  -- raw segment's image.  The extraction `simple_family_adj_far` (with
+  -- `Rado.PLSeg.p0_ne_p1`) turns the ℕ-indexed "meets-earlier-union-only-at-start"
+  -- invariant into `hab`/`hadj`/`hfar`.
+  --
+  -- What remains (the single `sorry`) is the assembly:
+  -- * (P2) the ℕ-limit across stages.  Fold `prune_step` over each stage's raw list
+  --   (from `hrawchain m` via `Rado.CStep.toPLSeg` +
+  --   `List.exists_isChain_cons_of_relationReflTransGen`), producing accumulated arcs
+  --   `Acc n` from `z₀` to `a n`.  Each fixed segment index STABILIZES: stage-`n`
+  --   material lies in `Om n`, and since `Om` is decreasing with `C n ⊆ (Kex n)ᶜ`
+  --   (`hCsub`) and `Kex` exhausts `↥Z`, for `n` large `Om n` is disjoint from any
+  --   fixed compact, so the last-exit truncation at stage `n` never reaches an early
+  --   segment.  The stable limit is the ℕ-family; its `hsimp` (⇒ `hadj`/`hfar`),
+  --   `hne`, `hchain`, `hstart`, and `hesc` follow, and `htgt`/`hZ`/`he` come from each
+  --   `PLSeg` (with `hOmsubZ : Om m ⊆ Z`).
+  -- * (P3) `hshell` from simplicity + local finiteness + `MetrizableSpace X`
+  --   (from `[T2Space X]` + `SecondCountableTopology X` via Urysohn) and
+  --   `Disjoint.exists_thickenings`.
+  --
+  -- P2's stabilized ℕ-limit is the arcwise-connectedness / loop-erasure bookkeeping
+  -- absent from mathlib at this pin; it is isolated here as the single remaining
+  -- `sorry`.  All of P1 and the SETUP above are sorry-free.
   sorry
 
 /-- **An embedded, proper, chart-polyline ray exists in a noncompact end
