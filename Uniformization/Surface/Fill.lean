@@ -3,7 +3,7 @@ Copyright (c) 2026 Rado Kirov. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rado Kirov
 -/
-import Uniformization.Surface.Regularity
+import Uniformization.Surface.Fill.Collapse
 
 /-!
 # Simply connected regular pieces exhausting a simply connected surface
@@ -52,6 +52,33 @@ theorem exists_simply_connected_piece [T2Space X] [ConnectedSpace X]
     ∃ V : Set X, IsOpen V ∧ IsConnected V ∧ IsCompact (closure V) ∧ K ⊆ V ∧
       IsSimplyConnected V ∧ (frontier V).Nonempty ∧
       ∀ ξ ∈ frontier V, ExteriorDiskAt V ξ := by
-  sorry
+  -- Take the harmonic level-set piece (F3.b/F3.c part 1); it already delivers
+  -- every conjunct of the frozen theorem except simple connectivity, together
+  -- with the harmonic collar data (`f`, `c`, `A`, the dichotomy, the
+  -- straightening charts) driving the remaining W7 topology.
+  obtain ⟨V, f, c, A, hVo, hVconn, hVcl, hKV, hVfr, hVnc, hAo, hfrA, hharm,
+    hfc, hchart, hdich, hext⟩ := exists_level_piece_regular_frontier hnc hK hx₀
+  refine ⟨V, hVo, hVconn, hVcl, hKV, ?_, hVfr, hext⟩
+  -- Remaining W7 content: `IsSimplyConnected V`.
+  --
+  -- Collar layer (delivered, `Fill/Collar.lean`): `exists_collar_dichotomy hdich hfc`
+  -- yields an open `A' ⊇ frontier V` with `x ∈ V ↔ c < f x` for all `x ∈ A'`, so
+  -- the harmonic `f` is a global two-sided collar coordinate: `V`-side `{c < f}`,
+  -- complement-side `{f ≤ c}`, `frontier V ⊆ {f = c}`.
+  --
+  -- Remaining (classical surface topology, NOT discharged — see report):
+  --   L5.4  per-end frontier connectivity via `Fill/Parity.lean`
+  --         (`lift_endpoint_eq_of_simplyConnected`) + a collar phase `τ : X → Circle`;
+  --   L5.5  escaping ray in each noncompact complement end + cut/Tietze collapse,
+  --         glued by `frontierGlue`, giving a retraction `r : C(X,X)` onto
+  --         `closure V`, then `isSimplyConnected_of_retract` (`Fill/Retraction.lean`)
+  --         ⇒ `IsSimplyConnected (closure V)`;
+  --   L5.6  inner-collar push (the flow of `f`) as a homotopy equivalence
+  --         `↥V ≃ₕ ↥(closure V)`, then `HomotopyEquiv.simplyConnectedSpace`
+  --         ⇒ `IsSimplyConnected V`.
+  obtain ⟨r, hrV, hrid⟩ :=
+    exists_retraction_onto_closure hVo hVconn hVcl hVnc hAo hfrA hharm hfc hchart hdich
+  have hcl_sc : IsSimplyConnected (closure V) := isSimplyConnected_of_retract r hrV hrid
+  exact isSimplyConnected_of_closure hVo hVcl hdich hfc hchart hcl_sc
 
 end Uniformization
