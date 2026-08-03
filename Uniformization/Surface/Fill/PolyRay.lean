@@ -837,13 +837,30 @@ theorem exists_truncate {O : Set X} {src : X} :
         -- that the cut point `x` misses survives verbatim in `L'`.  This is the clause
         -- P2's stabilisation runs on — image containment alone does not compose across
         -- stages, but "the early segments are literally still there" does.
-        (∀ {L₁ : List (PLSeg O)}, L₁ <+: L → (∀ t ∈ L₁, x ∉ t.img) → L₁ <+: L') := by
+        (∀ {L₁ : List (PLSeg O)}, L₁ <+: L → (∀ t ∈ L₁, x ∉ t.img) → L₁ <+: L') ∧
+        -- **Index-wise shrinking.**  Past a prefix the cut misses, the segment at that
+        -- index only shrinks: it is the original, or a `splitL` of it.  (`x ≠ s.p0`
+        -- excludes the cut landing exactly at the prefix's end, where `s` is dropped.)
+        -- P2 needs this so the escape argument can be applied to ONE fixed compact.
+        (∀ {L₁ L₂ : List (PLSeg O)} {w : PLSeg O}, L = L₁ ++ w :: L₂ →
+          (∀ t ∈ L₁, x ∉ t.img) → x ≠ w.p0 →
+          ∀ u ∈ (L'.drop L₁.length).head?, u.img ⊆ w.img) := by
   intro L
   induction L using List.reverseRecOn with
   | nil => intro _ _ _ _ x hx; simp only [List.not_mem_nil, Set.iUnion_of_empty,
       Set.iUnion_empty, Set.mem_empty_iff_false] at hx
   | append_singleton L₀ s ih =>
     intro hsimple hchain hstart hnd x hx
+    -- `L₀ ++ [s] = L₁ ++ w :: L₂` puts `w` either at the peeled-off end or inside `L₀`.
+    have hdecomp : ∀ {L₁ L₂ : List (PLSeg O)} {w : PLSeg O}, L₀ ++ [s] = L₁ ++ w :: L₂ →
+        (L₁ = L₀ ∧ w = s) ∨ (∃ L₂', L₀ = L₁ ++ w :: L₂') := by
+      intro L₁ L₂ w h
+      rcases List.eq_nil_or_concat L₂ with rfl | ⟨L₂', b, rfl⟩
+      · obtain ⟨h1, h2⟩ := List.append_inj' h (by simp)
+        exact Or.inl ⟨h1.symm, by simpa using h2.symm⟩
+      · refine Or.inr ⟨L₂', ?_⟩
+        simp only [List.concat_eq_append, ← List.cons_append, ← List.append_assoc] at h
+        exact (List.append_inj' h (by simp)).1
     have hsimple₀ : SimpleList L₀ := hsimple.of_concat
     have hchain₀ : List.IsChain (fun s t => s.p1 = t.p0) L₀ :=
       (List.isChain_append.mp hchain).1
@@ -862,7 +879,7 @@ theorem exists_truncate {O : Set X} {src : X} :
       obtain ⟨d, hd, hdx⟩ := hxs
       by_cases hda : d = s.a
       · -- degenerate cut at the start of `s`: drop `s`
-        refine ⟨L₀, hsimple₀, hchain₀, hstart₀, hnd₀, ?_, ?_, ?_⟩
+        refine ⟨L₀, hsimple₀, hchain₀, hstart₀, hnd₀, ?_, ?_, ?_, ?_⟩
         · rw [biUnion_img_concat]; exact Set.subset_union_left
         · have hxp0 : x = s.p0 := by rw [← hdx, hda]; rfl
           cases hlast : L₀.getLast? with
@@ -879,12 +896,17 @@ theorem exists_truncate {O : Set X} {src : X} :
             exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
               (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
           · exact hpre'
+        · intro L₁ L₂ w hL hmiss hne u hu
+          rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
+          · exact absurd (show x = w.p0 by rw [hws, ← hdx, hda]; rfl) hne
+          · rw [hL₀, List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
+            exact hu ▸ subset_rfl
       · -- proper cut inside `s`: keep `s.splitL d`
         have hsL : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hlast_meets
         have hsplit_meets : (s.splitL d hd).img ∩ (⋃ t ∈ L₀, t.img) ⊆ {(s.splitL d hd).p0} := by
           intro y hy
           exact hsL ⟨s.splitL_img_sub d hd hy.1, hy.2⟩
-        refine ⟨L₀ ++ [s.splitL d hd], hsimple₀.snoc hsplit_meets, ?_, ?_, ?_, ?_, ?_, ?_⟩
+        refine ⟨L₀ ++ [s.splitL d hd], hsimple₀.snoc hsplit_meets, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
         · refine List.IsChain.append hchain₀ (List.IsChain.singleton _) ?_
           intro g hg y hy
           rw [List.head?_singleton, Option.mem_some_iff] at hy
@@ -913,10 +935,18 @@ theorem exists_truncate {O : Set X} {src : X} :
             exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
               (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
           · exact hpre'.trans (List.prefix_append _ _)
+        · intro L₁ L₂ w hL hmiss hne u hu
+          rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
+          · subst hL₁
+            rw [List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
+            exact hu ▸ (hws ▸ s.splitL_img_sub d hd)
+          · rw [hL₀, List.append_assoc, List.drop_left, List.cons_append,
+              List.head?_cons, Option.mem_some_iff] at hu
+            exact hu ▸ subset_rfl
     · -- the point is on an earlier segment: recurse
       have hx0 : x ∈ (⋃ t ∈ L₀, t.img) := hx.resolve_right hxs
-      obtain ⟨L', h1, h2, h3, h4, h5, h6, h7⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
-      refine ⟨L', h1, h2, h3, h4, ?_, h6, ?_⟩
+      obtain ⟨L', h1, h2, h3, h4, h5, h6, h7, h8⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
+      refine ⟨L', h1, h2, h3, h4, ?_, h6, ?_, ?_⟩
       · rw [biUnion_img_concat]
         exact h5.trans Set.subset_union_left
       · -- Here `x` lies in `⋃ L₀`, so a prefix missing `x` cannot be all of `L₀ ++ [s]`
@@ -927,6 +957,12 @@ theorem exists_truncate {O : Set X} {src : X} :
         · obtain ⟨t, ht, hxt⟩ := Set.mem_iUnion₂.mp hx0
           exact absurd hxt (hmiss t (List.mem_append_left _ ht))
         · exact h7 hpre' hmiss
+      · intro L₁ L₂ w hL hmiss hne u hu
+        rcases hdecomp hL with ⟨hL₁, _⟩ | ⟨L₂', hL₀⟩
+        · subst hL₁
+          obtain ⟨v, hv, hxv⟩ := Set.mem_iUnion₂.mp hx0
+          exact absurd hxv (hmiss v hv)
+        · exact h8 hL₀ hmiss hne u hu
 
 /-- **Last-exit point of a chart segment from a compact set.**  If a straight
 chart segment `σ` starts inside a compact set `K`, there is a *last* parameter
@@ -1034,7 +1070,7 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
     lineMap_mem_segment (𝕜 := ℝ) σ.a σ.b hT
   set x : X := σ.e.symm (AffineMap.lineMap σ.a σ.b T) with hxdef
   have hxK : x ∈ ⋃ t ∈ L, t.img := hcTK
-  obtain ⟨L', hS', hC', hH', hN', hU', hE', hP'⟩ :=
+  obtain ⟨L', hS', hC', hH', hN', hU', hE', hP', hShr'⟩ :=
     exists_truncate (src := src) hsimple hchain hstart hnd hxK
   have hU'K : (⋃ t ∈ L', t.img) ⊆ K := hU'
   rcases eq_or_lt_of_le hT.2 with hTeq | hTlt
