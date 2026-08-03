@@ -1095,6 +1095,49 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
       · rw [List.mem_singleton] at hs'; subst hs'
         exact Or.inr (σ.splitR_img_sub _ hcTseg)
 
+/-! ### P2 step 0: the accumulated-arc package
+
+The stage recursion carries six invariants at once.  Bundling them keeps the
+`Nat.rec` in `nonempty_simpleRayData` readable and lets `prune_chain` be stated as
+an endomorphism `ArcTo src p → ArcTo src q`. -/
+
+/-- A simple, chained, nondegenerate polyline from `src` to `p` inside `O`. -/
+structure ArcTo (O : Set X) (src p : X) where
+  /-- The underlying segment list. -/
+  L : List (PLSeg O)
+  /-- Successive segments meet earlier ones only at the shared start. -/
+  simple : SimpleList L
+  /-- Consecutive segments chain. -/
+  chain : List.IsChain (fun s t => s.p1 = t.p0) L
+  /-- The arc starts at `src` (vacuous when empty). -/
+  head : L.head?.elim True (fun s => s.p0 = src)
+  /-- Every segment is nondegenerate in its chart. -/
+  nd : ∀ s ∈ L, s.a ≠ s.b
+  /-- The arc ends at `p` (degenerating to `src = p` when empty). -/
+  fin : L.getLast?.elim (src = p) (fun s => s.p1 = p)
+
+namespace ArcTo
+
+variable {O : Set X} {src p : X}
+
+/-- The material swept by the arc. -/
+def img (A : ArcTo O src p) : Set X := ⋃ t ∈ A.L, t.img
+
+theorem img_isCompact (A : ArcTo O src p) : IsCompact A.img := biUnion_img_isCompact A.L
+
+/-- The empty arc, from `src` to itself. -/
+def nil (O : Set X) (src : X) : ArcTo O src src where
+  L := []
+  simple := simpleList_nil
+  chain := List.IsChain.nil
+  head := by simp
+  nd := by simp
+  fin := by simp
+
+@[simp] theorem nil_L (O : Set X) (src : X) : (nil O src).L = [] := rfl
+
+end ArcTo
+
 /-! ### P2 step 1: raw chains as segment lists, and the per-stage fold -/
 
 /-- **A `CStep` chain, unfolded into a list of segments.**  No nondegeneracy is claimed:
@@ -1124,6 +1167,24 @@ theorem exists_plseg_list {O : Set X} {x y : X}
         cases hw : (hd :: tl).getLast? with
         | none => exact absurd (List.getLast?_eq_none_iff.mp hw) (by simp)
         | some w => rw [hw] at hRlast; simpa using hRlast
+
+/-- A stage's raw chain, re-based into the ambient set `Z` while remembering that its
+material stayed inside the (smaller) stage set `O`.  That memory is what the escape
+argument consumes: stage `n` lives in `Om n`, which eventually misses any fixed
+compact, hence any fixed prefix of the accumulated arc. -/
+theorem exists_stage_list {O Z : Set X} (hOZ : O ⊆ Z) {x y : X}
+    (h : Relation.ReflTransGen (CStep O) x y) :
+    ∃ R : List (PLSeg Z), List.IsChain (fun s t => s.p1 = t.p0) R ∧
+      R.head?.elim (x = y) (fun s => s.p0 = x) ∧
+      R.getLast?.elim (x = y) (fun s => s.p1 = y) ∧
+      (∀ t ∈ R, t.img ⊆ O) := by
+  obtain ⟨R₀, hc, hh, hl⟩ := exists_plseg_list h
+  refine ⟨R₀.map (PLSeg.mono hOZ), ?_,
+    by simpa [Function.comp_def] using hh, by simpa [Function.comp_def] using hl, ?_⟩
+  · exact List.isChain_map_of_isChain (PLSeg.mono hOZ) (fun _ _ hab => hab) hc
+  · intro t ht
+    obtain ⟨t₀, _, rfl⟩ := List.mem_map.mp ht
+    exact t₀.hsub
 
 /-- **P2, per stage: fold `prune_step` along a whole raw chain.**  Given a simple arc `L`
 from `src` to `p` and a raw (possibly self-crossing, possibly degenerate) chain `R` from
@@ -1192,6 +1253,20 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
         intro L₁' hpre hdisj
         exact g7 (h8 hpre (fun t ht => hdisj t ht σ (by simp)))
           (fun t ht u hu => hdisj t ht u (List.mem_cons_of_mem _ hu))
+
+/-- `prune_chain` packaged as an extension of `ArcTo` along one stage.  This is the
+step the `Nat.rec` in `nonempty_simpleRayData` iterates. -/
+theorem ArcTo.extend [T2Space X] {O : Set X} {src p q : X} (A : ArcTo O src p)
+    {R : List (PLSeg O)} (hRchain : List.IsChain (fun s t => s.p1 = t.p0) R)
+    (hRhead : R.head?.elim (p = q) (fun s => s.p0 = p))
+    (hRlast : R.getLast?.elim (p = q) (fun s => s.p1 = q)) :
+    ∃ B : ArcTo O src q,
+      B.img ⊆ A.img ∪ (⋃ t ∈ R, t.img) ∧
+      (∀ L₁ : List (PLSeg O), L₁ <+: A.L →
+        (∀ t ∈ L₁, ∀ u ∈ R, Disjoint t.img u.img) → L₁ <+: B.L) := by
+  obtain ⟨L', h1, h2, h3, h4, h5, h6, h7⟩ :=
+    prune_chain R A.simple A.chain A.head A.nd A.fin hRchain hRhead hRlast
+  exact ⟨⟨L', h1, h2, h3, h4, h5⟩, h6, fun _ hpre hdisj => h7 hpre hdisj⟩
 
 /-- **The pruning obligation (P1–P3), frozen.**  A noncompact complement end
 `Z = connectedComponentIn (closure V)ᶜ x₀` admits, from any base point `z₀ ∈ Z`,
