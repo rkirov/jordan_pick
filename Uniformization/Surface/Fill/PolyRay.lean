@@ -1453,20 +1453,55 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   -- * (P2) the ℕ-limit across stages.  Fold `prune_step` over each stage's raw list
   --   (from `hrawchain m` via `Rado.CStep.toPLSeg` +
   --   `List.exists_isChain_cons_of_relationReflTransGen`), producing accumulated arcs
-  --   `Acc n` from `z₀` to `a n`.  Each fixed segment index STABILIZES: stage-`n`
-  --   material lies in `Om n`, and since `Om` is decreasing with `C n ⊆ (Kex n)ᶜ`
-  --   (`hCsub`) and `Kex` exhausts `↥Z`, for `n` large `Om n` is disjoint from any
-  --   fixed compact, so the last-exit truncation at stage `n` never reaches an early
-  --   segment.  The stable limit is the ℕ-family; its `hsimp` (⇒ `hadj`/`hfar`),
-  --   `hne`, `hchain`, `hstart`, and `hesc` follow, and `htgt`/`hZ`/`he` come from each
-  --   `PLSeg` (with `hOmsubZ : Om m ⊆ Z`).
+  --   `Acc n` from `z₀` to `a n`.
+  --
+  -- ## STATUS AND THE CORRECTED PLAN
+  --
+  -- Everything above this comment is built and sorry-free: `Rw`/`stepFn`/`Acc`,
+  -- `hescape`, `hfrozen`, `haesc`, `hCdec`, and the machinery they rest on
+  -- (`PLSeg.mono`, `exists_plseg_list`, `exists_stage_list`, `ArcTo`(+`extend`),
+  -- `exists_truncate`(+prefix), `prune_step`(+prefix), `prune_chain`).
+  --
+  -- **The original plan for P2 was not runnable and has been corrected.**  It said
+  -- each fixed segment index stabilises because `Om n` eventually misses any fixed
+  -- compact.  But the only per-segment fact P1 exposed was image containment,
+  --     `∀ s ∈ L', s.img ⊆ (⋃ t ∈ L, t.img) ∨ s.img ⊆ σ.img`,
+  -- and that does NOT compose across stages: at the next stage one learns only
+  -- `s.img ⊆ ⋃ L₁`, which no longer splits.  The invariant that does compose is
+  -- PREFIX PRESERVATION — pruning removes only a suffix — now threaded through
+  -- `exists_truncate` → `prune_step` → `prune_chain`.
+  --
+  -- **Freezing must be keyed on `Om n`, not on a fixed compact.**  Using `hescape`
+  -- directly is circular: it produces an `N` only for an already-fixed compactum, so
+  -- applying it to "the first `k` segments" presupposes they have stabilised.  Instead
+  -- note a cut point always lies in the stage's own material `Om n`; hence a segment
+  -- disjoint from `Om n` is never a cut point, and by `hCdec` it stays disjoint from
+  -- every later stage.  Let `Qₙ` be the longest prefix of `Acc n` disjoint from `Om n`.
+  -- The `Qₙ` increase (each is frozen, and prefixes of a common list are comparable).
+  --
+  -- **Why `|Qₙ| → ∞`** (the last open point, now resolved).  Suppose `Qₙ` stalls at
+  -- `Q`, `|Q| = k`, and let `sₙ` be the segment of `Acc n` at index `k`; by maximality
+  -- `sₙ` meets `Om n`.  The cut is never at `Q`'s endpoint (that lies outside `Om n`),
+  -- so each stage either leaves `sₙ` alone or replaces it by a `splitL` of itself —
+  -- the images only ever SHRINK, so every later `sₘ` has `sₘ.img ⊆ s_N.img` for the
+  -- first such `N`.  Apply `hescape` to that one FIXED compact `s_N.img`: beyond some
+  -- `N'` no stage meets it, so no further cut is possible and `s` stabilises; but a
+  -- stabilised `s` meets `Om n` for all large `n`, contradicting the same `hescape`.
+  -- (If instead `Acc n = Q` infinitely often, the endpoint `a n` is eventually
+  -- constant, contradicting `haesc`.)
+  --
+  -- **What is still to write.**  (i) One more conclusion on `exists_truncate`, in the
+  -- same shape as the prefix clause and provable in the same four branches: when the
+  -- cut misses a prefix `L₁` and `L = L₁ ++ s :: L₂`, the segment of `L'` at index
+  -- `L₁.length` (if any) has image `⊆ s.img`.  That is the index-wise shrinking the
+  -- argument above consumes.  (ii) The limit family `f i := (Acc n).L[i]` for `n` past
+  -- the freeze point of index `i`, with `hsimp` from `SimpleList`, then
+  -- `simple_family_adj_far` for `hadj`/`hfar`, `hne` from `PLSeg.p0_ne_p1`, `hchain`
+  -- and `hstart` from `ArcTo`, and `hesc` from `haesc`; `htgt`/`hZ`/`he` come from each
+  -- `PLSeg` (with `hOmsubZ : Om m ⊆ Z`).
   -- * (P3) `hshell` from simplicity + local finiteness + `MetrizableSpace X`
   --   (from `[T2Space X]` + `SecondCountableTopology X` via Urysohn) and
   --   `Disjoint.exists_thickenings`.
-  --
-  -- P2's stabilized ℕ-limit is the arcwise-connectedness / loop-erasure bookkeeping
-  -- absent from mathlib at this pin; it is isolated here as the single remaining
-  -- `sorry`.  All of P1 and the SETUP above are sorry-free.
   sorry
 
 /-- **An embedded, proper, chart-polyline ray exists in a noncompact end
