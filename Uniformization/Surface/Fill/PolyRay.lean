@@ -1526,11 +1526,13 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   -- (If instead `Acc n = Q` infinitely often, the endpoint `a n` is eventually
   -- constant, contradicting `haesc`.)
   --
-  -- **What is still to write.**  (i) One more conclusion on `exists_truncate`, in the
-  -- same shape as the prefix clause and provable in the same four branches: when the
-  -- cut misses a prefix `L₁` and `L = L₁ ++ s :: L₂`, the segment of `L'` at index
-  -- `L₁.length` (if any) has image `⊆ s.img`.  That is the index-wise shrinking the
-  -- argument above consumes.  (ii) The limit family `f i := (Acc n).L[i]` for `n` past
+  -- **What is still to write.**  Every supporting lemma now exists and is sorry-free —
+  -- including the index-wise shrinking clause on `exists_truncate` that the growth
+  -- argument above consumes.  What remains is assembly only:
+  --   (i) `Qₙ` itself: the longest prefix of `(Acc n).L` disjoint from `Om n` (choose it
+  --   classically; `hfrozen` then freezes it and `hCdec` makes the choice monotone), and
+  --   the two-case argument above for `|Qₙ| → ∞`.
+  --   (ii) The limit family `f i := (Acc n).L[i]` for `n` past
   -- the freeze point of index `i`, with `hsimp` from `SimpleList`, then
   -- `simple_family_adj_far` for `hadj`/`hfar`, `hne` from `PLSeg.p0_ne_p1`, `hchain`
   -- and `hstart` from `ArcTo`, and `hesc` from `haesc`; `htgt`/`hZ`/`he` come from each
