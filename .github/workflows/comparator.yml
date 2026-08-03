@@ -17,8 +17,13 @@ name: Comparator
 # in sync with leanprover/lean-eval; a branch or tag here would put the upstream
 # publisher in our trust boundary.
 
+# Deliberately NOT on every push: this job installs a Go toolchain, does a Rust
+# release build, pulls Mathlib and builds three workspaces. Gate it on the
+# points where the answer actually matters — merges to main and PRs — plus
+# manual dispatch for when you want it on a branch.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
