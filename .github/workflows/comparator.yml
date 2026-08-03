@@ -1,0 +1,142 @@
+name: Comparator
+
+# Runs the lean-eval comparator over each submission workspace, with the
+# independent nanoda kernel forced on.
+#
+# This is the check that actually scores the submissions: `lake test` in a
+# workspace runs `WorkspaceTest.lean`, which reads the committed `config.json`,
+# overrides `enable_nanoda := true`, and hands the result to comparator. Every
+# Solution is therefore replayed through nanoda's independent kernel, not just
+# Lean's own. That matters here: this repository is pinned to Lean v4.32.2
+# precisely because v4.32.1/v4.32.2 fixed two kernel soundness bugs
+# (leanprover/lean4 #14484 and #14576), and an independent kernel is what turns
+# "our kernel accepted it" into "two kernels accepted it".
+#
+# The four external tools are pinned to the exact immutable commits lean-eval
+# pins in its SECURITY.md "Trusted dependencies and pin policy" table. Keep them
+# in sync with leanprover/lean-eval; a branch or tag here would put the upstream
+# publisher in our trust boundary.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  comparator:
+    runs-on: ubuntu-latest
+    steps:
+      # Mathlib's oleans plus the Lean toolchain plus three Lake builds do not
+      # fit in a default runner's free space.
+      - uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      # Builds the root project and populates .lake/packages with Mathlib at the
+      # pin, from the prebuilt cache. The submission workspaces then share that
+      # single checkout (see "Share the Mathlib checkout" below).
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9
+        with:
+          use-mathlib-cache: true
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          # Concrete version, not `stable`: a runner-image bump must not
+          # silently change the compiler landrun is built with.
+          go-version: '1.25.12'
+          cache: false
+
+      - name: Install landrun
+        run: |
+          set -euo pipefail
+          # landrun — comparator's landlock sandbox. Released tags through
+          # v0.1.15 lack the `--ldd`/`--add-exec` support comparator needs.
+          go install github.com/zouuup/landrun/cmd/landrun@5ed4a3db3a4ad930d577215c6b9abaa19df7f99f
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build lean4export
+        run: |
+          set -euo pipefail
+          git clone https://github.com/leanprover/lean4export.git .ci/lean4export
+          cd .ci/lean4export
+          git checkout 4e7915201d3f9f04470d9eae002fa695f7cdc589
+          # Deliberately take THIS repo's toolchain: comparator writes
+          # Challenge.olean with the workspace toolchain and reads it back with
+          # lean4export, and v4.32.0 vs v4.32.2 olean headers are incompatible.
+          cp "$GITHUB_WORKSPACE/lean-toolchain" lean-toolchain
+          lake build lean4export
+          echo "$PWD/.lake/build/bin" >> "$GITHUB_PATH"
+
+      - name: Build comparator
+        run: |
+          set -euo pipefail
+          git clone https://github.com/leanprover/comparator.git .ci/comparator
+          cd .ci/comparator
+          git checkout 71b52ec29e06d4b7d882726553b1ceb99a2499e0
+          lake build comparator
+          echo "$PWD/.lake/build/bin" >> "$GITHUB_PATH"
+
+      - name: Build nanoda
+        run: |
+          set -euo pipefail
+          # The independent kernel. WorkspaceTest forces enable_nanoda, so a
+          # missing `nanoda_bin` fails the check rather than silently skipping
+          # it — which is the whole point of this workflow.
+          git clone https://github.com/robsimmons/nanoda_lib.git .ci/nanoda
+          cd .ci/nanoda
+          git checkout 68d5ca9db226849b41a6fff59d796ff19d0a8840
+          cargo build --release
+          echo "$PWD/target/release" >> "$GITHUB_PATH"
+
+      - name: Share the Mathlib checkout with the submission workspaces
+        run: |
+          set -euo pipefail
+          # Each workspace pins the same Mathlib rev and toolchain as the root,
+          # so they can all read the root's .lake/packages instead of fetching
+          # ~7 GB apiece. Without this the job does not fit on a runner.
+          for w in pick jordan_curve rado_riemannSurface; do
+            mkdir -p "submission/$w/.lake"
+            rm -rf "submission/$w/.lake/packages"
+            ln -s "$GITHUB_WORKSPACE/.lake/packages" "submission/$w/.lake/packages"
+          done
+
+      - name: Verify each workspace matches the harness pin
+        run: |
+          set -euo pipefail
+          # A submission built against a different Mathlib than the harness is
+          # not a valid submission, so fail loudly rather than at comparator time.
+          root_rev=$(grep -oE '[0-9a-f]{40}' lakefile.toml | head -1)
+          root_tc=$(cat lean-toolchain)
+          for w in pick jordan_curve rado_riemannSurface; do
+            rev=$(grep -oE '[0-9a-f]{40}' "submission/$w/lakefile.toml" | head -1)
+            tc=$(cat "submission/$w/lean-toolchain")
+            [ "$rev" = "$root_rev" ] || { echo "::error::$w Mathlib rev $rev != root $root_rev"; exit 1; }
+            [ "$tc" = "$root_tc" ]   || { echo "::error::$w toolchain $tc != root $root_tc"; exit 1; }
+            echo "$w: $tc @ ${rev:0:12}"
+          done
+
+      # Sequential, not a matrix: the workspaces share one Mathlib build tree,
+      # so concurrent jobs would write into it at the same time.
+      - name: Run comparator (nanoda forced on)
+        run: |
+          set -euo pipefail
+          rc=0
+          for w in pick jordan_curve rado_riemannSurface; do
+            echo "::group::comparator — $w"
+            ( cd "submission/$w" && lake build && lake test ) || { echo "::error::comparator failed for $w"; rc=1; }
+            echo "::endgroup::"
+          done
+          exit $rc

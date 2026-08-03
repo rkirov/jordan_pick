@@ -12,9 +12,57 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      # Fetches the prebuilt Mathlib cache, then `lake build`s the library.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      # Fetches the prebuilt Mathlib cache, then `lake build`s the default
+      # targets (JordanPick, Rado).
       # (The `docgen-action` step was removed: doc generation is not needed for a
       # proof library, requires GitHub Pages to be enabled, and is OOM-prone on a
       # large development — a common CI-failure cause for this template.)
-      - uses: leanprover/lean-action@v1
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9
+        with:
+          use-mathlib-cache: true
+
+      # `Uniformization` is a declared lean_lib but NOT a default target, and
+      # nothing imports it, so the step above never compiles it. It has to be
+      # named explicitly or CI silently skips ~23k lines — including the parts
+      # most exposed to Mathlib churn (Filter/𝓝, deriv/fderiv, analyticity,
+      # manifolds) and the vendored RMT port.
+      #
+      # This stays green: the three open sorries in Uniformization/ emit
+      # warnings, not errors, and lean-action does not pass `--wfail`.
+      - name: Build Uniformization
+        run: lake build Uniformization
+
+      # Guards the claim the README makes. The three open sorries all live in
+      # Uniformization/ and are reachable only through `uniformization_key` /
+      # `uniformization`, which are deliberately NOT audited here — they do
+      # depend on sorryAx today.
+      - name: Axiom audit — the finished results must be sorry-free
+        run: |
+          set -euo pipefail
+          cat > /tmp/AxiomAudit.lean <<'LEAN'
+          import JordanPick
+          import Rado
+          #print axioms Pick.pick
+          #print axioms LeanEval.Geometry.PicksTheorem.pick
+          #print axioms JordanCurve.jordan_curve
+          #print axioms rado_riemannSurface
+          LEAN
+          lake env lean /tmp/AxiomAudit.lean | tee /tmp/axioms.txt
+          grep 'depends on axioms' /tmp/axioms.txt > /tmp/lines.txt || true
+
+          n=$(wc -l < /tmp/lines.txt)
+          if [ "$n" -ne 4 ]; then
+            echo "::error::expected 4 axiom lines, got $n"; exit 1
+          fi
+          # Order-independent, and rejects sorryAx along with anything else
+          # outside the permitted set.
+          allowed='(propext|Classical\.choice|Quot\.sound)'
+          if grep -vE "^'.*' depends on axioms: \[${allowed}(, ${allowed})*\]$" /tmp/lines.txt; then
+            echo "::error::a result depends on an axiom outside {propext, Classical.choice, Quot.sound}"
+            exit 1
+          fi
+          echo "OK — all four results are axiom-clean."

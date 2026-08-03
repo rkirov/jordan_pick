@@ -1,0 +1,45 @@
+name: Verso
+
+# Build-only check that the Verso exposition in site/ still compiles.
+#
+# This deliberately does NOT publish anything: there is no Pages artifact, no
+# deploy job, and no `pages`/`id-token` permission. It replaces the old "Docs"
+# workflow, which built the same package and then pushed it to GitHub Pages.
+#
+# site/ is a standalone Lake package on its own toolchain (v4.30.0) with its own
+# Verso pin, deliberately independent of the proof libraries — it shows theorem
+# statements as text rather than importing them, so it is unaffected by Mathlib
+# bumps to the main development. Hence: only run it when site/ actually changes,
+# rather than paying for a second toolchain on every push.
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['site/**', '.github/workflows/verso.yml']
+  pull_request:
+    paths: ['site/**', '.github/workflows/verso.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      # Installs elan, which picks up site/lean-toolchain (v4.30.0) per-directory.
+      # No Mathlib cache: the site does not import the proof libraries.
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9
+        with:
+          build: false
+          test: false
+
+      - name: Build the Verso exposition
+        run: |
+          set -euo pipefail
+          cd site
+          lake exe jordanpicksite      # emits site/_out/html-multi/
+          test -d _out/html-multi || { echo "::error::no HTML emitted"; exit 1; }
