@@ -1379,6 +1379,21 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hAcc_succ : ∀ n, Acc (n + 1) = stepFn n (Acc n) := fun _ => rfl
   -- Stage-`n` material lies in `Om n`, which is disjoint from `Kex n`'s image in `X`.
   have hRw_far : ∀ n, ∀ u ∈ Rw n, u.img ⊆ Om n := hRwsub
+  -- **The escape property.**  Every compact subset of `Z` is missed by all late stages:
+  -- `Kex` exhausts `↥Z`, so it eventually swallows the compactum, while stage `n`'s
+  -- material lies in `Om n`, the image of `C n ⊆ (Kex n)ᶜ`.  This is what supplies
+  -- `prune_chain`'s disjointness hypothesis and therefore freezes each fixed prefix.
+  have hescape : ∀ S : Set X, IsCompact S → S ⊆ Z → ∃ N, ∀ n, N ≤ n → Disjoint S (Om n) := by
+    intro S hS hSZ
+    have hS' : IsCompact (Subtype.val ⁻¹' S : Set ↥Z) := by
+      rw [hemb.isInducing.isCompact_iff, Subtype.image_preimage_coe,
+        Set.inter_eq_self_of_subset_right hSZ]
+      exact hS
+    obtain ⟨N, hN⟩ := Kex.exists_superset_of_isCompact hS'
+    refine ⟨N, fun n hn => ?_⟩
+    rw [Set.disjoint_left]
+    rintro x hxS ⟨y, hyC, rfl⟩
+    exact absurd (Kex.subset hn (hN (by simpa using hxS))) (hCsub n hyC)
   -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
   --
   -- The SETUP above is complete and sorry-free.  The context now provides, from any
