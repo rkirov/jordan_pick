@@ -1346,6 +1346,13 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hCconn : ∀ m, IsConnected (C m) := fun m => ⟨⟨a m, hanC m⟩, isPreconnected_connectedComponentIn⟩
   have hCsub : ∀ m, C m ⊆ (Kex m)ᶜ := fun m => connectedComponentIn_subset _ _
   have haC1 : ∀ m, a (m + 1) ∈ C m := hlink
+  -- The chain is decreasing: `a (m+1) ∈ C m` and `(Kex (m+1))ᶜ ⊆ (Kex m)ᶜ`, so the
+  -- component of `a (m+1)` in the smaller set sits inside its component in the larger.
+  -- This is what lets the frozen prefix be keyed on `Om n`: a segment disjoint from
+  -- `Om n` is then disjoint from every later stage's material too.
+  have hCdec : ∀ m, C (m + 1) ⊆ C m := fun m =>
+    (connectedComponentIn_mono _ (Set.compl_subset_compl.mpr (Kex.subset m.le_succ))).trans
+      (connectedComponentIn_eq (haC1 m)).symm.subset
   -- image sets in `X`: `Om m := Subtype.val '' C m`, open and preconnected in `X`
   have hemb : IsOpenEmbedding (Subtype.val : ↥Z → X) := hZopen.isOpenEmbedding_subtypeVal
   set Om : ℕ → Set X := fun m => Subtype.val '' (C m) with hOmdef
