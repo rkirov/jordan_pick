@@ -1415,6 +1415,14 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         have hyy : y' = y := Subtype.val_injective (hy'x.trans hyx.symm)
         subst hyy
         exact absurd (Kex.subset hnm hy) (hCsub m hy')
+  -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
+  -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
+  -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
+  -- eventually constant, hence trapped in some `Kex M`.
+  have haesc : ∀ S : Set ↥Z, IsCompact S → ∃ N, ∀ n, N ≤ n → a n ∉ S := by
+    intro S hS
+    obtain ⟨M, hM⟩ := Kex.exists_superset_of_isCompact hS
+    exact ⟨M, fun n hn hmem => ha_not n (Kex.subset hn (hM hmem))⟩
   -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
   --
   -- The SETUP above is complete and sorry-free.  The context now provides, from any
