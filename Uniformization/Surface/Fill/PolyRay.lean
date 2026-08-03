@@ -240,6 +240,21 @@ theorem _root_.Rado.CStep.toPLSeg {O : Set X} {y z : X} (h : CStep O y z) :
   obtain ⟨e, he, hy, hz, htgt, hsub⟩ := h
   exact ⟨⟨e, he, e y, e z, htgt, hsub⟩, e.left_inv hy, e.left_inv hz⟩
 
+/-- **Weakening the ambient set.**  `O` occurs in `PLSeg O` only through `hsub`, so a
+segment inside `O` is literally a segment inside any larger `O'`.  This is what lets the
+per-stage segments (each living in its own `Om m`) be collected into a single
+`ℕ`-indexed family of `PLSeg Z`. -/
+def mono {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : PLSeg O₂ :=
+  { t with hsub := t.hsub.trans h }
+
+@[simp] theorem mono_e {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : (mono h t).e = t.e := rfl
+@[simp] theorem mono_a {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : (mono h t).a = t.a := rfl
+@[simp] theorem mono_b {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : (mono h t).b = t.b := rfl
+@[simp] theorem mono_img {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) :
+    (mono h t).img = t.img := rfl
+@[simp] theorem mono_p0 {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : (mono h t).p0 = t.p0 := rfl
+@[simp] theorem mono_p1 {O₁ O₂ : Set X} (h : O₁ ⊆ O₂) (t : PLSeg O₁) : (mono h t).p1 = t.p1 := rfl
+
 end PLSeg
 
 end Rado
@@ -741,6 +756,19 @@ theorem SimpleList.snoc {O : Set X} {L : List (PLSeg O)} (hL : SimpleList L)
     rw [List.getElem_concat_length rfl, List.take_left]
     exact hs
 
+/-- The image union of a polyline splits over its first segment. -/
+theorem biUnion_img_cons {O : Set X} (s : PLSeg O) (L : List (PLSeg O)) :
+    (⋃ t ∈ s :: L, t.img) = s.img ∪ (⋃ t ∈ L, t.img) := by
+  ext y
+  simp only [Set.mem_iUnion, List.mem_cons, Set.mem_union, exists_prop]
+  constructor
+  · rintro ⟨t, rfl | ht, hy⟩
+    · exact Or.inl hy
+    · exact Or.inr ⟨t, ht, hy⟩
+  · rintro (hy | ⟨t, ht, hy⟩)
+    · exact ⟨s, Or.inl rfl, hy⟩
+    · exact ⟨t, Or.inr ht, hy⟩
+
 /-- The image union of a polyline splits over its last segment. -/
 theorem biUnion_img_concat {O : Set X} (L : List (PLSeg O)) (s : PLSeg O) :
     (⋃ t ∈ L ++ [s], t.img) = (⋃ t ∈ L, t.img) ∪ s.img := by
@@ -804,7 +832,12 @@ theorem exists_truncate {O : Set X} {src : X} :
         List.IsChain (fun s t => s.p1 = t.p0) L' ∧
         L'.head?.elim True (fun s => s.p0 = src) ∧ (∀ s ∈ L', s.a ≠ s.b) ∧
         (⋃ t ∈ L', t.img) ⊆ (⋃ t ∈ L, t.img) ∧
-        L'.getLast?.elim (x = src) (fun s => s.p1 = x) := by
+        L'.getLast?.elim (x = src) (fun s => s.p1 = x) ∧
+        -- **Prefix preservation.**  Truncation removes only a *suffix*: any prefix of `L`
+        -- that the cut point `x` misses survives verbatim in `L'`.  This is the clause
+        -- P2's stabilisation runs on — image containment alone does not compose across
+        -- stages, but "the early segments are literally still there" does.
+        (∀ {L₁ : List (PLSeg O)}, L₁ <+: L → (∀ t ∈ L₁, x ∉ t.img) → L₁ <+: L') := by
   intro L
   induction L using List.reverseRecOn with
   | nil => intro _ _ _ _ x hx; simp only [List.not_mem_nil, Set.iUnion_of_empty,
@@ -829,7 +862,7 @@ theorem exists_truncate {O : Set X} {src : X} :
       obtain ⟨d, hd, hdx⟩ := hxs
       by_cases hda : d = s.a
       · -- degenerate cut at the start of `s`: drop `s`
-        refine ⟨L₀, hsimple₀, hchain₀, hstart₀, hnd₀, ?_, ?_⟩
+        refine ⟨L₀, hsimple₀, hchain₀, hstart₀, hnd₀, ?_, ?_, ?_⟩
         · rw [biUnion_img_concat]; exact Set.subset_union_left
         · have hxp0 : x = s.p0 := by rw [← hdx, hda]; rfl
           cases hlast : L₀.getLast? with
@@ -839,12 +872,19 @@ theorem exists_truncate {O : Set X} {src : X} :
                     simpa [hxp0] using hstart
           | some g => simp only [hlast, Option.elim]
                       rw [hxp0]; exact hconn g hlast
+        · -- `x ∈ s.img`, so a prefix missing `x` cannot contain `s`; it lies in `L₀ = L'`.
+          intro L₁ hpre hmiss
+          rcases List.prefix_concat_iff.mp hpre with rfl | hpre'
+          · -- `hxs` was destructured above, so rebuild `x ∈ s.img` from its pieces.
+            exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
+              (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
+          · exact hpre'
       · -- proper cut inside `s`: keep `s.splitL d`
         have hsL : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hlast_meets
         have hsplit_meets : (s.splitL d hd).img ∩ (⋃ t ∈ L₀, t.img) ⊆ {(s.splitL d hd).p0} := by
           intro y hy
           exact hsL ⟨s.splitL_img_sub d hd hy.1, hy.2⟩
-        refine ⟨L₀ ++ [s.splitL d hd], hsimple₀.snoc hsplit_meets, ?_, ?_, ?_, ?_, ?_⟩
+        refine ⟨L₀ ++ [s.splitL d hd], hsimple₀.snoc hsplit_meets, ?_, ?_, ?_, ?_, ?_, ?_⟩
         · refine List.IsChain.append hchain₀ (List.IsChain.singleton _) ?_
           intro g hg y hy
           rw [List.head?_singleton, Option.mem_some_iff] at hy
@@ -865,12 +905,28 @@ theorem exists_truncate {O : Set X} {src : X} :
         · simp only [List.getLast?_concat, Option.elim]
           show (s.splitL d hd).p1 = x
           rw [PLSeg.splitL_p1]; exact hdx
+        · -- same as the drop case: `x ∈ s.img`, so a prefix missing `x` cannot contain
+          -- `s`; it lies in `L₀`, which is a prefix of `L₀ ++ [s.splitL d hd]`.
+          intro L₁ hpre hmiss
+          rcases List.prefix_concat_iff.mp hpre with rfl | hpre'
+          · -- `hxs` was destructured above, so rebuild `x ∈ s.img` from its pieces.
+            exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
+              (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
+          · exact hpre'.trans (List.prefix_append _ _)
     · -- the point is on an earlier segment: recurse
       have hx0 : x ∈ (⋃ t ∈ L₀, t.img) := hx.resolve_right hxs
-      obtain ⟨L', h1, h2, h3, h4, h5, h6⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
-      refine ⟨L', h1, h2, h3, h4, ?_, h6⟩
-      rw [biUnion_img_concat]
-      exact h5.trans Set.subset_union_left
+      obtain ⟨L', h1, h2, h3, h4, h5, h6, h7⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
+      refine ⟨L', h1, h2, h3, h4, ?_, h6, ?_⟩
+      · rw [biUnion_img_concat]
+        exact h5.trans Set.subset_union_left
+      · -- Here `x` lies in `⋃ L₀`, so a prefix missing `x` cannot be all of `L₀ ++ [s]`
+        -- (that would contain the segment carrying `x`); hence it is a prefix of `L₀`,
+        -- and the inductive hypothesis applies.
+        intro L₁ hpre hmiss
+        rcases List.prefix_concat_iff.mp hpre with rfl | hpre'
+        · obtain ⟨t, ht, hxt⟩ := Set.mem_iUnion₂.mp hx0
+          exact absurd hxt (hmiss t (List.mem_append_left _ ht))
+        · exact h7 hpre' hmiss
 
 /-- **Last-exit point of a chart segment from a compact set.**  If a straight
 chart segment `σ` starts inside a compact set `K`, there is a *last* parameter
@@ -937,13 +993,19 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
       L'.head?.elim True (fun s => s.p0 = src) ∧ (∀ s ∈ L', s.a ≠ s.b) ∧
       L'.getLast?.elim (src = σ.p1) (fun s => s.p1 = σ.p1) ∧
       (⋃ t ∈ L', t.img) ⊆ (⋃ t ∈ L, t.img) ∪ σ.img ∧
-      (∀ s ∈ L', s.img ⊆ (⋃ t ∈ L, t.img) ∨ s.img ⊆ σ.img) := by
+      (∀ s ∈ L', s.img ⊆ (⋃ t ∈ L, t.img) ∨ s.img ⊆ σ.img) ∧
+      -- **Prefix preservation** (inherited from `exists_truncate`).  The cut point lies
+      -- on `σ`, so a prefix of the arc whose segments avoid `σ` entirely is untouched.
+      -- Across stages this is what freezes the early segments: stage-`n` material lies
+      -- in `Om n`, which escapes every compact set, hence misses any fixed prefix.
+      (∀ {L₁ : List (PLSeg O)}, L₁ <+: L → (∀ t ∈ L₁, Disjoint t.img σ.img) →
+        L₁ <+: L') := by
   set K : Set X := ⋃ t ∈ L, t.img with hKdef
   by_cases hdeg : σ.p0 = σ.p1
   · -- degenerate raw segment: keep the arc unchanged
     have hp : p = σ.p1 := hσ0.symm.trans hdeg
     refine ⟨L, hsimple, hchain, hstart, hnd, ?_, Set.subset_union_left,
-      fun s hs => Or.inl (img_subset_biUnion hs)⟩
+      fun s hs => Or.inl (img_subset_biUnion hs), fun hpre _ => hpre⟩
     rw [hp] at hend; exact hend
   -- nondegenerate raw segment
   have hσab : σ.a ≠ σ.b := by
@@ -953,7 +1015,7 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
     subst hLnil
     have hsp : src = p := by simpa using hend
     refine ⟨[σ], (simpleList_nil.snoc (by simp)), List.IsChain.singleton σ, ?_,
-      ?_, ?_, ?_, ?_⟩
+      ?_, ?_, ?_, ?_, fun hpre _ => by rw [List.prefix_nil.mp hpre]; exact List.nil_prefix⟩
     · show σ.p0 = src; rw [hσ0, hsp]
     · intro s hs; rw [List.mem_singleton] at hs; subst hs; exact hσab
     · show σ.p1 = σ.p1; rfl
@@ -972,7 +1034,7 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
     lineMap_mem_segment (𝕜 := ℝ) σ.a σ.b hT
   set x : X := σ.e.symm (AffineMap.lineMap σ.a σ.b T) with hxdef
   have hxK : x ∈ ⋃ t ∈ L, t.img := hcTK
-  obtain ⟨L', hS', hC', hH', hN', hU', hE'⟩ :=
+  obtain ⟨L', hS', hC', hH', hN', hU', hE', hP'⟩ :=
     exists_truncate (src := src) hsimple hchain hstart hnd hxK
   have hU'K : (⋃ t ∈ L', t.img) ⊆ K := hU'
   rcases eq_or_lt_of_le hT.2 with hTeq | hTlt
@@ -980,7 +1042,9 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
     have hxp1 : x = σ.p1 := by
       rw [hxdef, hTeq, AffineMap.lineMap_apply_one]; rfl
     refine ⟨L', hS', hC', hH', hN', ?_, hU'.trans Set.subset_union_left,
-      fun s hs => Or.inl ((img_subset_biUnion hs).trans hU'K)⟩
+      fun s hs => Or.inl ((img_subset_biUnion hs).trans hU'K),
+      fun {L₁} hpre hdisj => hP' hpre (fun t ht =>
+        Set.disjoint_right.mp (hdisj t ht) ⟨_, hcTseg, rfl⟩)⟩
     rw [hxp1] at hE'
     cases hgl' : L'.getLast? with
     | none => simp only [hgl', Option.elim] at hE' ⊢; exact hE'.symm
@@ -1000,7 +1064,9 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
       have := hE'
       rw [(by exact hg' : L'.getLast? = some g)] at this
       exact this
-    refine ⟨L' ++ [σ'], hS'.snoc hmeetL', ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨L' ++ [σ'], hS'.snoc hmeetL', ?_, ?_, ?_, ?_, ?_, ?_,
+      fun {L₁} hpre hdisj => (hP' hpre (fun t ht =>
+        Set.disjoint_right.mp (hdisj t ht) ⟨_, hcTseg, rfl⟩)).trans (List.prefix_append _ _)⟩
     · refine List.IsChain.append hC' (List.IsChain.singleton _) ?_
       intro g hg' y hy
       rw [List.head?_singleton, Option.mem_some_iff] at hy
@@ -1028,6 +1094,104 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
       · exact Or.inl ((img_subset_biUnion hs').trans hU'K)
       · rw [List.mem_singleton] at hs'; subst hs'
         exact Or.inr (σ.splitR_img_sub _ hcTseg)
+
+/-! ### P2 step 1: raw chains as segment lists, and the per-stage fold -/
+
+/-- **A `CStep` chain, unfolded into a list of segments.**  No nondegeneracy is claimed:
+`Relation.ReflTransGen` admits degenerate steps, and `prune_step` absorbs them. -/
+theorem exists_plseg_list {O : Set X} {x y : X}
+    (h : Relation.ReflTransGen (CStep O) x y) :
+    ∃ R : List (PLSeg O), List.IsChain (fun s t => s.p1 = t.p0) R ∧
+      R.head?.elim (x = y) (fun s => s.p0 = x) ∧
+      R.getLast?.elim (x = y) (fun s => s.p1 = y) := by
+  -- Build from the *head*: consing keeps `head?`/`IsChain` trivial, whereas appending
+  -- forces `getLast?` case analysis at every step.
+  induction h using Relation.ReflTransGen.head_induction_on with
+  | refl => exact ⟨[], List.IsChain.nil, by simp, by simp⟩
+  | @head u c h' _ ih =>
+      obtain ⟨R, hRchain, hRhead, hRlast⟩ := ih
+      obtain ⟨σ, hσ0, hσ1⟩ := Rado.CStep.toPLSeg h'
+      rcases R with _ | ⟨hd, tl⟩
+      · simp only [List.head?_nil, List.getLast?_nil, Option.elim] at hRhead hRlast
+        exact ⟨[σ], List.IsChain.singleton _, by simpa using hσ0,
+          by simpa [hσ1] using hRlast⟩
+      · simp only [List.head?_cons, Option.elim] at hRhead
+        refine ⟨σ :: hd :: tl, List.isChain_cons_cons.mpr ⟨by rw [hσ1, hRhead], hRchain⟩,
+          by simpa using hσ0, ?_⟩
+        -- `getLast?` of a cons-cons is the tail's, and it is never `none`, so the two
+        -- `Option.elim` defaults (`u = y` here, `c = y` in `hRlast`) are both discarded.
+        rw [List.getLast?_cons_cons]
+        cases hw : (hd :: tl).getLast? with
+        | none => exact absurd (List.getLast?_eq_none_iff.mp hw) (by simp)
+        | some w => rw [hw] at hRlast; simpa using hRlast
+
+/-- **P2, per stage: fold `prune_step` along a whole raw chain.**  Given a simple arc `L`
+from `src` to `p` and a raw (possibly self-crossing, possibly degenerate) chain `R` from
+`p` to `q`, last-exit pruning segment by segment yields a simple arc from `src` to `q`
+whose material is drawn from `L` and `R` only.
+
+The final clause is the one P2's stabilisation argument runs on: every surviving segment
+came either from the old arc or from this stage's raw material, so a segment that is far
+from stage `n`'s material cannot be disturbed at stage `n`. -/
+theorem prune_chain [T2Space X] {O : Set X} {src : X} :
+    ∀ (R : List (PLSeg O)) {p q : X} {L : List (PLSeg O)}, SimpleList L →
+      List.IsChain (fun s t => s.p1 = t.p0) L →
+      L.head?.elim True (fun s => s.p0 = src) → (∀ s ∈ L, s.a ≠ s.b) →
+      L.getLast?.elim (src = p) (fun s => s.p1 = p) →
+      List.IsChain (fun s t => s.p1 = t.p0) R →
+      R.head?.elim (p = q) (fun s => s.p0 = p) →
+      R.getLast?.elim (p = q) (fun s => s.p1 = q) →
+      ∃ L' : List (PLSeg O), SimpleList L' ∧
+        List.IsChain (fun s t => s.p1 = t.p0) L' ∧
+        L'.head?.elim True (fun s => s.p0 = src) ∧ (∀ s ∈ L', s.a ≠ s.b) ∧
+        L'.getLast?.elim (src = q) (fun s => s.p1 = q) ∧
+        (⋃ t ∈ L', t.img) ⊆ (⋃ t ∈ L, t.img) ∪ (⋃ t ∈ R, t.img) ∧
+        (∀ {L₁ : List (PLSeg O)}, L₁ <+: L →
+          (∀ t ∈ L₁, ∀ u ∈ R, Disjoint t.img u.img) → L₁ <+: L') := by
+  intro R
+  induction R with
+  | nil =>
+      intro p q L hsimple hchain hstart hnd hend _ hRhead _
+      simp only [List.head?_nil, Option.elim] at hRhead
+      subst hRhead
+      exact ⟨L, hsimple, hchain, hstart, hnd, hend, by simp, fun hpre _ => hpre⟩
+  | cons σ R' ih =>
+      intro p q L hsimple hchain hstart hnd hend hRchain hRhead hRlast
+      simp only [List.head?_cons, Option.elim] at hRhead
+      -- one last-exit prune against `σ` …
+      obtain ⟨L₁, h1, h2, h3, h4, h5, h6, h7, h8⟩ :=
+        prune_step hsimple hchain hstart hnd hend σ hRhead
+      -- … then recurse along the rest of the stage
+      have hR'head : R'.head?.elim (σ.p1 = q) (fun s => s.p0 = σ.p1) := by
+        cases hR : R' with
+        | nil =>
+            simp only [List.head?_nil, Option.elim]
+            rw [hR] at hRlast; simpa using hRlast
+        | cons hd tl =>
+            simp only [List.head?_cons, Option.elim]
+            rw [hR] at hRchain
+            exact (List.isChain_cons_cons.mp hRchain).1.symm
+      have hR'last : R'.getLast?.elim (σ.p1 = q) (fun s => s.p1 = q) := by
+        cases hR : R' with
+        | nil => simp only [List.getLast?_nil, Option.elim]; rw [hR] at hRlast; simpa using hRlast
+        | cons hd tl =>
+            rw [hR, List.getLast?_cons_cons] at hRlast
+            cases hw : (hd :: tl).getLast? with
+            | none => exact absurd (List.getLast?_eq_none_iff.mp hw) (by simp)
+            | some w => rw [hw] at hRlast; simpa using hRlast
+      obtain ⟨L₂, g1, g2, g3, g4, g5, g6, g7⟩ :=
+        ih h1 h2 h3 h4 h5 (hRchain.tail) hR'head hR'last
+      refine ⟨L₂, g1, g2, g3, g4, g5, ?_, ?_⟩
+      · -- material: `⋃L₂ ⊆ ⋃L₁ ∪ ⋃R' ⊆ (⋃L ∪ σ.img) ∪ ⋃R' = ⋃L ∪ ⋃(σ :: R')`
+        refine g6.trans ?_
+        rw [biUnion_img_cons]
+        refine Set.union_subset (h6.trans ?_) ?_
+        · exact Set.union_subset_union_right _ Set.subset_union_left
+        · exact Set.subset_union_of_subset_right Set.subset_union_right _
+      · -- prefix: `σ` and every `u ∈ R'` miss the prefix, so neither prune touches it
+        intro L₁' hpre hdisj
+        exact g7 (h8 hpre (fun t ht => hdisj t ht σ (by simp)))
+          (fun t ht u hu => hdisj t ht u (List.mem_cons_of_mem _ hu))
 
 /-- **The pruning obligation (P1–P3), frozen.**  A noncompact complement end
 `Z = connectedComponentIn (closure V)ᶜ x₀` admits, from any base point `z₀ ∈ Z`,
