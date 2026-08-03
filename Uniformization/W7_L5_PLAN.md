@@ -13,8 +13,8 @@ def RegularSimplyConnected (X) [TopologicalSpace X] [ChartedSpace ℂ X]
 `exists_simply_connected_piece_of_regularSimplyConnected` already discharges the
 frozen theorem from this predicate, feeding it the piece `V` from
 `exists_regular_piece`. This document plans the proof of the predicate itself.
-**No Lean proofs here — statements and sizing only.** Pin: Lean `v4.32.0-rc1`,
-Mathlib `360da6f`.
+**No Lean proofs here — statements and sizing only.** Pin: Lean `v4.32.2`,
+Mathlib `905b9581`.
 
 ---
 

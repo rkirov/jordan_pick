@@ -10,7 +10,7 @@ lean-eval PR #473 and mathlib4 PR #33505.** Nothing proved yet. Both problems
 the problem submitter) added a second, "possibly easier" problem
 `uniformization_key` next to the original `uniformization`. Both are mirrored
 exactly in `Uniformization/Main.lean` (typechecked against the pin: Lean
-`v4.32.0-rc1`, Mathlib `360da6f`); the PR's diff is vendored at
+`v4.32.2`, Mathlib `905b9581`); the PR's diff is vendored at
 `reference/uniformization/lean-eval-pr473.diff`.
 
 **Primary target — `uniformization_key`** (Anghel–Stan arXiv:2008.12189,

@@ -65,8 +65,8 @@ theorem exists_phi_of_green [T2Space X] {U : Set X} {x₀ : X} {G : X → ℝ}
     with he₀_def
   have he₀sheet : e₀ ∈ sheet V₀ ψpole := ⟨hx₀V₀, rfl⟩
   -- instances for the lifting theorem
-  haveI : LocPathConnectedSpace X := ChartedSpace.locPathConnectedSpace ℂ X
-  haveI : LocPathConnectedSpace (↥U) := hUo.locPathConnectedSpace
+  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
+  haveI : LocallyPathConnectedSpace (↥U) := hUo.locallyPathConnectedSpace
   haveI : SimplyConnectedSpace (↥U) := hUsc
   -- the global section, from simple connectedness
   set incl : C(↥U, X) := ⟨Subtype.val, continuous_subtype_val⟩ with hincl_def

@@ -6,7 +6,7 @@ Authors: Rado Kirov
 import Mathlib.Analysis.Complex.CoveringMap
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Homotopy.Lifting
-import Mathlib.Topology.Connected.LocPathConnected
+import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Algebra.Group.TypeTags.Hom
@@ -228,12 +228,12 @@ namespace Complex
 
 /-- Branch of the logarithm on a set with hom-trivial loops (weakening `IsSimplyConnected` in
 `Complex.exists_branch_log` to `HomTrivialLoops` + connectivity). -/
-theorem exists_branch_log_of_homTrivial {X : Type*} [TopologicalSpace X] [LocPathConnectedSpace X]
+theorem exists_branch_log_of_homTrivial {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
     {U : Set X} (hUt : HomTrivialLoops U) (hUconn : IsConnected U) (hUo : IsOpen U)
     {g : X → ℂ} (hgc : ContinuousOn g U) (hU₀ : 0 ∉ g '' U) :
     ∃ f : X → ℂ, ContinuousOn f U ∧ EqOn (Complex.exp ∘ f) g U := by
   classical
-  haveI hlpc : LocPathConnectedSpace ↥U := hUo.locPathConnectedSpace
+  haveI hlpc : LocallyPathConnectedSpace ↥U := hUo.locallyPathConnectedSpace
   haveI hconn : ConnectedSpace ↥U := Subtype.connectedSpace hUconn
   haveI hpc : PathConnectedSpace ↥U := pathConnectedSpace_iff_connectedSpace.mpr hconn
   obtain ⟨x₀, hx₀U⟩ := hUconn.nonempty
@@ -273,7 +273,7 @@ theorem exists_branch_log_of_homTrivial {X : Type*} [TopologicalSpace X] [LocPat
 
 /-- Branch of an `n`-th root on a set with hom-trivial loops. -/
 theorem exists_branch_nthRoot_of_homTrivial {X : Type*} [TopologicalSpace X]
-    [LocPathConnectedSpace X] {U : Set X} (hUt : HomTrivialLoops U) (hUconn : IsConnected U)
+    [LocallyPathConnectedSpace X] {U : Set X} (hUt : HomTrivialLoops U) (hUconn : IsConnected U)
     (hUo : IsOpen U) {g : X → ℂ} (hgc : ContinuousOn g U) (hU₀ : 0 ∉ g '' U) {n : ℕ} (hn : n ≠ 0) :
     ∃ f : X → ℂ, ContinuousOn f U ∧ ∀ x, f x ^ n = g x := by
   classical

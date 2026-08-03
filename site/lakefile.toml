@@ -3,7 +3,7 @@
 # library (theorem statements are shown as text; importing the library would pull
 # Mathlib into the native link closure of the executable). Pinned to a stable
 # toolchain (v4.30.0) with a known-good Verso, independent of the main proof
-# (which stays on v4.32.0-rc1 + Mathlib master).
+# (which is on v4.32.2 + Mathlib v4.32.2).
 name = "jordanpicksite"
 reservoir = false
 version = "0.1.0"

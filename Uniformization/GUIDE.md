@@ -6,7 +6,7 @@
 - `lake build` only when no agents are running (shared lock; rebuilds mid-edit files).
 - Beware bash cwd persisting (do not get stranded in `.lake/packages/mathlib`).
 - Machine has 4 cores ⇒ at most 2 concurrent prover agents.
-- Pin: Lean v4.32.0-rc1, Mathlib 360da6f (browse `.lake/packages/mathlib/Mathlib/`).
+- Pin: Lean v4.32.2, Mathlib 905b9581 (browse `.lake/packages/mathlib/Mathlib/`).
 - No `sorry`, no new axioms; audit with `#print axioms` (expect propext,
   Classical.choice, Quot.sound only).
 
@@ -28,6 +28,13 @@
 - `HasFDerivAtFilter.hasFDerivAt` doesn't exist at pin; `HasStrictDerivAt.hasDerivAt` does.
 - Bare `mem_sdiff` is ambiguous (`Set` vs `Filter` both open) — qualify.
 - `push_neg` deprecated → `push Not`.
+- `LocPathConnectedSpace` → `LocallyPathConnectedSpace` (Mathlib 2026-06-21), and likewise
+  `IsOpen.locPathConnectedSpace` / `ChartedSpace.locPathConnectedSpace` → `…locallyPathConnectedSpace`.
+  The old names survive as `alias`es, but an `alias` of a class is a plain `def`, so an
+  instance binder `[LocPathConnectedSpace X]` fails outright with "invalid binder annotation,
+  type is not a class instance" — `haveI :` ascriptions still elaborate. Module
+  `Mathlib.Topology.Connected.LocPathConnected` is now a `deprecated_module` shim for
+  `…Connected.LocallyPathConnected`.
 - Lean silently drops unused section hypotheses in statements — force with `include h`.
 
 ## Rado reuse layer

@@ -31,7 +31,7 @@ abbrev Plane := EuclideanSpace ℝ (Fin 2)
 /-! ## Phase 1 — the once-around loop on `AddCircle 1` is not nullhomotopic -/
 
 /-- The covering map `ℝ → AddCircle 1`. -/
-noncomputable def cover : IsCoveringMap ((↑) : ℝ → AddCircle (1 : ℝ)) :=
+theorem cover : IsCoveringMap ((↑) : ℝ → AddCircle (1 : ℝ)) :=
   AddCircle.isCoveringMap_coe 1
 
 /-- The once-around loop `t ↦ ↑t` in `AddCircle 1`. -/
@@ -222,6 +222,7 @@ lemma Acoef_pos (x) : 0 < Acoef f x := by
   rw [Acoef, real_inner_self_eq_norm_sq]
   exact pow_pos (norm_pos_iff.mpr (dvec_ne f hf x)) 2
 
+omit hf in
 lemma Ccoef_nonpos (x) : Ccoef f x ≤ 0 := by
   rw [Ccoef, sub_nonpos]
   have : ‖(f x : Plane)‖ ≤ 1 := by
@@ -230,7 +231,7 @@ lemma Ccoef_nonpos (x) : Ccoef f x ≤ 0 := by
 
 lemma discr_nonneg (x) : 0 ≤ discr f x := by
   have hA := (Acoef_pos f hf x).le
-  have hC := Ccoef_nonpos f hf x
+  have hC := Ccoef_nonpos f x
   have : 0 ≤ Acoef f x * (- Ccoef f x) := mul_nonneg hA (by linarith)
   rw [discr]; nlinarith [sq_nonneg (Bcoef f x)]
 
@@ -334,7 +335,7 @@ end Disk
 theorem brouwer_disk (f : C(closedBall (0 : Plane) 1, closedBall (0 : Plane) 1)) :
     ∃ x, f x = x := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hf : ∀ x, (f x : Plane) ≠ (x : Plane) := fun x h => hcon x (Subtype.ext h)
   have hρmem : ∀ x, rhoPt f x ∈ closedBall (0 : Plane) 1 := fun x => by
     rw [mem_closedBall, dist_zero_right, norm_rhoPt f hf x]
@@ -372,8 +373,13 @@ noncomputable def ballScale (R : ℝ) (hR : 0 < R) :
     nlinarith [norm_nonneg (y : Plane)]⟩
   left_inv x := by ext; simp [smul_smul, mul_inv_cancel₀ hR.ne']
   right_inv y := by ext; simp [smul_smul, inv_mul_cancel₀ hR.ne']
-  continuous_toFun := (continuous_const.smul continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_const.smul continuous_subtype_val).subtype_mk _
+  -- `fun_prop` rather than term-mode `Continuous.subtype_mk`: since Mathlib
+  -- `905b9581`, unifying `Continuous.subtype_mk _ ?hp` against the `continuous_invFun`
+  -- field of this `where` block diverges (it exhausts even a 1M heartbeat budget in
+  -- `isDefEq`). Not a proof-size problem — hoisting the membership obligations into
+  -- standalone lemmas does not help; only avoiding that unification does.
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 /-- **Brouwer for a closed ball of arbitrary positive radius.** -/
 theorem brouwer_ball (R : ℝ) (hR : 0 < R)

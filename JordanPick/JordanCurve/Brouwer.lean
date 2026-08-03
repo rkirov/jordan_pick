@@ -373,8 +373,13 @@ noncomputable def ballScale (R : ℝ) (hR : 0 < R) :
     nlinarith [norm_nonneg (y : Plane)]⟩
   left_inv x := by ext; simp [smul_smul, mul_inv_cancel₀ hR.ne']
   right_inv y := by ext; simp [smul_smul, inv_mul_cancel₀ hR.ne']
-  continuous_toFun := (continuous_const.smul continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_const.smul continuous_subtype_val).subtype_mk _
+  -- `fun_prop` rather than term-mode `Continuous.subtype_mk`: since Mathlib
+  -- `905b9581`, unifying `Continuous.subtype_mk _ ?hp` against the `continuous_invFun`
+  -- field of this `where` block diverges (it exhausts even a 1M heartbeat budget in
+  -- `isDefEq`). Not a proof-size problem — hoisting the membership obligations into
+  -- standalone lemmas does not help; only avoiding that unification does.
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 /-- **Brouwer for a closed ball of arbitrary positive radius.** -/
 theorem brouwer_ball (R : ℝ) (hR : 0 < R)

@@ -12,8 +12,8 @@ theorem exists_simply_connected_piece [T2Space X] [ConnectedSpace X]
 ```
 
 `X` is a Riemann surface: `[TopologicalSpace X] [ChartedSpace ℂ X]
-[IsManifold (modelWithCornersSelf ℂ ℂ) 1 X]`. Pin: Lean `v4.32.0-rc1`, Mathlib
-`360da6f`. This document is a specification for prover agents. It does **not**
+[IsManifold (modelWithCornersSelf ℂ ℂ) 1 X]`. Pin: Lean `v4.32.2`, Mathlib
+`905b9581`. This document is a specification for prover agents. It does **not**
 contain Lean proofs.
 
 Free structural facts we get from the instances (cite in every file):

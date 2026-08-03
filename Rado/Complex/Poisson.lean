@@ -19,7 +19,7 @@ mass, approximate identity). Together: `exists_harmonic_extension`, the
 solution of the Dirichlet problem (Anghel–Stan "Poisson integral formula";
 Rainer/Forster Theorem 22.3; Hubbard's use in §1.2).
 
-Mathlib anchors (pinned commit `360da6f`):
+Mathlib anchors (pinned commit `905b9581`):
 * `herglotzRieszKernel`, `poissonKernel`, `poissonKernel_eq_re_herglotzRieszKernel`,
   `re_herglotzRieszKernel_le`, `le_re_herglotzRieszKernel`
   (`Mathlib/Analysis/Complex/Poisson.lean`); conventions: in

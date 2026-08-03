@@ -284,13 +284,13 @@ theorem eqOn_const_or_injOn_of_tendstoLocallyUniformlyOn {ι : Type*} {U : Set �
       |>.eqOn_of_preconnected_of_eventuallyEq analyticOnNhd_const hUc hx ?_
     exact heq.eventuallyEq_of_mem (ball_mem_nhds _ hr₀) |>.mono fun z hz ↦ sub_eq_zero.mp hz
 
-theorem exists_branch_log {X : Type*} [TopologicalSpace X] [LocPathConnectedSpace X] {U : Set X}
+theorem exists_branch_log {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X] {U : Set X}
     (hUc : IsSimplyConnected U) (hUo : IsOpen U)
     {g : X → ℂ} (hgc : ContinuousOn g U) (hU₀ : 0 ∉ g '' U) :
     ∃ f : X → ℂ, ContinuousOn f U ∧ EqOn (exp ∘ f) g U := by
   classical
   have := hUc.simplyConnectedSpace
-  have := hUo.locPathConnectedSpace
+  have := hUo.locallyPathConnectedSpace
   rcases hUc.nonempty with ⟨x₀, hx₀U⟩
   have hx₀ : g x₀ ≠ 0 := ne_of_mem_of_not_mem (mem_image_of_mem g hx₀U) hU₀
   lift x₀ to U using hx₀U
@@ -310,7 +310,7 @@ theorem exists_branch_log {X : Type*} [TopologicalSpace X] [LocPathConnectedSpac
     lift x to U using hx
     simpa [hg] using congr($hf x)
 
-theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocPathConnectedSpace X] {U : Set X}
+theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X] {U : Set X}
     (hUc : IsSimplyConnected U) (hUo : IsOpen U) {g : X → ℂ} (hgc : ContinuousOn g U)
     (hU₀ : 0 ∉ g '' U) {n : ℕ} (hn : n ≠ 0) :
     ∃ f : X → ℂ, ContinuousOn f U ∧ ∀ x, f x ^ n = g x := by
@@ -327,7 +327,7 @@ theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocPathConnected
 
 namespace UnitDisc
 
-protected theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocPathConnectedSpace X]
+protected theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
     {U : Set X} (hUc : IsSimplyConnected U) (hUo : IsOpen U) {g : X → UnitDisc}
     (hgc : ContinuousOn g U) (hU₀ : 0 ∉ g '' U) (n : ℕ+) :
     ∃ f : X → UnitDisc, ContinuousOn f U ∧ ∀ x, f x ^ n = g x := by

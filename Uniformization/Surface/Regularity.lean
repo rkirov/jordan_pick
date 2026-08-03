@@ -372,9 +372,13 @@ private theorem dirichlet_upper [T2Space X] {W : Set X} (hWo : IsOpen W)
   have hCbar_tend : Tendsto (fun x ↦ Cbar (e x)) (𝓝 ξ) (𝓝 (Cbar a)) := by
     have hce : ContinuousAt (fun x ↦ e x) ξ := e.continuousAt hξe
     have hbar_at : ContinuousAt Cbar a := by
+      -- `hsub` is ascribed so that `continuous_const`'s scalar is forced to `c'`.
+      -- Left to inference (Mathlib `905b9581`), `Continuous.sub`'s `Pi`-level `f - g`
+      -- yields the side goal `‖(id - fun _ ↦ (a + c) / 2) a‖ ≠ 0`, which neither
+      -- beta-reduces nor mentions `c'`, so `hac'` cannot fire.
+      have hsub : Continuous (fun w : ℂ ↦ w - c') := continuous_id.sub continuous_const
       have hlog : ContinuousAt (fun w ↦ Real.log ‖w - c'‖) a :=
-        (((continuous_id.sub continuous_const).norm).continuousAt).log
-          (by simp only [id_eq]; rw [hac']; exact hr'pos.ne')
+        hsub.norm.continuousAt.log (by simpa [hac'] using hr'pos.ne')
       have hδcont : ContinuousAt δbar a := hlog.sub continuousAt_const
       have hb := hδcont.const_smul (c := C)
       exact hb.congr (by filter_upwards with z; simp [hCbar_def, smul_eq_mul])
@@ -670,9 +674,10 @@ private theorem dirichlet_lower [T2Space X] {W : Set X} (hWo : IsOpen W)
     (isPerronFamily_dirichletFamily hWo (fun ζ hζ ↦ (hφ01 ζ hζ).1)).le_perronSup hmem
   -- the barrier vanishes at `ξ`, so `gstar ≥ φ ξ - ε` near `ξ`
   have hδcont_a : ContinuousAt δbar a := by
+    -- See the note on the matching `hsub` earlier in this file.
+    have hsub : Continuous (fun w : ℂ ↦ w - c') := continuous_id.sub continuous_const
     have hlog : ContinuousAt (fun w ↦ Real.log ‖w - c'‖) a :=
-      (((continuous_id.sub continuous_const).norm).continuousAt).log
-        (by simp only [id_eq]; rw [hac']; exact hr'pos.ne')
+      hsub.norm.continuousAt.log (by simpa [hac'] using hr'pos.ne')
     exact hlog.sub continuousAt_const
   have htend : Tendsto (fun x ↦ C' * δbar (e x)) (𝓝 ξ) (𝓝 (C' * δbar a)) :=
     continuousAt_const.mul (hδcont_a.comp (e.continuousAt hξe))

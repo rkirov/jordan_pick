@@ -85,7 +85,7 @@ theorem exists_pos_cover [T2Space X] [ConnectedSpace X]
     ∃ (pos : Finset (ChartDisk X)) (T : Set X), IsCompact T ∧ IsConnected T ∧
       x₀ ∈ T ∧ K ⊆ T ∧ T ⊆ ⋃ d ∈ pos, d.odisk := by
   classical
-  haveI : LocPathConnectedSpace X := ChartedSpace.locPathConnectedSpace ℂ X
+  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
   haveI : PathConnectedSpace X := pathConnectedSpace_iff_connectedSpace.mpr ‹_›
   -- one chart disk per point, with a distinguished half-radius core
   choose D hDe hDc hDmem using fun y : X => exists_chartDisk_around y

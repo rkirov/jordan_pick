@@ -80,11 +80,12 @@ The engine is ~28k lines across 15 modules (namespace `Pick`); the bridge adds
 
 ## Toolchain — matches the harness
 
-The engine + bridge build against **Lean `v4.32.0-rc1`** + **Mathlib `360da6f`**
+The engine + bridge build against **Lean `v4.32.2`** + **Mathlib `905b9581`**
 (`lean-toolchain` copied here) — the **same pin the lean-eval harness uses**, so
-the bundled engine compiles against the harness's exact dependencies. (The proof
-is version-robust: it also builds unchanged on the `v4.31.0` release.) Re-check
-the harness's `lean-toolchain` / `lake-manifest` before submitting in case
-lean-eval has since bumped its Mathlib `master` pin; if so, re-pin to match (the
-port from `v4.31.0` → `v4.32.0-rc1` needed **zero** code changes, so a further
-small bump is expected to be cheap).
+the bundled engine compiles against the harness's exact dependencies. Re-check the
+harness's `lean-toolchain` / `lake-manifest` before submitting in case lean-eval
+has since bumped again; if so, re-pin to match. Past bumps have been cheap for the
+bundled engine: `v4.31.0` → `v4.32.0-rc1` needed **zero** code changes, and
+`v4.32.0-rc1` → `v4.32.2` needed none *here* — its only fallout was a mechanical
+`LocPathConnectedSpace` → `LocallyPathConnectedSpace` rename in `Uniformization/`,
+which the Pick engine and bridge do not use.

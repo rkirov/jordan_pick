@@ -126,8 +126,8 @@ theorem exists_phi_of_green_of_monodromyTrivial [T2Space X] {U : Set X} {x₀ : 
     with he₀_def
   have he₀sheet : e₀ ∈ sheet V₀ ψpole := ⟨hx₀V₀, rfl⟩
   -- instances for the lifting theorem
-  haveI : LocPathConnectedSpace X := ChartedSpace.locPathConnectedSpace ℂ X
-  haveI : LocPathConnectedSpace (↥U) := hUo.locPathConnectedSpace
+  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
+  haveI : LocallyPathConnectedSpace (↥U) := hUo.locallyPathConnectedSpace
   haveI : ConnectedSpace ↥U := Subtype.connectedSpace hUconn
   haveI : PathConnectedSpace ↥U := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
   -- basepoints for the criterion

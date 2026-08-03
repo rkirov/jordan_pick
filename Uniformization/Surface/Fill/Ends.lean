@@ -302,7 +302,7 @@ theorem exists_escaping_ray [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ : X
   classical
   haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
   haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : LocPathConnectedSpace X := ChartedSpace.locPathConnectedSpace ℂ X
+  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
   haveI : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZopen : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
@@ -312,7 +312,7 @@ theorem exists_escaping_ray [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ : X
   haveI hWsc : SecondCountableTopology ↥Z := inferInstance
   haveI hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
   haveI hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
-  haveI hWlpc : LocPathConnectedSpace ↥Z := hZopen.locPathConnectedSpace
+  haveI hWlpc : LocallyPathConnectedSpace ↥Z := hZopen.locallyPathConnectedSpace
   haveI hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
   have hWncs : ¬ CompactSpace ↥Z := fun hc => hZnc (isCompact_iff_compactSpace.mpr hc)
   -- compact exhaustion of `↥Z` with `Kex 0 = ∅`

@@ -13,7 +13,7 @@ theorem rado_riemannSurface {X : Type*} [TopologicalSpace X] [T2Space X]
 Every connected Hausdorff Riemann surface is second countable. The real
 analogue is **false** (Prüfer surface, long line), so the complex structure
 must be used essentially. Harness pins match this repo exactly
-(Lean `v4.32.0-rc1`, Mathlib `360da6f`); submissions must use only the three
+(Lean `v4.32.2`, Mathlib `905b9581`); submissions must use only the three
 standard axioms. The two recorded eval solutions (Aristotle/Harmonic 2026-06-22,
 Seed Prover/ByteDance 2026-06-28) are **private**; the only public attempt
 (Vilin97/aleph, `reference/rado/aleph_rado.lean`) proved the easy reductions

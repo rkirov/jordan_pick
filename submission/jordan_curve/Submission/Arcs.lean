@@ -182,7 +182,7 @@ theorem arc_interior_isPathConnected {X : Type*} [TopologicalSpace X] {A : Set X
     (convex_Ioo (0 : ℝ) 1).isPathConnected ⟨1 / 2, by norm_num⟩
   have himg : g '' Set.Ioo (0 : ℝ) 1 = A \ {x, y} := by
     ext p
-    simp only [Set.mem_image, Set.mem_diff, Set.mem_insert_iff, Set.mem_singleton_iff]
+    simp only [Set.mem_image, Set.mem_sdiff, Set.mem_insert_iff, Set.mem_singleton_iff]
     constructor
     · rintro ⟨s, hs, rfl⟩
       have hsI : s ∈ Set.Icc (0 : ℝ) 1 := ⟨hs.1.le, hs.2.le⟩
@@ -375,9 +375,9 @@ theorem jordanCurve_split {K : Type*} [TopologicalSpace K]
       IsPathConnected (A₁ \ {f x, f y}) ∧ IsPathConnected (A₂ \ {f x, f y}) := by
   obtain ⟨A₁, A₂, hc1, hc2, hu, hi, ⟨e1⟩, ⟨e2⟩, hpc1, hpc2⟩ := sphere_split hxy
   have himg1 : f '' (A₁ \ {x, y}) = f '' A₁ \ {f x, f y} := by
-    rw [Set.image_diff f.injective, Set.image_insert_eq, Set.image_singleton]
+    rw [Set.image_sdiff f.injective, Set.image_insert_eq, Set.image_singleton]
   have himg2 : f '' (A₂ \ {x, y}) = f '' A₂ \ {f x, f y} := by
-    rw [Set.image_diff f.injective, Set.image_insert_eq, Set.image_singleton]
+    rw [Set.image_sdiff f.injective, Set.image_insert_eq, Set.image_singleton]
   refine ⟨f '' A₁, f '' A₂, f.isClosedMap _ hc1, f.isClosedMap _ hc2, ?_, ?_,
     ⟨(f.image A₁).symm.trans e1⟩, ⟨(f.image A₂).symm.trans e2⟩,
     himg1 ▸ hpc1.image f.continuous, himg2 ▸ hpc2.image f.continuous⟩

@@ -42,7 +42,7 @@ namespace UnitDisc
 /-- `n`-th root branch into the unit disc, hom-trivial version of
 `Complex.UnitDisc.exists_branch_nthRoot`. -/
 protected theorem exists_branch_nthRoot_of_homTrivial {X : Type*} [TopologicalSpace X]
-    [LocPathConnectedSpace X] {U : Set X} (hUt : HomTrivialLoops U) (hUconn : IsConnected U)
+    [LocallyPathConnectedSpace X] {U : Set X} (hUt : HomTrivialLoops U) (hUconn : IsConnected U)
     (hUo : IsOpen U) {g : X → UnitDisc} (hgc : ContinuousOn g U) (hU₀ : 0 ∉ g '' U) (n : ℕ+) :
     ∃ f : X → UnitDisc, ContinuousOn f U ∧ ∀ x, f x ^ n = g x := by
   rcases exists_branch_nthRoot_of_homTrivial hUt hUconn hUo

@@ -21,9 +21,14 @@ build/
 # the bundled copy of the engine is not.
 /submission/Submission/
 
-# Local build artifacts of the rado_riemannSurface submission workspace
-# (verification builds fetch a full Mathlib here).
+# Local build artifacts of the submission verification workspaces. Each workspace's
+# `.lake/packages` is a symlink to the root `/.lake/packages`, so all three share the
+# single Mathlib checkout instead of fetching ~7 GB apiece — they pin the same Mathlib
+# rev and toolchain as the root, so the oleans are already correct. Delete these dirs
+# to force a from-scratch fetch.
 /submission/rado_riemannSurface/.lake/
+/submission/pick/.lake/
+/submission/jordan_curve/.lake/
 
 # Editor / OS noise
 .DS_Store

@@ -64,11 +64,25 @@ case (nearest-point projection).
 lake build
 ```
 
-Pinned to **Lean `v4.32.0-rc1`** + **Mathlib `360da6f`** (a `master` commit) via
-`lean-toolchain` / `lakefile.toml` — chosen to **match the lean-eval harness**,
+Pinned to **Lean `v4.32.2`** + **Mathlib `905b9581`** (the `v4.32.2` release tag)
+via `lean-toolchain` / `lakefile.toml` — chosen to **match the lean-eval harness**,
 so both eval submissions build against the harness's exact dependencies. Mathlib
-is fetched as a dependency. (The proof is version-robust: it also builds
-unchanged on the `v4.31.0` release.)
+is fetched as a dependency. (The proof is version-robust: the `v4.31.0` →
+`v4.32.0-rc1` port needed no code changes at all, and `v4.32.0-rc1` → `v4.32.2`
+needed only a mechanical rename, `LocPathConnectedSpace` →
+`LocallyPathConnectedSpace`, across eight `Uniformization/` files. Because that
+name did not exist before Mathlib's 2026-06-21 rename, the tree no longer builds
+on the older pins.)
+
+`v4.32.2` is the first release carrying both of the mid-2026 kernel soundness
+fixes — [#14484](https://github.com/leanprover/lean4/issues/14484) (missing
+closure check on `opaque` declarations) in `v4.32.1`, and
+[#14576](https://github.com/leanprover/lean4/issues/14576) (nested inductives
+with phantom parameters escaping the type checker) in `v4.32.2`. Both were
+reachable only by an adversarial metaprogram calling `addDecl` directly, never
+from ordinary tactics, but the axiom audits below are worth more on a kernel that
+has them. Note that Mathlib `master` is *not* the right target here: it still
+pins Lean `v4.33.0-rc1`, cut before either fix.
 
 ## Layout
 

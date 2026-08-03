@@ -17,7 +17,7 @@ Two lean-eval problems are solved:
 
 Every result is proved **sorry-free**; `#print axioms` shows only the three standard
 axioms `[propext, Classical.choice, Quot.sound]`. The project is pinned to Lean
-`v4.32.0-rc1` + Mathlib `360da6f` to match the lean-eval harness.
+`v4.32.2` + Mathlib `905b9581` to match the lean-eval harness.
 
 [Source repository](https://github.com/rkirov/jordan-pick) · the four headline
 results are each documented below, with the exact Lean statement shown verbatim.

@@ -220,7 +220,7 @@ theorem isPreconnected_frontier_component_compl_closure [T2Space X] [SimplyConne
     IsPreconnected (frontier (connectedComponentIn (closure V)ᶜ x)) := by
   classical
   haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : LocPathConnectedSpace X := ChartedSpace.locPathConnectedSpace ℂ X
+  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
   have hZopen : IsOpen (connectedComponentIn (closure V)ᶜ x) :=
     isClosed_closure.isOpen_compl.connectedComponentIn
   have hZcompl : connectedComponentIn (closure V)ᶜ x ⊆ (closure V)ᶜ :=

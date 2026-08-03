@@ -515,7 +515,13 @@ theorem arc_not_separates (hbr : BrouwerFPT) {A : Set Plane}
       have h2 : Continuous (fun z => (‖Q z - o‖)⁻¹) :=
         h1.norm.inv₀ (fun z => by
           simp only [ne_eq, norm_eq_zero, sub_eq_zero]; exact hQne z)
-      exact continuous_const.sub (continuous_const.smul (h2.smul h1))
+      -- Each step is ascribed explicitly, and the scalar is passed to `const_smul`
+      -- rather than inferred: since Mathlib `905b9581`, `continuous_const.smul _`
+      -- leaves the scalar an undetermined metavariable, because unifying the `Pi`-level
+      -- `f • g` of `Continuous.smul` against `fun z ↦ R • …` no longer solves for it.
+      have h3 : Continuous (fun z => (‖Q z - o‖)⁻¹ • (Q z - o)) := h2.smul h1
+      have h4 : Continuous (fun z => R • ((‖Q z - o‖)⁻¹ • (Q z - o))) := h3.const_smul R
+      exact continuous_const.sub h4
     have hΦsphere : ∀ z, ‖Φ z - o‖ = R := by
       intro z
       have hne : Q z - o ≠ 0 := sub_ne_zero.mpr (hQne z)
