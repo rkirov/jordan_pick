@@ -1394,6 +1394,27 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     rw [Set.disjoint_left]
     rintro x hxS ⟨y, hyC, rfl⟩
     exact absurd (Kex.subset hn (hN (by simpa using hxS))) (hCsub n hyC)
+  -- **Freezing.**  A prefix already inside `Kex n`'s image is never touched again.
+  -- Keying on `Kex n` rather than on "some fixed compact" is what makes this
+  -- non-circular: `hescape` would require the prefix to be already stable in order to
+  -- pick `N`, whereas membership in `Kex n` is checkable at stage `n` itself, and every
+  -- later stage has its material in `Om m ⊆ val '' (Kex m)ᶜ ⊆ val '' (Kex n)ᶜ`.
+  have hfrozen : ∀ (n : ℕ) (L₁ : List (PLSeg Z)), L₁ <+: (Acc n).L →
+      (⋃ t ∈ L₁, t.img) ⊆ Subtype.val '' (Kex n : Set ↥Z) →
+      ∀ m, n ≤ m → L₁ <+: (Acc m).L := by
+    intro n L₁ hpre hsub m hm
+    induction m, hm using Nat.le_induction with
+    | base => exact hpre
+    | succ m hnm ih =>
+        refine hstep_pre m (Acc m) L₁ ih ?_
+        intro t ht u hu
+        rw [Set.disjoint_left]
+        intro x hxt hxu
+        obtain ⟨y, hy, hyx⟩ := hsub (Set.mem_biUnion ht hxt)
+        obtain ⟨y', hy', hy'x⟩ := hRw_far m u hu hxu
+        have hyy : y' = y := Subtype.val_injective (hy'x.trans hyx.symm)
+        subst hyy
+        exact absurd (Kex.subset hnm hy) (hCsub m hy')
   -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
   --
   -- The SETUP above is complete and sorry-free.  The context now provides, from any
