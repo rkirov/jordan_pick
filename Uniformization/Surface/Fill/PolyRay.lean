@@ -1360,6 +1360,25 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   -- per-stage raw chart-polyline chains from `a m` to `a (m+1)` inside `Om m`
   have hrawchain : ∀ m, Relation.ReflTransGen (CStep (Om m)) (a m : X) (a (m + 1) : X) :=
     fun m => exists_cStep_chain (hOmopen m) (hOmpre m) (haOm m) (ha1Om m)
+  -- ## P2: the accumulated arcs
+  -- Each stage's raw chain, re-based into `Z` but remembering it lives in `Om m`.
+  choose Rw hRwchain hRwhead hRwlast hRwsub using
+    fun m => exists_stage_list (hOmsubZ m) (hrawchain m)
+  -- One stage of last-exit pruning, as a step on `ArcTo` packages.
+  have hstep : ∀ (n : ℕ) (A : ArcTo Z z₀ (a n : X)), ∃ B : ArcTo Z z₀ (a (n + 1) : X),
+      B.img ⊆ A.img ∪ (⋃ t ∈ Rw n, t.img) ∧
+      (∀ L₁ : List (PLSeg Z), L₁ <+: A.L →
+        (∀ t ∈ L₁, ∀ u ∈ Rw n, Disjoint t.img u.img) → L₁ <+: B.L) :=
+    fun n A => A.extend (hRwchain n) (hRwhead n) (hRwlast n)
+  choose stepFn hstep_img hstep_pre using hstep
+  -- The accumulated arc after `n` stages, from `z₀` to `a n`.
+  have ha0 : (a 0 : X) = z₀ := rfl
+  set Acc : ∀ n, ArcTo Z z₀ (a n : X) := fun n =>
+    Nat.rec (motive := fun n => ArcTo Z z₀ (a n : X))
+      (ha0 ▸ ArcTo.nil Z z₀) (fun k ih => stepFn k ih) n with hAccdef
+  have hAcc_succ : ∀ n, Acc (n + 1) = stepFn n (Acc n) := fun _ => rfl
+  -- Stage-`n` material lies in `Om n`, which is disjoint from `Kex n`'s image in `X`.
+  have hRw_far : ∀ n, ∀ u ∈ Rw n, u.img ⊆ Om n := hRwsub
   -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
   --
   -- The SETUP above is complete and sorry-free.  The context now provides, from any
