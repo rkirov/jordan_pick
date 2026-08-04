@@ -844,7 +844,7 @@ theorem exists_truncate {O : Set X} {src : X} :
         -- P2 needs this so the escape argument can be applied to ONE fixed compact.
         (∀ {L₁ L₂ : List (PLSeg O)} {w : PLSeg O}, L = L₁ ++ w :: L₂ →
           (∀ t ∈ L₁, x ∉ t.img) → x ≠ w.p0 →
-          ∀ u ∈ (L'.drop L₁.length).head?, u.img ⊆ w.img) := by
+          ∀ u ∈ (L'.drop L₁.length).head?, u.img ⊆ w.img ∧ u.p0 = w.p0) := by
   intro L
   induction L using List.reverseRecOn with
   | nil => intro _ _ _ _ x hx; simp only [List.not_mem_nil, Set.iUnion_of_empty,
@@ -900,7 +900,7 @@ theorem exists_truncate {O : Set X} {src : X} :
           rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
           · exact absurd (show x = w.p0 by rw [hws, ← hdx, hda]; rfl) hne
           · rw [hL₀, List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ subset_rfl
+            exact hu ▸ ⟨subset_rfl, rfl⟩
       · -- proper cut inside `s`: keep `s.splitL d`
         have hsL : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hlast_meets
         have hsplit_meets : (s.splitL d hd).img ∩ (⋃ t ∈ L₀, t.img) ⊆ {(s.splitL d hd).p0} := by
@@ -937,12 +937,12 @@ theorem exists_truncate {O : Set X} {src : X} :
           · exact hpre'.trans (List.prefix_append _ _)
         · intro L₁ L₂ w hL hmiss hne u hu
           rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
-          · subst hL₁
+          · subst hL₁; subst hws
             rw [List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ (hws ▸ s.splitL_img_sub d hd)
+            exact hu ▸ ⟨PLSeg.splitL_img_sub _ d hd, PLSeg.splitL_p0 _ d hd⟩
           · rw [hL₀, List.append_assoc, List.drop_left, List.cons_append,
               List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ subset_rfl
+            exact hu ▸ ⟨subset_rfl, rfl⟩
     · -- the point is on an earlier segment: recurse
       have hx0 : x ∈ (⋃ t ∈ L₀, t.img) := hx.resolve_right hxs
       obtain ⟨L', h1, h2, h3, h4, h5, h6, h7, h8⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
@@ -1458,6 +1458,26 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         have hyy : y' = y := Subtype.val_injective (hy'x.trans hyx.symm)
         subst hyy
         exact absurd (Kex.subset hnm hy) (hCsub m hy')
+  -- `Om` is decreasing, so "disjoint from stage `n`" already means "disjoint from every
+  -- later stage".
+  have hCmono : ∀ {m n : ℕ}, m ≤ n → C n ⊆ C m := by
+    intro m n h
+    induction n, h using Nat.le_induction with
+    | base => exact subset_rfl
+    | succ n hmn ih => exact (hCdec n).trans ih
+  have hOmdec : ∀ {m n : ℕ}, m ≤ n → Om n ⊆ Om m := fun h => Set.image_mono (hCmono h)
+  -- **Freezing, keyed on `Om`.**  This is the form the growth argument needs: maximality
+  -- of the frozen prefix then says the next segment *meets* `Om n`, and `hescape` can
+  -- contradict that once the segment's image is pinned inside a fixed compact.
+  have hfrozenOm : ∀ (n : ℕ) (L₁ : List (PLSeg Z)), L₁ <+: (Acc n).L →
+      (∀ t ∈ L₁, Disjoint t.img (Om n)) → ∀ m, n ≤ m → L₁ <+: (Acc m).L := by
+    intro n L₁ hpre hdisj m hm
+    induction m, hm using Nat.le_induction with
+    | base => exact hpre
+    | succ m hnm ih =>
+        refine hstep_pre m (Acc m) L₁ ih ?_
+        intro t ht u hu
+        exact (hdisj t ht).mono_right ((hRw_far m u hu).trans (hOmdec hnm))
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
