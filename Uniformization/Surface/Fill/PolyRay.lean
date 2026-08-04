@@ -844,7 +844,7 @@ theorem exists_truncate {O : Set X} {src : X} :
         -- P2 needs this so the escape argument can be applied to ONE fixed compact.
         (∀ {L₁ L₂ : List (PLSeg O)} {w : PLSeg O}, L = L₁ ++ w :: L₂ →
           (∀ t ∈ L₁, x ∉ t.img) → x ≠ w.p0 →
-          ∀ u ∈ (L'.drop L₁.length).head?, u.img ⊆ w.img ∧ u.p0 = w.p0) := by
+          ∃ v, (L'.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) := by
   intro L
   induction L using List.reverseRecOn with
   | nil => intro _ _ _ _ x hx; simp only [List.not_mem_nil, Set.iUnion_of_empty,
@@ -896,11 +896,10 @@ theorem exists_truncate {O : Set X} {src : X} :
             exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
               (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
           · exact hpre'
-        · intro L₁ L₂ w hL hmiss hne u hu
+        · intro L₁ L₂ w hL hmiss hne
           rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
           · exact absurd (show x = w.p0 by rw [hws, ← hdx, hda]; rfl) hne
-          · rw [hL₀, List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ ⟨subset_rfl, rfl⟩
+          · exact ⟨w, by rw [hL₀, List.drop_left, List.head?_cons], subset_rfl, rfl⟩
       · -- proper cut inside `s`: keep `s.splitL d`
         have hsL : s.img ∩ (⋃ t ∈ L₀, t.img) ⊆ {s.p0} := hlast_meets
         have hsplit_meets : (s.splitL d hd).img ∩ (⋃ t ∈ L₀, t.img) ⊆ {(s.splitL d hd).p0} := by
@@ -935,14 +934,13 @@ theorem exists_truncate {O : Set X} {src : X} :
             exact absurd (show x ∈ s.img from ⟨d, hd, hdx⟩)
               (hmiss s (List.mem_append_right _ (List.mem_singleton_self _)))
           · exact hpre'.trans (List.prefix_append _ _)
-        · intro L₁ L₂ w hL hmiss hne u hu
+        · intro L₁ L₂ w hL hmiss hne
           rcases hdecomp hL with ⟨hL₁, hws⟩ | ⟨L₂', hL₀⟩
           · subst hL₁; subst hws
-            rw [List.drop_left, List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ ⟨PLSeg.splitL_img_sub _ d hd, PLSeg.splitL_p0 _ d hd⟩
-          · rw [hL₀, List.append_assoc, List.drop_left, List.cons_append,
-              List.head?_cons, Option.mem_some_iff] at hu
-            exact hu ▸ ⟨subset_rfl, rfl⟩
+            exact ⟨_, by rw [List.drop_left, List.head?_cons],
+              PLSeg.splitL_img_sub _ d hd, PLSeg.splitL_p0 _ d hd⟩
+          · exact ⟨w, by rw [hL₀, List.append_assoc, List.drop_left, List.cons_append,
+              List.head?_cons], subset_rfl, rfl⟩
     · -- the point is on an earlier segment: recurse
       have hx0 : x ∈ (⋃ t ∈ L₀, t.img) := hx.resolve_right hxs
       obtain ⟨L', h1, h2, h3, h4, h5, h6, h7, h8⟩ := ih hsimple₀ hchain₀ hstart₀ hnd₀ hx0
@@ -957,12 +955,12 @@ theorem exists_truncate {O : Set X} {src : X} :
         · obtain ⟨t, ht, hxt⟩ := Set.mem_iUnion₂.mp hx0
           exact absurd hxt (hmiss t (List.mem_append_left _ ht))
         · exact h7 hpre' hmiss
-      · intro L₁ L₂ w hL hmiss hne u hu
+      · intro L₁ L₂ w hL hmiss hne
         rcases hdecomp hL with ⟨hL₁, _⟩ | ⟨L₂', hL₀⟩
         · subst hL₁
           obtain ⟨v, hv, hxv⟩ := Set.mem_iUnion₂.mp hx0
           exact absurd hxv (hmiss v hv)
-        · exact h8 hL₀ hmiss hne u hu
+        · exact h8 hL₀ hmiss hne
 
 /-- **Last-exit point of a chart segment from a compact set.**  If a straight
 chart segment `σ` starts inside a compact set `K`, there is a *last* parameter
