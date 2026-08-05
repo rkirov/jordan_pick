@@ -220,6 +220,23 @@ theorem exists_tube_width : ∃ δ > 0, ∀ z ∈ segment ℝ s.a s.b, ∀ w : �
   refine Metric.mem_thickening_iff.mpr ⟨z, hz, ?_⟩
   simpa [dist_eq_norm] using hw
 
+/-- Refinement of `exists_tube_width` keeping the tube inside a given open set that
+contains the segment's image — in the application, the end `Z`.  Both conditions come
+from one thickening, taken inside `e.target ∩ e.symm ⁻¹' U`. -/
+theorem exists_tube_width_in {U : Set X} (hU : IsOpen U) (hsU : s.img ⊆ U) :
+    ∃ δ > 0, ∀ z ∈ segment ℝ s.a s.b, ∀ w : ℂ, ‖w‖ < δ →
+      z + w ∈ s.e.target ∧ s.e.symm (z + w) ∈ U := by
+  have hcomp : IsCompact (segment ℝ s.a s.b) := by
+    rw [segment_eq_image_lineMap]; exact isCompact_Icc.image (by fun_prop)
+  have hVopen : IsOpen (s.e.target ∩ s.e.symm ⁻¹' U) :=
+    s.e.continuousOn_symm.isOpen_inter_preimage s.e.open_target hU
+  have hsubV : segment ℝ s.a s.b ⊆ s.e.target ∩ s.e.symm ⁻¹' U := fun z hz =>
+    ⟨s.htgt hz, hsU ⟨z, hz, rfl⟩⟩
+  obtain ⟨δ, hδ, hsub⟩ := hcomp.exists_thickening_subset_open hVopen hsubV
+  refine ⟨δ, hδ, fun z hz w hw => hsub ?_⟩
+  refine Metric.mem_thickening_iff.mpr ⟨z, hz, ?_⟩
+  simpa [dist_eq_norm] using hw
+
 /-- Left sub-segment `[a, c]` for `c` in the segment; a chart-straight segment. -/
 def splitL (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : PLSeg O where
   e := s.e; he := s.he; a := s.a; b := c
