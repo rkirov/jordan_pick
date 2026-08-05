@@ -261,6 +261,37 @@ theorem exists_tube_width_in {U : Set X} (hU : IsOpen U) (hsU : s.img ⊆ U) :
   refine Metric.mem_thickening_iff.mpr ⟨z, hz, ?_⟩
   simpa [dist_eq_norm] using hw
 
+/-- **The per-segment tube.**  A half-width for which *both* half-rectangles are carried
+by the chart and land inside `U`.  Rescaling by `‖b - a‖ + 1` converts the normal
+displacement `v · i · (b - a)` into the plain norm bound `exists_tube_width_in` provides. -/
+theorem exists_halfRect_width {U : Set X} (hU : IsOpen U) (hsU : s.img ⊆ U) :
+    ∃ δ > 0, ∀ side : ℝ, s.halfRect δ side ⊆ s.e.target ∧
+      s.e.symm '' (s.halfRect δ side) ⊆ U := by
+  obtain ⟨δ₀, hδ₀, h⟩ := s.exists_tube_width_in hU hsU
+  refine ⟨δ₀ / (‖s.b - s.a‖ + 1), by positivity, fun side => ⟨?_, ?_⟩⟩
+  · rintro _ ⟨⟨u, v⟩, ⟨hu, hv⟩, rfl⟩
+    refine (h _ (lineMap_mem_segment (𝕜 := ℝ) s.a s.b hu) _ ?_).1
+    have hvb : |v| ≤ δ₀ / (‖s.b - s.a‖ + 1) := by
+      split at hv <;> rw [abs_le] <;> constructor <;> linarith [hv.1, hv.2]
+    calc ‖(v : ℂ) * (Complex.I * (s.b - s.a))‖ = |v| * ‖s.b - s.a‖ := by
+          simp [norm_mul, Complex.norm_real, abs_of_nonneg]
+      _ ≤ (δ₀ / (‖s.b - s.a‖ + 1)) * ‖s.b - s.a‖ := by
+          exact mul_le_mul_of_nonneg_right hvb (norm_nonneg _)
+      _ < δ₀ := by
+          rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+          nlinarith [norm_nonneg (s.b - s.a), hδ₀]
+  · rintro _ ⟨_, ⟨⟨u, v⟩, ⟨hu, hv⟩, rfl⟩, rfl⟩
+    refine (h _ (lineMap_mem_segment (𝕜 := ℝ) s.a s.b hu) _ ?_).2
+    have hvb : |v| ≤ δ₀ / (‖s.b - s.a‖ + 1) := by
+      split at hv <;> rw [abs_le] <;> constructor <;> linarith [hv.1, hv.2]
+    calc ‖(v : ℂ) * (Complex.I * (s.b - s.a))‖ = |v| * ‖s.b - s.a‖ := by
+          simp [norm_mul, Complex.norm_real, abs_of_nonneg]
+      _ ≤ (δ₀ / (‖s.b - s.a‖ + 1)) * ‖s.b - s.a‖ :=
+          mul_le_mul_of_nonneg_right hvb (norm_nonneg _)
+      _ < δ₀ := by
+          rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+          nlinarith [norm_nonneg (s.b - s.a), hδ₀]
+
 /-- Left sub-segment `[a, c]` for `c` in the segment; a chart-straight segment. -/
 def splitL (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : PLSeg O where
   e := s.e; he := s.he; a := s.a; b := c
