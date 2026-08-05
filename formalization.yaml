@@ -112,12 +112,39 @@ status:
     (pick, jordan_curve, rado_riemannSurface) are proved in their exact harness statements against
     the harness's pinned toolchain (Lean v4.32.2, Mathlib 905b9581); the rado_riemannSurface
     submission passed the lean-eval comparator (2026-07-10).
-  sorry_count: 0
+  sorry_count: 0                        # scope: the submitted results and the JordanPick/ + Rado/
+                                        # libraries they are built from. The in-progress
+                                        # Uniformization/ development is NOT covered -- see
+                                        # in_progress below.
   sorry_in_definitions: 0
-  axioms:                               # the complete axiom surface of every declaration in the repo
+  axioms:                               # scope as for sorry_count: the axiom surface of every
+                                        # declaration in JordanPick/ and Rado/, hence of all
+                                        # submitted results. Uniformization/ is not covered.
     - "propext"
     - "Classical.choice"
     - "Quot.sound"
+  in_progress:                          # not submitted; recorded so the counts above are not
+                                        # mistaken for a repo-wide claim
+    - directory: "Uniformization/"
+      goal: "lean-eval `uniformization` (Hubbard Thm 1.1.2)"
+      sorry_count: 2
+      sorries:
+        - declaration: "LeanEval.Geometry.isFreeGroup_fundamentalGroup"
+          file: "Uniformization/Main.lean"
+          missing_input: >
+            pi_1 of an open surface is free (Ahlfors-Sario 1960 sec. 44A), reached by Rado
+            triangulability of open surfaces plus Whitehead's spine. Neither is in Mathlib at
+            the pin. Everything downstream of it is proved sorry-free in Uniformization/Pi1Free.lean,
+            so LeanEval.Geometry.uniformization is proved modulo this one input.
+        - declaration: "Uniformization.exists_end_collapse"
+          file: "Uniformization/Surface/Fill/Collapse.lean"
+          missing_input: >
+            A TubeData: two-sided tubular neighbourhood of the cutting ray. The chain
+            TubeData -> RayCollar -> exists_end_collapse is complete and sorry-free.
+      notes: >
+        Because of these, LeanEval.Geometry.uniformization_key and
+        LeanEval.Geometry.uniformization depend on sorryAx via exists_end_collapse; they are
+        NOT axiom-clean, unlike the submitted results above.
   main_results:
     - declaration: "LeanEval.Geometry.PicksTheorem.pick"
       file: "JordanPick/PicksTheorem/EvalBridgeMain.lean"
