@@ -1529,6 +1529,10 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         refine hstep_pre m (Acc m) L₁ ih ?_
         intro t ht u hu
         exact (hdisj t ht).mono_right ((hRw_far m u hu).trans (hOmdec hnm))
+  have haesc : ∀ S : Set ↥Z, IsCompact S → ∃ N, ∀ n, N ≤ n → a n ∉ S := by
+    intro S hS
+    obtain ⟨M, hM⟩ := Kex.exists_superset_of_isCompact hS
+    exact ⟨M, fun n hn hmem => ha_not n (Kex.subset hn (hM hmem))⟩
   -- ### The frozen length
   -- `j n` is the longest prefix of `Acc n` whose segments all avoid stage `n`'s
   -- material.  `Nat.findGreatest` needs the predicate decidable, which it is only
@@ -1581,14 +1585,19 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     refine Nat.le_findGreatest ?_ hcand
     have := hpre.length_le
     rw [hlen] at this; exact this
+  -- **`j` is unbounded.**  `j` is nondecreasing; if it were bounded it would be
+  -- eventually constant, and both ways that can happen are refuted.
+  have hjconst : ∀ k, (∀ n, j n < k) → ∃ N, ∀ m, N ≤ m → j m = j N := by
+    intro k hk
+    have hbdd : BddAbove (Set.range j) := ⟨k, by rintro _ ⟨n, rfl⟩; exact (hk n).le⟩
+    obtain ⟨N, hN⟩ : ∃ N, j N = sSup (Set.range j) := by
+      obtain ⟨N, hN⟩ := Nat.sSup_mem (Set.range_nonempty j) hbdd
+      exact ⟨N, hN⟩
+    exact ⟨N, fun m hm => le_antisymm (hN ▸ le_csSup hbdd ⟨m, rfl⟩) (hjmono N m hm)⟩
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
   -- eventually constant, hence trapped in some `Kex M`.
-  have haesc : ∀ S : Set ↥Z, IsCompact S → ∃ N, ∀ n, N ≤ n → a n ∉ S := by
-    intro S hS
-    obtain ⟨M, hM⟩ := Kex.exists_superset_of_isCompact hS
-    exact ⟨M, fun n hn hmem => ha_not n (Kex.subset hn (hM hmem))⟩
   -- REMAINING GAP (P1 + P2 + P3): the arcwise-simplification / last-exit pruning.
   --
   -- The SETUP above is complete and sorry-free.  The context now provides, from any
