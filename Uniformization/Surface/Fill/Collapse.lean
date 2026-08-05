@@ -229,6 +229,68 @@ theorem not_isCompact_closure_end [T2Space X] [ConnectedSpace X]
   rw [closure_end_eq_component_compl hVo hfc hchart hdich hx]
   exact hWnc
 
+/-- **An end has unbounded part away from its frontier circle.**  If `U` is any relatively
+compact open neighbourhood of `frontier Z`, then `Z \ U` is closed in `X` and still
+noncompact.
+
+This is the geometric fact the *strengthened* escape clause rests on.  `SimpleRayData.hesc`
+only asks the ray to leave every compact subset of `Z`, which a ray running into the
+frontier circle already does — so it does not force the ray edge `R` to be closed in `X`
+(see the note on `exists_end_collapse`).  What is needed is a ray escaping every compact of
+`X`, and this lemma says there is somewhere for such a ray to go: after deleting a collar
+neighbourhood of the boundary circle, what remains is still unbounded, and it is closed, so
+a compact exhaustion of it is an exhaustion by sets that stay away from `frontier Z`.
+
+Closedness holds because `closure Z = Z ∪ frontier Z` and `frontier Z ⊆ U`, so
+`closure (Z \ U) ⊆ closure Z ∩ Uᶜ = Z \ U`.  Noncompactness because otherwise
+`closure Z ⊆ (Z \ U) ∪ closure U` would be compact, contradicting `hWnc` via
+`closure_end_eq_component_compl`. -/
+theorem not_isCompact_end_diff [T2Space X] [ConnectedSpace X]
+    {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    {x : X} (hx : x ∈ (closure V)ᶜ)
+    (hWnc : ¬ IsCompact (connectedComponentIn Vᶜ x))
+    {U : Set X} (hUo : IsOpen U)
+    (hfrU : frontier (connectedComponentIn (closure V)ᶜ x) ⊆ U)
+    (hUcl : IsCompact (closure U)) :
+    IsClosed (connectedComponentIn (closure V)ᶜ x \ U) ∧
+      ¬ IsCompact (connectedComponentIn (closure V)ᶜ x \ U) := by
+  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  set Z : Set X := connectedComponentIn (closure V)ᶜ x with hZdef
+  have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
+  have hnc : ¬ IsCompact (closure Z) :=
+    not_isCompact_closure_end hVo hfc hchart hdich hx hWnc
+  -- `closure Z ⊆ Z ∪ frontier Z`
+  have hsplit : closure Z ⊆ Z ∪ frontier Z := by
+    intro q hq
+    by_cases h : q ∈ Z
+    · exact Or.inl h
+    · exact Or.inr (by rw [hZo.frontier_eq]; exact ⟨hq, h⟩)
+  have hcl : IsClosed (Z \ U) := by
+    rw [← closure_subset_iff_isClosed]
+    intro q hq
+    have hq' : q ∈ closure Z ∩ Uᶜ := by
+      refine ⟨closure_mono (Set.sdiff_subset (t := U)) hq, ?_⟩
+      have : closure (Z \ U) ⊆ closure Uᶜ := closure_mono (Set.sdiff_subset_compl _ _)
+      simpa [hUo.isClosed_compl.closure_eq] using this hq
+    rcases hsplit hq'.1 with h | h
+    · exact ⟨h, hq'.2⟩
+    · exact absurd (hfrU h) hq'.2
+  refine ⟨hcl, fun hK => hnc ?_⟩
+  -- `closure Z ⊆ (Z \ U) ∪ closure U`, a union of two compacts
+  have hsub : closure Z ⊆ (Z \ U) ∪ closure U := by
+    intro q hq
+    by_cases hqU : q ∈ U
+    · exact Or.inr (subset_closure hqU)
+    · rcases hsplit hq with h | h
+      · exact Or.inl ⟨h, hqU⟩
+      · exact absurd (hfrU h) hqU
+  exact (hK.union hUcl).of_isClosed_subset isClosed_closure hsub
+
 /-- **Per-end collapse (the remaining geometric input, W7 L5.5–L6).**  For a
 complement end `Z = connectedComponentIn (closure V)ᶜ x` whose *containing component of
 `Vᶜ` is noncompact*, there is a
