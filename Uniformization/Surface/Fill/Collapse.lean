@@ -188,14 +188,39 @@ half of this that enters `Z` through `p` is discharged in `Fill/BoundaryEntry.le
 Being chart-straight, the entry segment has the same shape as a `PLSeg`, so it can be
 prepended to the polyline ray rather than glued as a foreign arc.
 
-**What remains.**  Two things, both still open:
+`exists_local_collar_of_halfdisk` goes one step further and builds, *inside the model
+disk*, the ray edge (the leftward radius) together with the two quarter-disk half-collars,
+discharging the set-level `TubeData` fields `hpR`, `hRSm`, `hRSp`, `hRZ`, `hSmZ`, `hSpZ`,
+`hSmSp` and `hcovp` near `p`.  `halfdisk_end_eq` is what makes the circle-edge bookkeeping
+tractable: near `p` the frontier circle is a straight diameter, so cutting it at `p` into
+the two arcs is cutting the diameter into halves.
 
-1. *Joining* the entry segment to the escaping ray while keeping the concatenation
-   injective and closed.  `SimpleRayData.hesc` bounds how often the ray can revisit a
-   compact subset of `Z`, but "finitely often" is not "never", so the join needs the ray to
-   be *built* avoiding the entry segment rather than merely intersected with it afterwards.
-2. The half-collars `Sm`, `Sp` themselves, and in particular the circle-edge termination:
-   arranging them to meet `CZ` in exactly the two `ε`-arcs.
+**What remains.**  Three things, all still open:
+
+1. **`SimpleRayData` is not strong enough as stated.**  Its escape clause is
+   `hesc : ∀ K, IsCompact K → K ⊆ Z → ∃ N, ∀ n ≥ N, Disjoint (segment n) K` — escape from
+   the compacts *of `Z`*, i.e. properness of the ray as a map into `Z`.  But `TubeData`
+   asks for `hRcl : IsClosed R` with `R` closed *in `X`*.  Properness in `Z` permits the
+   ray to accumulate on `frontier Z`: a ray running into the boundary circle does leave
+   every compact subset of `Z` (points near the frontier lie in no such compact), yet its
+   closure in `X` picks up frontier points other than `p`, so `R` is not closed and
+   `R \ {p} ⊆ Z` fails.  Compare the open half-disk, where a radius aimed at the diameter
+   is proper in the disk but not closed in the plane.  So `PolyRay.lean` needs a
+   *strengthened* escape clause — the ray must escape every compact of `X`, equivalently
+   eventually avoid a neighbourhood of the compact set `closure V` — and that is a change
+   to the construction, not a corollary of it.
+2. *Joining* the entry segment to the escaping ray while keeping the concatenation
+   injective and closed.  `hesc` bounds how often the ray can revisit a compact subset of
+   `Z`, but "finitely often" is not "never", so the join cannot be repaired after the fact.
+   Nor can the ray simply be built inside `Z` minus the entry slit: near `p` that slit
+   *locally separates* the half-disk into its upper and lower halves — which is exactly
+   what the ray cut is for — so `Z ∖ slit` is the wrong ambient space.  The ray
+   construction has to be *seeded* with the entry segment as segment `0`, which means
+   changing the `Acc`/stage-list accumulation recursion in `PolyRay.lean`.
+3. The half-collars `Sm`, `Sp` along the *global* ray (thicken each chart segment to a
+   rectangle via `PLSeg.exists_tube_width`, glue at junctions using `hshell`), and the
+   circle-edge termination proper: matching the model's `im` coordinate to the circle
+   parameter `θ` so that `Sm ∩ CZ = γ '' [0, ε]` and `Sp ∩ CZ = γ '' [1 - ε, 1]`.
 
 This is still a construction of the same order as the ray itself, not a final step. -/
 theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace X]
