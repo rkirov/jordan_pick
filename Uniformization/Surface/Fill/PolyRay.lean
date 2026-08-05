@@ -1654,6 +1654,60 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       have : j (n + 1) = j n := by omega
       simpa [this] using hd
     exact hidx ▸ hvimg
+  -- **`j` is unbounded.**  Suppose not.  Then `j` stabilises at `j N`; from stage
+  -- `M = max N Nz` on, either the arc equals its frozen prefix (endpoint pinned, refuted
+  -- by `haesc`) or the boundary segments form a descending chain inside the fixed compact
+  -- `(Acc M).L[j M].img`, which `hescape` eventually misses — contradicting `hjmax`.
+  have hjunbdd : ∀ k, ∃ n, k ≤ j n := by
+    intro k
+    by_contra hcon
+    push_neg at hcon
+    obtain ⟨N, hN⟩ := hjconst k hcon
+    set M := max N Nz with hMdef
+    have hMN : N ≤ M := le_max_left _ _
+    have hMz : Nz ≤ M := le_max_right _ _
+    have hjM : ∀ m, M ≤ m → j m = j N := fun m hm => hN m (hMN.trans hm)
+    -- equal arcs have equal endpoints
+    have hendeq : ∀ m m', (Acc m).L = (Acc m').L → a m = a m' := by
+      intro m m' he
+      have h1 := (Acc m).fin
+      have h2 := (Acc m').fin
+      rw [he] at h1
+      refine Subtype.val_injective ?_
+      cases hgl : (Acc m').L.getLast? with
+      | none => simp only [hgl, Option.elim] at h1 h2; rw [← h1, ← h2]
+      | some g => simp only [hgl, Option.elim] at h1 h2; rw [← h1, ← h2]
+    by_cases hfull : ∀ M', ∃ m, M' ≤ m ∧ (Acc m).L.length = j m
+    · -- pinned infinitely often: the endpoint repeats, which `haesc` forbids
+      obtain ⟨m₀, hm₀, hlen₀⟩ := hfull M
+      obtain ⟨M', hM'⟩ := haesc {a m₀} isCompact_singleton
+      obtain ⟨m, hm, hlen⟩ := hfull (max M M')
+      have hmM : M ≤ m := (le_max_left _ _).trans hm
+      have hm₀M : M ≤ m₀ := hm₀
+      have hpin  := hpinned N m  (hMN.trans hmM)  (hjM m hmM)   hlen
+      have hpin₀ := hpinned N m₀ (hMN.trans hm₀M) (hjM m₀ hm₀M) hlen₀
+      exact hM' m ((le_max_right _ _).trans hm)
+        (Set.mem_singleton_iff.mpr (hendeq m m₀ (hpin.trans hpin₀.symm)))
+    · push_neg at hfull
+      obtain ⟨M₀, hM₀⟩ := hfull
+      set M₁ := max M M₀ with hM₁def
+      have hM₁ : M ≤ M₁ := le_max_left _ _
+      have hlt : ∀ m, M₁ ≤ m → j m < (Acc m).L.length := fun m hm =>
+        lt_of_le_of_ne (hj_le m) (Ne.symm (hM₀ m ((le_max_right _ _).trans hm)))
+      have hchainD : ∀ m (hm : M₁ ≤ m), ((Acc m).L[j m]'(hlt m hm)).img ⊆
+          ((Acc M₁).L[j M₁]'(hlt M₁ le_rfl)).img := by
+        intro m hm
+        induction m, hm using Nat.le_induction with
+        | base => exact subset_rfl
+        | succ m hMm ih =>
+            exact (hdescend N m (hMz.trans (hM₁.trans hMm)) (hMN.trans (hM₁.trans hMm))
+              (hjM m (hM₁.trans hMm)) (hjM (m + 1) ((hM₁.trans hMm).trans (Nat.le_succ _)))
+              (hlt m hMm) (hlt (m + 1) (hMm.trans (Nat.le_succ _)))).trans ih
+      obtain ⟨M₂, hM₂⟩ := hescape (((Acc M₁).L[j M₁]'(hlt M₁ le_rfl)).img)
+        (PLSeg.img_compact _) (PLSeg.img_sub _)
+      have hbig : M₁ ≤ max M₁ M₂ := le_max_left _ _
+      exact hjmax _ (hlt _ hbig)
+        ((hM₂ _ (le_max_right _ _)).mono_left (hchainD _ hbig))
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
