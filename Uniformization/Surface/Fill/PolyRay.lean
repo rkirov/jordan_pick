@@ -448,20 +448,28 @@ facts this needs, neither of which existed when `hesc` was written:
 * `not_isCompact_end_diff` — for any relatively compact open `U ⊇ frontier Z`, the set
   `Z \ U` is **closed in `X` and still noncompact**.
 
-`Z \ U` being closed and noncompact is the point: it is a closed noncompact subset of a
-locally compact second countable space, hence admits a `CompactExhaustion`, and every member
-of that exhaustion is a compact subset of `Z` that stays a definite distance from
-`frontier Z`.  Feeding *that* exhaustion to the existing machinery — in place of
-`CompactExhaustion ↥Z`, which is what `nonempty_simpleRayData` currently uses — makes escape
-from it equivalent to escape from the compacts of `X`, because a compact `K ⊆ X` meets `Z`
-either inside `U` (excluded once the ray has left `U` for good) or inside `Z \ U` (excluded
-by the exhaustion).
+`Z \ U` being closed and noncompact is what makes the target *reachable*: it is a closed
+noncompact subset of a locally compact second countable space, hence admits a
+`CompactExhaustion` whose members are compact subsets of `Z` bounded away from
+`frontier Z`.  So there is somewhere for a proper-in-`X` ray to go.
 
-**Scope of the change.**  `hesc` is consumed at `PolyRay.lean:606` (`polyRay_of_simple`'s
-properness) and produced by the `Acc` recursion; the exhaustion `Kex` is fixed at the top of
+**Warning — swapping the exhaustion is necessary but NOT sufficient.**  It is tempting to
+conclude that feeding that exhaustion to the existing machinery, in place of the
+`CompactExhaustion ↥Z` currently used at the top of `nonempty_simpleRayData`, already gives
+escape from the compacts of `X`.  It does not.  Escaping `Dₙ = (Z \ U) ∩ Kₙ` constrains the
+ray only while it is outside `U`; it says nothing while the ray is inside `U ∩ Kₙ`.  A ray
+that oscillates — dipping into `U`, emerging further out, dipping back — escapes every `Dₙ`
+and still fails to escape `Kₙ`, and still accumulates on `frontier Z`.  Ruling that out
+needs the extra conclusion that the ray *eventually leaves `U` for good*, which is a genuine
+additional condition on the construction, not a consequence of the exhaustion choice.
+
+**Scope of the change.**  `hesc` is consumed at `polyRay_of_simple`'s properness argument and
+produced by the `Acc` recursion; the exhaustion `Kex` is fixed at the top of
 `nonempty_simpleRayData` (`(default : CompactExhaustion ↥Z).shiftr`).  The last-exit pruning
-itself is indifferent to which exhaustion it is given, so the edit is localised to the
-choice of `Kex` and the statement threading, not to `prune_step`/`prune_chain`.
+is indifferent to which exhaustion it is handed, so *that* part of the edit is localised —
+but the "eventually leaves `U`" clause has to be established inside the recursion, so the
+change is not confined to the `Kex` choice.  Treat the localisation claim as applying to the
+exhaustion only.
 
 The other two obstructions to a `TubeData` — seeding the recursion with the boundary entry
 segment of `Fill/BoundaryEntry.lean`, and the global half-collars — are independent of this
