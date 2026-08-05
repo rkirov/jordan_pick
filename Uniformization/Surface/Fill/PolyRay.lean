@@ -1546,6 +1546,22 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hjfrozen : ∀ n m, n ≤ m → (Acc n).L.take (j n) <+: (Acc m).L := by
     intro n m hnm
     exact hfrozenOm n _ (hjpre n) (hj_spec n) m hnm
+  -- **Maximality.**  If the arc is longer than its frozen prefix, the very next segment
+  -- must meet the stage material — otherwise `j n` would have been larger.  This is the
+  -- hinge: it converts "the prefix stopped growing" into "a segment keeps meeting `Om n`",
+  -- which `hescape` can refute once that segment is pinned in a fixed compact.
+  have hjmax : ∀ n (h : j n < (Acc n).L.length),
+      ¬ Disjoint ((Acc n).L[j n]).img (Om n) := by
+    intro n h hdisj
+    have hstep : Frozen n (j n + 1) := by
+      intro t ht
+      rw [List.take_succ, List.mem_append] at ht
+      rcases ht with ht' | ht'
+      · exact hj_spec n t ht'
+      · have hte : t = (Acc n).L[j n] := by
+          simpa [List.getElem?_eq_getElem h] using ht'
+        exact hte ▸ hdisj
+    exact absurd hstep (Nat.findGreatest_is_greatest (Nat.lt_succ_self _) h)
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
