@@ -115,7 +115,35 @@ continuous self-map `h` fixing everything outside `Z` and mapping all of `Z`
 into `closure V` (in fact onto the single frontier circle `frontier Z ⊆
 frontier V`).  Constructed by cutting `Z` along an escaping ray, Tietze-extending
 the angular coordinate of the periodic frontier parametrisation, and composing
-with the parametrisation. -/
+with the parametrisation.
+
+## Status: reduced to one construction
+
+Everything downstream of the geometry is now built and sorry-free:
+
+* `Uniformization/Surface/Fill/PolyRay.lean` — `nonempty_simpleRayData` supplies the
+  embedded, proper, shell-separated cutting ray (this was W7-P1/P2/P3, closed);
+* `RayBuild.lean` — `nonempty_rayCollar_of_tubeData` turns raw tube coordinates into
+  a `RayCollar`, discharging all collar-coordinate bookkeeping;
+* `RayCollar.lean` — `exists_end_collapse_of_rayCollar` turns a `RayCollar` for the
+  end into exactly this theorem.
+
+So the *only* thing still missing is a `TubeData X Z CZ γ (γ 0)`: a two-sided
+tubular neighbourhood of the cutting ray, i.e. closed half-collars `Sm`, `Sp`
+sharing the ray edge `R`, with transverse/longitudinal coordinates `sm, tm`
+(resp. `sp, tp`), matching `γ` on the circle edge (`hCZm`, `hCZp`) and covering
+the circle apart from the far arc (`hCZcover`).
+
+**Shape of that construction.**  The ray is a *chart polyline*: each segment is
+straight in a chart.  Thicken each segment to a rectangle in its own chart, then
+glue across junctions.  `SimpleRayData.hshell` is what makes the gluing possible —
+it gives each segment a neighbourhood meeting only its two neighbours, so the
+per-segment tubes interfere only where intended.  Two things need care: a
+*consistent side* (which rectangle half is `Sm` vs `Sp`) transported along the ray,
+and the termination at the circle edge, where `hCZm`/`hCZp` must reproduce `γ` on
+an `ε`-arc either side of `p`.
+
+This is a construction of the same order as the ray itself, not a final step. -/
 theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace X]
     {V : Set X} (hVo : IsOpen V) (hVconn : IsConnected V) (hVcl : IsCompact (closure V))
     {f : X → ℝ} {c : ℝ} {A : Set X} (hAo : IsOpen A) (hfrA : frontier V ⊆ A)
