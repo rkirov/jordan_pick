@@ -3,7 +3,7 @@ Copyright (c) 2026 Rado Kirov. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rado Kirov
 -/
-import Uniformization.Main
+import Uniformization.Surface.Limit
 import Uniformization.RMT.RiemannMapping
 
 /-!
@@ -434,13 +434,21 @@ theorem dichotomy_of_diffeo_opens {X : Type*} [TopologicalSpace X] [T2Space X]
     obtain ⟨eC⟩ := nonempty_ball_diffeo_uhp
     exact ⟨e.trans (eB.trans eC)⟩
 
-/-- **Wrapper for the future `H¹`-generalization.** A simply connected, noncompact,
-second countable Riemann surface is biholomorphic to `ℂ` or to the upper half plane. -/
+/-- **Uniformization for simply connected surfaces.** A simply connected, noncompact,
+second countable Riemann surface is biholomorphic to `ℂ` or to the upper half plane.
+
+This is `LeanEval.Geometry.uniformization_key` (which is `exists_uniformizer` +
+`exists_diffeomorph_opens_of_injective`, inlined here) fed into the dichotomy.  It is stated
+here rather than in `Uniformization/Main.lean` so that the imports run
+`Limit → Dichotomy → Main`: `Main` needs *this* result to derive the harness statement
+`LeanEval.Geometry.uniformization`. -/
 theorem uniformization_of_key {X : Type*} [TopologicalSpace X] [T2Space X] [ConnectedSpace X]
     [SecondCountableTopology X] [ChartedSpace ℂ X]
     [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] [SimplyConnectedSpace X] (hX : ¬ CompactSpace X) :
     Nonempty (X ≃ₘ⟮𝓘(ℂ, ℂ), 𝓘(ℂ, ℂ)⟯ ℂ) ∨
-    Nonempty (X ≃ₘ⟮𝓘(ℂ, ℂ), 𝓘(ℂ, ℂ)⟯ ℍ) :=
-  dichotomy_of_diffeo_opens (LeanEval.Geometry.uniformization_key hX)
+    Nonempty (X ≃ₘ⟮𝓘(ℂ, ℂ), 𝓘(ℂ, ℂ)⟯ ℍ) := by
+  obtain ⟨ψ, hψ, hinj⟩ := Uniformization.exists_uniformizer hX
+  exact dichotomy_of_diffeo_opens
+    (Uniformization.exists_diffeomorph_opens_of_injective hψ hinj)
 
 end Uniformization

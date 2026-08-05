@@ -44,4 +44,6 @@ import Uniformization.Surface.Fill.Ends
 import Uniformization.Surface.Fill
 import Uniformization.Surface.Biholo
 import Uniformization.Surface.Limit
+import Uniformization.Surface.Dichotomy
+import Uniformization.Pi1Free
 import Uniformization.Main
