@@ -55,12 +55,37 @@ theorem uniformization_key (hX : ¬ CompactSpace X) [SimplyConnectedSpace X] :
 
 This is the **sole remaining gap** between `uniformization_key` and the harness statement
 `uniformization`: everything downstream of it is proved sorry-free in
-`Uniformization/Pi1Free.lean`.  The chain is
-`X` open surface ⇒ triangulable (Radó) ⇒ spine retraction (Whitehead) ⇒ π₁ free.
+`Uniformization/Pi1Free.lean`.  The *topological* chain is
+`X` open surface ⇒ triangulable (Radó 1925) ⇒ spine retraction (Whitehead 1939) ⇒ π₁ free.
 Neither triangulability of *open* surfaces nor Whitehead's spine is in Mathlib at the pin,
 and `reference/classification-of-surfaces/` cannot supply them — its Moise development is
 compact-only (`moise_finite_chart_cover` needs a *finite* chart cover) and carries live
 sorries of its own.
+
+**Do not take that route.**  Radó/Moise triangulability is a theorem about *topological*
+surfaces and its difficulty is concentrated in the Schoenflies theorem.  `X` is not merely
+topological: `riemannAtlas X` has analytic transition maps, so `X` is a real-analytic —
+in particular smooth — 2-manifold.  In the smooth category triangulability is Whitehead
+(1940), much weaker; and better still the triangulation can be skipped entirely:
+
+> a connected noncompact **smooth** `n`-manifold is homotopy equivalent to a CW complex of
+> dimension `≤ n - 1`; for `n = 2` that is a graph, whose `π₁` is free.
+
+This is Morse-theoretic (a proper Morse function on an open manifold can be arranged with
+no index-`n` critical points — equivalently a handle decomposition with no `n`-handles).
+Morse theory is essentially absent from Mathlib at the pin, so this remains a project, but
+it uses structure `X` already carries and avoids Schoenflies altogether.
+
+Literature, searched 2026-08-05.  Bishop–Rempe, *Non-compact Riemann surfaces are
+equilaterally triangulable* (arXiv:2103.16702), proves triangulability in exactly our
+setting, but by quasiconformal/dynamical methods far heavier than needed — **not** a
+formalisation target.  Lalwani, *Triangulation and Classification of 2-Manifolds*
+(arXiv:1407.8478), assembles Moise/Ahlfors/Richards and is likely the friendliest write-up
+*if* the topological route is taken anyway.  The smooth statement displayed above was
+attributed by a search summary to Napier–Ramachandran, but that attribution could **not**
+be verified and should be checked in a Morse theory text (Milnor; or Gompf–Stipsicz for the
+handle formulation) before being cited.  Ahlfors–Sario §44A remains the citation of record
+for the surface case.
 
 **On the shape of the statement.**  `Uniformization/Surface/PhiHomTrivial.lean` flags an
 "open mathematical question (T3)": how can `H¹(X, ℝ) = 0` kill an `ℝ/2πℤ`-valued modulus
@@ -79,8 +104,9 @@ Bockstein sequence of `0 → ℤ → ℝ → ℝ/ℤ → 0`,
 it lands in the `HomTrivial*` layer rather than here, and `H²` of manifolds is likewise
 absent from Mathlib.
 
-Full write-up, with both routes costed:
-`reference/uniformization/pi1-open-surface-free.md`. -/
+A longer write-up lives at `reference/uniformization/pi1-open-surface-free.md`, but note
+that `reference/` is **gitignored** (`.gitignore:17`), so it is not present in a fresh
+clone — everything needed is reproduced above. -/
 theorem isFreeGroup_fundamentalGroup (hX : ¬ CompactSpace X) (x : X) :
     IsFreeGroup (FundamentalGroup X x) := by
   sorry
