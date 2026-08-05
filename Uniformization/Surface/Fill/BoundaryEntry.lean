@@ -142,16 +142,120 @@ theorem exists_halfdisk_chart {V : Set X} {f : X → ℝ} {c : ℝ} {A' : Set X}
       linarith
     · exact subset_closure ((hpos _ (hA'mem z hz)).mpr (by rw [hfre z hz]; exact hlt))
 
-/-- **Straight chart segment entering an end through a frontier point.**  If `p` lies on the
-frontier of the end `Z = connectedComponentIn (closure V)ᶜ x₀` and carries the exterior-disk
-chart data, then some maximal-atlas chart `ψ` about `p` admits a nondegenerate straight
-segment from `ψ p` whose image, *punctured at `p`*, lies in `Z`.
+omit [ChartedSpace ℂ X] [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
+/-- **The open half-disk of the normal form lies inside the end.**  It is convex, hence
+connected; it misses `closure V`; and it meets the end `Z` because `p ∈ closure Z`.  So it
+lies in `Z` rather than in some other component of `(closure V)ᶜ`. -/
+theorem halfdisk_image_subset_end {V : Set X} {c : ℝ} {p x₀ : X}
+    {ψ : OpenPartialHomeomorph X ℂ} {r : ℝ} (hr : 0 < r) (hpψ : p ∈ ψ.source)
+    (hbtgt : ball (ψ p) r ⊆ ψ.target)
+    (hclos : ∀ z ∈ ball (ψ p) r, (ψ.symm z ∈ closure V ↔ c ≤ z.re))
+    (hpZ : p ∈ frontier (connectedComponentIn (closure V)ᶜ x₀)) :
+    ψ.symm '' (ball (ψ p) r ∩ {u : ℂ | u.re < c}) ⊆
+      connectedComponentIn (closure V)ᶜ x₀ := by
+  classical
+  set H : Set ℂ := ball (ψ p) r ∩ {u : ℂ | u.re < c} with hHdef
+  have hHtgt : H ⊆ ψ.target := fun u hu => hbtgt hu.1
+  have hHconn : IsPreconnected (ψ.symm '' H) :=
+    ((convex_ball _ _).inter (convex_halfSpace_re_lt c)).isPreconnected.image _
+      (ψ.continuousOn_symm.mono hHtgt)
+  have hHcompl : ψ.symm '' H ⊆ (closure V)ᶜ := by
+    rintro _ ⟨u, hu, rfl⟩
+    exact fun hcl => absurd ((hclos u hu.1).mp hcl) (not_le.mpr hu.2)
+  -- `p ∈ closure Z`, so a chart-ball neighbourhood of `p` meets `Z`
+  have hUo : IsOpen (ψ.source ∩ ψ ⁻¹' ball (ψ p) r) :=
+    ψ.continuousOn.isOpen_inter_preimage ψ.open_source isOpen_ball
+  have hpU : p ∈ ψ.source ∩ ψ ⁻¹' ball (ψ p) r := ⟨hpψ, mem_ball_self hr⟩
+  obtain ⟨y, ⟨hys, hyb⟩, hyZ⟩ :=
+    mem_closure_iff.mp (frontier_subset_closure hpZ) _ hUo hpU
+  simp only [mem_preimage] at hyb
+  have hy' : ψ.symm (ψ y) = y := ψ.left_inv hys
+  have hyH : ψ y ∈ H := by
+    refine ⟨hyb, ?_⟩
+    have hycl : y ∉ closure V := connectedComponentIn_subset _ _ hyZ
+    have hiff : y ∈ closure V ↔ c ≤ (ψ y).re := by
+      have := hclos (ψ y) hyb; rwa [hy'] at this
+    exact not_le.mp fun hle => hycl (hiff.mpr hle)
+  rw [connectedComponentIn_eq hyZ]
+  exact hHconn.subset_connectedComponentIn ⟨ψ y, hyH, hy'⟩ hHcompl
 
-This is exactly the ray edge `R` that `TubeData` requires near its base point: `p ∈ R` with
-`R \ {p} ⊆ Z`.  In the half-plane model of `exists_halfdisk_chart` the segment is the
-leftward radius `[ψ p, ψ p − r/2]`; the punctured part has real part `< c`, hence misses
-`closure V`, and lands in `Z` rather than some other component because the whole open
-half-disk is connected and meets `Z` (as `p ∈ closure Z`). -/
+/-- **The end and its frontier, read off in the half-disk model.**  On the model disk the
+end `Z` is exactly the open left half-disk `{re < c}` and `frontier Z` is exactly the
+vertical diameter `{re = c}`.
+
+The diameter statement is what the circle-edge termination of the half-collars needs: near
+`p` the frontier circle `CZ` is a straight segment through `ψ p`, so cutting it at `p` into
+the two arcs `Sm ∩ CZ` and `Sp ∩ CZ` is cutting the diameter into its two halves. -/
+theorem halfdisk_end_eq {V : Set X} {c : ℝ} {p x₀ : X}
+    {ψ : OpenPartialHomeomorph X ℂ} {r : ℝ} (hr : 0 < r) (hpψ : p ∈ ψ.source)
+    (hbtgt : ball (ψ p) r ⊆ ψ.target)
+    (hclos : ∀ z ∈ ball (ψ p) r, (ψ.symm z ∈ closure V ↔ c ≤ z.re))
+    (hpZ : p ∈ frontier (connectedComponentIn (closure V)ᶜ x₀)) :
+    (∀ z ∈ ball (ψ p) r,
+      (ψ.symm z ∈ connectedComponentIn (closure V)ᶜ x₀ ↔ z.re < c)) ∧
+    (∀ z ∈ ball (ψ p) r,
+      (ψ.symm z ∈ frontier (connectedComponentIn (closure V)ᶜ x₀) ↔ z.re = c)) := by
+  classical
+  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  set Z : Set X := connectedComponentIn (closure V)ᶜ x₀ with hZdef
+  have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
+  have hsub := halfdisk_image_subset_end hr hpψ hbtgt hclos hpZ
+  -- the left half-disk is exactly `Z` inside the model disk
+  have hZiff : ∀ z ∈ ball (ψ p) r, (ψ.symm z ∈ Z ↔ z.re < c) := by
+    intro z hz
+    constructor
+    · intro hzZ
+      exact not_le.mp fun hle =>
+        (connectedComponentIn_subset _ _ hzZ) ((hclos z hz).mpr hle)
+    · intro hlt
+      exact hsub ⟨z, ⟨hz, hlt⟩, rfl⟩
+  refine ⟨hZiff, fun z hz => ⟨fun hfr => ?_, fun hre => ?_⟩⟩
+  · -- on the frontier: not in the open `Z`, and not strictly right of the diameter
+    have hnZ : ψ.symm z ∉ Z := by rw [hZo.frontier_eq] at hfr; exact hfr.2
+    have hle : c ≤ z.re := not_lt.mp fun h => hnZ ((hZiff z hz).mpr h)
+    rcases eq_or_lt_of_le hle with heq | hlt
+    · exact heq.symm
+    · -- strictly right of the diameter: an open neighbourhood misses `Z`
+      exfalso
+      set U : Set X := ψ.source ∩ ψ ⁻¹' (ball (ψ p) r ∩ {u : ℂ | c < u.re}) with hUdef
+      have hUo : IsOpen U :=
+        ψ.continuousOn.isOpen_inter_preimage ψ.open_source
+          (isOpen_ball.inter (isOpen_lt continuous_const (by fun_prop)))
+      have hUmem : ψ.symm z ∈ U := by
+        refine ⟨ψ.map_target (hbtgt hz), ?_⟩
+        simp only [mem_preimage, ψ.right_inv (hbtgt hz)]
+        exact ⟨hz, hlt⟩
+      have hUZ : U ∩ Z = ∅ := by
+        rw [Set.eq_empty_iff_forall_notMem]
+        rintro u ⟨⟨hus, humem⟩, huZ⟩
+        simp only [mem_preimage] at humem
+        have hu' : ψ.symm (ψ u) = u := ψ.left_inv hus
+        have := (hZiff (ψ u) humem.1).mp (by rwa [hu'])
+        exact absurd this (not_lt.mpr humem.2.le)
+      have := mem_closure_iff.mp (frontier_subset_closure hfr) U hUo hUmem
+      rw [hUZ] at this
+      exact absurd this Set.not_nonempty_empty
+  · -- on the diameter: not in `Z`, but a limit of points of `Z` from the left
+    have hnZ : ψ.symm z ∉ Z := fun h => absurd ((hZiff z hz).mp h) (by rw [hre]; exact lt_irrefl c)
+    have hztgt : z ∈ ψ.target := hbtgt hz
+    have hcont : ContinuousAt (ψ.symm) z :=
+      ψ.continuousOn_symm.continuousAt (ψ.open_target.mem_nhds hztgt)
+    have hbase : Filter.Tendsto (fun t : ℝ => z - (t : ℂ)) (𝓝[>] (0 : ℝ)) (𝓝 z) := by
+      have hc : Continuous (fun t : ℝ => z - (t : ℂ)) :=
+        continuous_const.sub Complex.continuous_ofReal
+      have h0 := hc.tendsto (0 : ℝ)
+      simp only [Complex.ofReal_zero, sub_zero] at h0
+      exact h0.mono_left nhdsWithin_le_nhds
+    have hcl : ψ.symm z ∈ closure Z := by
+      refine mem_closure_of_tendsto (hcont.tendsto.comp hbase) ?_
+      filter_upwards [hbase (isOpen_ball.mem_nhds hz), self_mem_nhdsWithin] with t hbt hpt
+      simp only [Set.mem_Ioi] at hpt
+      refine (hZiff _ hbt).mpr ?_
+      simp only [Complex.sub_re, Complex.ofReal_re, hre]
+      linarith
+    rw [hZo.frontier_eq]
+    exact ⟨hcl, hnZ⟩
+
 theorem exists_boundary_entry_segment {V : Set X} {f : X → ℝ} {c : ℝ} {A' : Set X}
     (hA'o : IsOpen A') (hpos : ∀ x ∈ A', (x ∈ V ↔ c < f x))
     {p : X} (hpA' : p ∈ A') (hfp : f p = c)
@@ -167,35 +271,8 @@ theorem exists_boundary_entry_segment {V : Set X} {f : X → ℝ} {c : ℝ} {A' 
   obtain ⟨ψ, hψ, r, hr, hpψ, hψpre, hbtgt, hbA', hclos⟩ :=
     exists_halfdisk_chart hA'o hpos hpA' hfp he hpe hFan hFre hFd
   set Z : Set X := connectedComponentIn (closure V)ᶜ x₀ with hZdef
-  -- the open half-disk, and its image in `X`
   set H : Set ℂ := ball (ψ p) r ∩ {u : ℂ | u.re < c} with hHdef
-  have hHtgt : H ⊆ ψ.target := fun u hu => hbtgt hu.1
-  have hHconv : Convex ℝ H :=
-    (convex_ball _ _).inter (convex_halfSpace_re_lt c)
-  have hHconn : IsPreconnected (ψ.symm '' H) :=
-    hHconv.isPreconnected.image _ (ψ.continuousOn_symm.mono hHtgt)
-  have hHcompl : ψ.symm '' H ⊆ (closure V)ᶜ := by
-    rintro _ ⟨u, hu, rfl⟩
-    exact fun hcl => absurd ((hclos u hu.1).mp hcl) (not_le.mpr hu.2)
-  -- `p ∈ closure Z`, so a chart-ball neighbourhood of `p` meets `Z`
-  have hpcl : p ∈ closure Z := (frontier_subset_closure hpZ)
-  have hUo : IsOpen (ψ.source ∩ ψ ⁻¹' ball (ψ p) r) :=
-    ψ.continuousOn.isOpen_inter_preimage ψ.open_source isOpen_ball
-  have hpU : p ∈ ψ.source ∩ ψ ⁻¹' ball (ψ p) r := ⟨hpψ, mem_ball_self hr⟩
-  obtain ⟨y, ⟨hys, hyb⟩, hyZ⟩ := mem_closure_iff.mp hpcl _ hUo hpU
-  simp only [mem_preimage] at hyb
-  have hy' : ψ.symm (ψ y) = y := ψ.left_inv hys
-  have hyH : ψ y ∈ H := by
-    refine ⟨hyb, ?_⟩
-    have hycl : y ∉ closure V := connectedComponentIn_subset _ _ hyZ
-    have hiff : y ∈ closure V ↔ c ≤ (ψ y).re := by
-      have := hclos (ψ y) hyb; rwa [hy'] at this
-    exact not_le.mp fun hle => hycl (hiff.mpr hle)
-  have hymem : y ∈ ψ.symm '' H := ⟨ψ y, hyH, hy'⟩
-  -- the half-disk image is connected, sits in the complement, and meets `Z`
-  have hHZ : ψ.symm '' H ⊆ Z := by
-    rw [hZdef, connectedComponentIn_eq hyZ]
-    exact hHconn.subset_connectedComponentIn hymem hHcompl
+  have hHZ : ψ.symm '' H ⊆ Z := halfdisk_image_subset_end hr hpψ hbtgt hclos hpZ
   -- the leftward radius
   have hwball : ψ p - ((r / 2 : ℝ) : ℂ) ∈ ball (ψ p) r := by
     rw [mem_ball, dist_eq_norm,
