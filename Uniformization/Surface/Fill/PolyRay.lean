@@ -1614,6 +1614,28 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   -- The frozen prefix's segments are disjoint from every segment of stage `n`.
   have hbdry_disj : ∀ n, ∀ t ∈ (Acc n).L.take (j n), ∀ u ∈ Rw n, Disjoint t.img u.img :=
     fun n t ht u hu => (hj_spec n t ht).mono_right (hRw_far n u hu)
+  -- **The boundary segment's start point avoids the stage material.**  For `j n > 0` it
+  -- is the previous segment's endpoint, which lies in the frozen prefix; for `j n = 0` it
+  -- is `z₀`, which `hescape` puts outside `Om n` from some stage on.
+  obtain ⟨Nz, hNz⟩ := hescape {z₀} isCompact_singleton (Set.singleton_subset_iff.mpr hz₀)
+  have hbdry_p0 : ∀ n, Nz ≤ n → ∀ (h : j n < (Acc n).L.length),
+      ∀ u ∈ Rw n, ((Acc n).L[j n]).p0 ∉ u.img := by
+    intro n hn h u hu hmem
+    rcases Nat.eq_zero_or_pos (j n) with hj0 | hjpos
+    · -- start of the arc: the point is `z₀`, which `hescape` has already excluded
+      have hp0 : ((Acc n).L[j n]).p0 = z₀ := by
+        have hh := (Acc n).head
+        rw [List.head?_eq_getElem?, List.getElem?_eq_getElem (by omega)] at hh
+        simpa [hj0] using hh
+      exact Set.disjoint_left.mp (hNz n hn) rfl (hp0 ▸ hRw_far n u hu hmem)
+    · -- interior: the point is the previous segment's endpoint, inside the frozen prefix
+      have hprev : (Acc n).L[j n - 1]'(by omega) ∈ (Acc n).L.take (j n) :=
+        List.mem_take_iff_getElem.mpr ⟨j n - 1, by omega, rfl⟩
+      have hchainstep : ((Acc n).L[j n - 1]'(by omega)).p1 = ((Acc n).L[j n]).p0 := by
+        have hc := List.isChain_iff_getElem.mp (Acc n).chain (j n - 1) (by omega)
+        simpa [Nat.sub_add_cancel hjpos] using hc
+      exact Set.disjoint_left.mp (hbdry_disj n _ hprev u hu)
+        (hchainstep ▸ PLSeg.p1_mem _) hmem
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
