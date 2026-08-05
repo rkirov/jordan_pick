@@ -26,6 +26,11 @@ frontier into the half-plane normal form
 on a small disk about `p`.  In that model entering the end is a straight leftward segment.
 
 * `exists_halfdisk_chart` — the normal form;
+* `halfdisk_image_subset_end` — the open left half-disk lands in the end `Z`;
+* `halfdisk_end_eq` — in the model, `Z` *is* `{re < c}` and `frontier Z` *is* the diameter
+  `{re = c}`;
+* `exists_local_collar_of_halfdisk` — the ray edge and the two quarter-disk half-collars,
+  supplying the set-level `TubeData` fields near `p`;
 * `exists_boundary_entry_segment` — the straight chart segment from `p` into `Z`.
 
 Note `exists_halfdisk_chart` needs **no** hypothesis on `frontier V` (in particular not
@@ -179,6 +184,7 @@ theorem halfdisk_image_subset_end {V : Set X} {c : ℝ} {p x₀ : X}
   rw [connectedComponentIn_eq hyZ]
   exact hHconn.subset_connectedComponentIn ⟨ψ y, hyH, hy'⟩ hHcompl
 
+omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- **The end and its frontier, read off in the half-disk model.**  On the model disk the
 end `Z` is exactly the open left half-disk `{re < c}` and `frontier Z` is exactly the
 vertical diameter `{re = c}`.
@@ -255,6 +261,103 @@ theorem halfdisk_end_eq {V : Set X} {c : ℝ} {p x₀ : X}
       linarith
     rw [hZo.frontier_eq]
     exact ⟨hcl, hnZ⟩
+
+/-- **The local two-sided collar at a frontier point.**  In the half-disk model the ray edge
+`R` is the leftward radius and the two half-collars are the two quarter-disks below and
+above it.  This supplies, on the model disk, the `TubeData` fields that constrain the sets:
+`hpR`, `hRSm`, `hRSp`, `hRZ`, `hSmZ`, `hSpZ`, `hSmSp` and `hcovp`.
+
+`Sm ∩ Sp = R` on the nose (not merely `⊆`), because `im ≤ y₀` and `y₀ ≤ im` intersect in
+`im = y₀` and `ψ.symm` is injective on the chart target.  What is *not* here is anything
+global: the ray leaves the model disk, and `Sm`/`Sp` must be continued along it. -/
+theorem exists_local_collar_of_halfdisk [T2Space X] {V : Set X} {c : ℝ} {p x₀ : X}
+    {ψ : OpenPartialHomeomorph X ℂ} {r : ℝ} (hr : 0 < r) (hpψ : p ∈ ψ.source)
+    (hψpre : (ψ p).re = c)
+    (hbtgt : ball (ψ p) r ⊆ ψ.target)
+    (hclos : ∀ z ∈ ball (ψ p) r, (ψ.symm z ∈ closure V ↔ c ≤ z.re))
+    (hpZ : p ∈ frontier (connectedComponentIn (closure V)ᶜ x₀)) :
+    ∃ R Sm Sp : Set X,
+      IsClosed R ∧ IsClosed Sm ∧ IsClosed Sp ∧
+      p ∈ R ∧ R ⊆ Sm ∧ R ⊆ Sp ∧ Sm ∩ Sp = R ∧
+      R \ {p} ⊆ connectedComponentIn (closure V)ᶜ x₀ ∧
+      Sm ⊆ connectedComponentIn (closure V)ᶜ x₀ ∪
+        frontier (connectedComponentIn (closure V)ᶜ x₀) ∧
+      Sp ⊆ connectedComponentIn (closure V)ᶜ x₀ ∪
+        frontier (connectedComponentIn (closure V)ᶜ x₀) ∧
+      (∀ᶠ x in 𝓝 p, x ∈ connectedComponentIn (closure V)ᶜ x₀ → x ∈ Sm ∪ Sp) := by
+  classical
+  set Z : Set X := connectedComponentIn (closure V)ᶜ x₀ with hZdef
+  obtain ⟨hZiff, hFiff⟩ := halfdisk_end_eq hr hpψ hbtgt hclos hpZ
+  set y₀ : ℝ := (ψ p).im with hy₀
+  -- the model sets: a closed half-disk of radius `r/2`, split along the horizontal diameter
+  set Kr : Set ℂ := closedBall (ψ p) (r / 2) ∩ {u : ℂ | u.re ≤ c} with hKr
+  set MR : Set ℂ := Kr ∩ {u : ℂ | u.im = y₀} with hMR
+  set Mm : Set ℂ := Kr ∩ {u : ℂ | u.im ≤ y₀} with hMm
+  set Mp : Set ℂ := Kr ∩ {u : ℂ | y₀ ≤ u.im} with hMp
+  have hKrball : Kr ⊆ ball (ψ p) r := fun u hu =>
+    mem_ball.mpr (lt_of_le_of_lt (mem_closedBall.mp hu.1) (by linarith))
+  have hKrtgt : Kr ⊆ ψ.target := hKrball.trans hbtgt
+  have hKrc : IsCompact Kr :=
+    (isCompact_closedBall _ _).inter_right (isClosed_le Complex.continuous_re continuous_const)
+  have hcompact : ∀ M : Set ℂ, IsClosed M → IsCompact (ψ.symm '' (Kr ∩ M)) := fun M hM =>
+    (hKrc.inter_right hM).image_of_continuousOn
+      (ψ.continuousOn_symm.mono (fun u hu => hKrtgt hu.1))
+  have hMRc : IsCompact (ψ.symm '' MR) := hcompact _ (isClosed_eq Complex.continuous_im continuous_const)
+  have hMmc : IsCompact (ψ.symm '' Mm) := hcompact _ (isClosed_le Complex.continuous_im continuous_const)
+  have hMpc : IsCompact (ψ.symm '' Mp) := hcompact _ (isClosed_le continuous_const Complex.continuous_im)
+  -- `ψ p` is the unique point of `MR` on the diameter's right end
+  have hpMR : ψ p ∈ MR := ⟨⟨mem_closedBall_self (by linarith), le_of_eq hψpre⟩, rfl⟩
+  have hpsymm : ψ.symm (ψ p) = p := ψ.left_inv hpψ
+  refine ⟨ψ.symm '' MR, ψ.symm '' Mm, ψ.symm '' Mp,
+    hMRc.isClosed, hMmc.isClosed, hMpc.isClosed, ⟨ψ p, hpMR, hpsymm⟩,
+    Set.image_mono (fun u hu => ⟨hu.1, le_of_eq hu.2⟩),
+    Set.image_mono (fun u hu => ⟨hu.1, ge_of_eq hu.2⟩), ?_, ?_, ?_, ?_, ?_⟩
+  · -- `Sm ∩ Sp = R`
+    have hinj : Set.InjOn ψ.symm Kr :=
+      ψ.symm.injOn.mono (by rw [ψ.symm_source]; exact hKrtgt)
+    have hMeq : Mm ∩ Mp = MR := by
+      ext u
+      simp only [hMm, hMp, hMR, mem_inter_iff, mem_setOf_eq]
+      constructor
+      · rintro ⟨⟨hK, hle⟩, -, hge⟩; exact ⟨hK, le_antisymm hle hge⟩
+      · rintro ⟨hK, heq⟩; exact ⟨⟨hK, le_of_eq heq⟩, hK, ge_of_eq heq⟩
+    rw [← Set.InjOn.image_inter hinj (fun u hu => hu.1) (fun u hu => hu.1), hMeq]
+  · -- `R \ {p} ⊆ Z`
+    rintro _ ⟨⟨u, huMR, rfl⟩, hne⟩
+    refine (hZiff u (hKrball huMR.1)).mpr ?_
+    have hre : u.re ≤ c := by simpa using huMR.1.2
+    rcases lt_or_eq_of_le hre with h | h
+    · exact h
+    · exact absurd (by rw [show u = ψ p from Complex.ext (h.trans hψpre.symm) huMR.2, hpsymm]; rfl)
+        hne
+  · -- `Sm ⊆ Z ∪ CZ`
+    rintro _ ⟨u, ⟨hK, -⟩, rfl⟩
+    have hre : u.re ≤ c := by simpa using hK.2
+    rcases lt_or_eq_of_le hre with h | h
+    · exact Or.inl ((hZiff u (hKrball hK)).mpr h)
+    · exact Or.inr ((hFiff u (hKrball hK)).mpr h)
+  · -- `Sp ⊆ Z ∪ CZ`
+    rintro _ ⟨u, ⟨hK, -⟩, rfl⟩
+    have hre : u.re ≤ c := by simpa using hK.2
+    rcases lt_or_eq_of_le hre with h | h
+    · exact Or.inl ((hZiff u (hKrball hK)).mpr h)
+    · exact Or.inr ((hFiff u (hKrball hK)).mpr h)
+  · -- near `p`, every point of `Z` is in one of the two quarter-disks
+    have hUo : IsOpen (ψ.source ∩ ψ ⁻¹' ball (ψ p) (r / 2)) :=
+      ψ.continuousOn.isOpen_inter_preimage ψ.open_source isOpen_ball
+    have hpU : p ∈ ψ.source ∩ ψ ⁻¹' ball (ψ p) (r / 2) :=
+      ⟨hpψ, mem_ball_self (by linarith)⟩
+    filter_upwards [hUo.mem_nhds hpU] with x hx hxZ
+    obtain ⟨hxs, hxb⟩ := hx
+    simp only [mem_preimage] at hxb
+    have hx' : ψ.symm (ψ x) = x := ψ.left_inv hxs
+    have hxbr : ψ x ∈ ball (ψ p) r :=
+      mem_ball.mpr (lt_trans (mem_ball.mp hxb) (by linarith))
+    have hxlt : (ψ x).re < c := (hZiff (ψ x) hxbr).mp (by rwa [hx'])
+    have hxK : ψ x ∈ Kr := ⟨ball_subset_closedBall hxb, hxlt.le⟩
+    rcases le_total (ψ x).im y₀ with h | h
+    · exact Or.inl ⟨ψ x, ⟨hxK, h⟩, hx'⟩
+    · exact Or.inr ⟨ψ x, ⟨hxK, h⟩, hx'⟩
 
 theorem exists_boundary_entry_segment {V : Set X} {f : X → ℝ} {c : ℝ} {A' : Set X}
     (hA'o : IsOpen A') (hpos : ∀ x ∈ A', (x ∈ V ↔ c < f x))
