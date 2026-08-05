@@ -5,6 +5,7 @@ Authors: Rado Kirov
 -/
 import Uniformization.Surface.Fill.Ends
 import Uniformization.Surface.Fill.CircleParam
+import Uniformization.Surface.Fill.BoundaryEntry
 
 /-!
 # Collapse of the complement ends onto `closure V` (W7 steps L5.5–L8)
@@ -109,6 +110,124 @@ theorem not_isCompact_end [T2Space X] [ConnectedSpace X] {V : Set X}
   have hcvempty : closure V = ∅ := by
     rw [← Set.compl_univ_iff]; exact Set.univ_subset_iff.mp hsub
   exact hVne.ne_empty (Set.subset_eq_empty subset_closure hcvempty)
+
+/-- **The closure of an end is the corresponding component of `Vᶜ`.**
+
+`Z = connectedComponentIn (closure V)ᶜ x` is a component of an *open* set, so `Z` itself
+says nothing about compactness at infinity; `W = connectedComponentIn Vᶜ x` is a component
+of a *closed* set, so `¬ IsCompact W` genuinely means unbounded.  This identifies the two:
+`closure Z = W`.
+
+Consequently `exists_end_collapse`'s hypothesis `hWnc` is exactly `¬ IsCompact (closure Z)`,
+which is the form a prover of that theorem wants (the ray edge `R` must be closed in `X`,
+so the end has to reach infinity rather than merely fail to be compact).
+
+The proof is a connectedness argument.  `closure Z ⊆ W` because `closure Z` is connected,
+contains `x`, and avoids the open `V`.  For the reverse, every point of `closure Z` has an
+open neighbourhood `N` with `N ∩ Vᶜ ⊆ closure Z`: interior points use `Z` itself, and a
+frontier point `q ∈ frontier Z ⊆ frontier V` uses the half-disk model of
+`exists_halfdisk_chart` at `q`, where `Vᶜ` is the closed half-disk `{re ≤ c}` and
+`halfdisk_end_eq` identifies `{re < c}` with `Z` and `{re = c}` with `frontier Z` — so the
+whole closed half-disk lies in `closure Z`.  The union `U` of these neighbourhoods and the
+open set `(closure Z)ᶜ` then cover the preconnected `W`, and `U ∩ W ⊆ closure Z` forces the
+second piece to be empty. -/
+theorem closure_end_eq_component_compl [T2Space X] [ConnectedSpace X]
+    {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    {x : X} (hx : x ∈ (closure V)ᶜ) :
+    closure (connectedComponentIn (closure V)ᶜ x) = connectedComponentIn Vᶜ x := by
+  classical
+  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  obtain ⟨A', hA'o, hfrA', hpos, hneg, -⟩ := exists_collar_dichotomy hdich hfc
+  set Z : Set X := connectedComponentIn (closure V)ᶜ x with hZdef
+  set W : Set X := connectedComponentIn Vᶜ x with hWdef
+  have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
+  have hxZ : x ∈ Z := mem_connectedComponentIn hx
+  have hxVc : x ∈ Vᶜ := fun hxV => hx (subset_closure hxV)
+  have hfrVc : frontier V ⊆ Vᶜ := fun ξ hξ => (hVo.frontier_eq ▸ hξ).2
+  have hfrZ : frontier Z ⊆ frontier V := frontier_component_compl_closure_subset
+  -- `closure Z = Z ∪ frontier Z`, and both sides sit in `Vᶜ`
+  have hclZsplit : ∀ q ∈ closure Z, q ∈ Z ∨ q ∈ frontier Z := by
+    intro q hq
+    by_cases h : q ∈ Z
+    · exact Or.inl h
+    · exact Or.inr (by rw [hZo.frontier_eq]; exact ⟨hq, h⟩)
+  have hclZVc : closure Z ⊆ Vᶜ := by
+    intro q hq
+    rcases hclZsplit q hq with h | h
+    · exact fun hqV => (connectedComponentIn_subset _ _ h) (subset_closure hqV)
+    · exact hfrVc (hfrZ h)
+  have hclZW : closure Z ⊆ W :=
+    (isPreconnected_connectedComponentIn.closure).subset_connectedComponentIn
+      (subset_closure hxZ) hclZVc
+  -- every point of `closure Z` has a neighbourhood meeting `Vᶜ` only inside `closure Z`
+  have hlocal : ∀ q ∈ closure Z, ∃ N : Set X, IsOpen N ∧ q ∈ N ∧ N ∩ Vᶜ ⊆ closure Z := by
+    intro q hq
+    rcases hclZsplit q hq with hqZ | hqfr
+    · exact ⟨Z, hZo, hqZ, fun y hy => subset_closure hy.1⟩
+    · -- frontier point: use the half-disk model at `q`
+      have hqfrV : q ∈ frontier V := hfrZ hqfr
+      obtain ⟨e, he, hqe, F, hFan, hFre, hFd⟩ := hchart q hqfrV
+      obtain ⟨ψ, hψ, r, hr, hqψ, hψpre, hbtgt, hbA', hclos⟩ :=
+        exists_halfdisk_chart hA'o hpos (hfrA' hqfrV) (hfc q hqfrV) he hqe hFan hFre hFd
+      obtain ⟨hZiff, hFiff⟩ := halfdisk_end_eq hr hqψ hbtgt hclos hqfr
+      refine ⟨ψ.source ∩ ψ ⁻¹' ball (ψ q) r,
+        ψ.continuousOn.isOpen_inter_preimage ψ.open_source isOpen_ball,
+        ⟨hqψ, mem_ball_self hr⟩, ?_⟩
+      rintro y ⟨⟨hys, hyb⟩, hyV⟩
+      simp only [mem_preimage] at hyb
+      have hy' : ψ.symm (ψ y) = y := ψ.left_inv hys
+      obtain ⟨hyA', hyf⟩ := hbA' (ψ y) hyb
+      rw [hy'] at hyA' hyf
+      have hyle : (ψ y).re ≤ c := by rw [← hyf]; exact (hneg y hyA').mp hyV
+      rcases lt_or_eq_of_le hyle with hlt | heq
+      · exact subset_closure (by have := (hZiff (ψ y) hyb).mpr hlt; rwa [hy'] at this)
+      · exact frontier_subset_closure (by
+          have := (hFiff (ψ y) hyb).mpr heq; rwa [hy'] at this)
+  choose! N hNo hqN hNsub using hlocal
+  set U : Set X := ⋃ q ∈ closure Z, N q with hUdef
+  have hUo : IsOpen U := isOpen_biUnion fun q hq => hNo q hq
+  have hclU : closure Z ⊆ U := fun q hq => mem_biUnion hq (hqN q hq)
+  have hUVc : U ∩ Vᶜ ⊆ closure Z := by
+    rintro y ⟨hyU, hyV⟩
+    obtain ⟨q, hq, hyN⟩ := mem_iUnion₂.mp hyU
+    exact hNsub q hq ⟨hyN, hyV⟩
+  -- `W` is preconnected and covered by `U` and `(closure Z)ᶜ`; the second piece is empty
+  refine Set.Subset.antisymm hclZW ?_
+  by_contra hcon
+  obtain ⟨w, hwW, hwn⟩ := Set.not_subset.mp hcon
+  have hcover : W ⊆ U ∪ (closure Z)ᶜ := by
+    intro v hv
+    by_cases h : v ∈ closure Z
+    · exact Or.inl (hclU h)
+    · exact Or.inr h
+  obtain ⟨y, hyW, hyU, hyn⟩ :=
+    isPreconnected_connectedComponentIn U (closure Z)ᶜ hUo isClosed_closure.isOpen_compl
+      hcover ⟨x, mem_connectedComponentIn hxVc, hclU (subset_closure hxZ)⟩ ⟨w, hwW, hwn⟩
+  exact hyn (hUVc ⟨hyU, connectedComponentIn_subset _ _ hyW⟩)
+
+/-- **An end reaches infinity.**  Restatement of `exists_end_collapse`'s hypothesis `hWnc`
+in the form its proof needs: the end has noncompact closure, so a cutting ray inside it can
+escape every compact set of `X` and the ray edge `R` can be closed in `X`.
+
+This is what fails for the hole in the counterexample recorded on `exists_end_collapse`:
+there `closure Z` is the closed unit disk. -/
+theorem not_isCompact_closure_end [T2Space X] [ConnectedSpace X]
+    {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {c : ℝ}
+    (hfc : ∀ ξ ∈ frontier V, f ξ = c)
+    (hchart : ∀ ξ ∈ frontier V, ∃ e ∈ riemannAtlas X, ξ ∈ e.source ∧
+        ∃ F : ℂ → ℂ, AnalyticAt ℂ F (e ξ) ∧
+          (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
+    (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
+    {x : X} (hx : x ∈ (closure V)ᶜ)
+    (hWnc : ¬ IsCompact (connectedComponentIn Vᶜ x)) :
+    ¬ IsCompact (closure (connectedComponentIn (closure V)ᶜ x)) := by
+  rw [closure_end_eq_component_compl hVo hfc hchart hdich hx]
+  exact hWnc
 
 /-- **Per-end collapse (the remaining geometric input, W7 L5.5–L6).**  For a
 complement end `Z = connectedComponentIn (closure V)ᶜ x` whose *containing component of
