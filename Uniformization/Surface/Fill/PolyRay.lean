@@ -423,7 +423,49 @@ segments) and carries the **shell separation** directly (`hshell`).
 
 `polyRay_of_simple` assembles this into a `PolyRay`.  This is exactly the data the
 last-exit pruning (P1 within a stage, P2 across stages) plus the metric separation
-(P3) must produce; it plays the role `TubeData` plays for `RayCollar`. -/
+(P3) must produce; it plays the role `TubeData` plays for `RayCollar`.
+
+## `hesc` is too weak for `TubeData` — specification of the fix
+
+`hesc` quantifies over compacts **of `Z`**, i.e. it says the ray is proper as a map into
+`Z`.  `TubeData` (`Fill/RayBuild.lean`) instead needs `hRcl : IsClosed R` with `R` closed
+**in `X`** and `R \ {p} ⊆ Z`.  Properness in `Z` does not give that: a ray running into
+`frontier Z` leaves every compact subset of `Z` — points near the frontier lie in no such
+compact — yet its closure in `X` picks up frontier points other than `p`.  The open
+half-disk with a radius aimed at the diameter is the model.  So `nonempty_simpleRayData`,
+though true and proved, cannot supply a `TubeData` as it stands.
+
+**What the strengthened clause should say.**  Replace `hesc` by escape from the compacts of
+`X`:
+
+    hesc' : ∀ K : Set X, IsCompact K → ∃ N, ∀ n ≥ N, Disjoint ((e n).symm '' segment ℝ (a n) (b n)) K
+
+**Why it is achievable, and with which inputs.**  `Fill/Collapse.lean` now proves the two
+facts this needs, neither of which existed when `hesc` was written:
+
+* `closure_end_eq_component_compl` — `closure Z = connectedComponentIn Vᶜ x`, so
+  `exists_end_collapse`'s (corrected) hypothesis `hWnc` says `closure Z` is noncompact;
+* `not_isCompact_end_diff` — for any relatively compact open `U ⊇ frontier Z`, the set
+  `Z \ U` is **closed in `X` and still noncompact**.
+
+`Z \ U` being closed and noncompact is the point: it is a closed noncompact subset of a
+locally compact second countable space, hence admits a `CompactExhaustion`, and every member
+of that exhaustion is a compact subset of `Z` that stays a definite distance from
+`frontier Z`.  Feeding *that* exhaustion to the existing machinery — in place of
+`CompactExhaustion ↥Z`, which is what `nonempty_simpleRayData` currently uses — makes escape
+from it equivalent to escape from the compacts of `X`, because a compact `K ⊆ X` meets `Z`
+either inside `U` (excluded once the ray has left `U` for good) or inside `Z \ U` (excluded
+by the exhaustion).
+
+**Scope of the change.**  `hesc` is consumed at `PolyRay.lean:606` (`polyRay_of_simple`'s
+properness) and produced by the `Acc` recursion; the exhaustion `Kex` is fixed at the top of
+`nonempty_simpleRayData` (`(default : CompactExhaustion ↥Z).shiftr`).  The last-exit pruning
+itself is indifferent to which exhaustion it is given, so the edit is localised to the
+choice of `Kex` and the statement threading, not to `prune_step`/`prune_chain`.
+
+The other two obstructions to a `TubeData` — seeding the recursion with the boundary entry
+segment of `Fill/BoundaryEntry.lean`, and the global half-collars — are independent of this
+one. -/
 structure SimpleRayData (Z : Set X) (z₀ : X) where
   /-- The chart carrying the `n`-th segment. -/
   e : ℕ → OpenPartialHomeomorph X ℂ
