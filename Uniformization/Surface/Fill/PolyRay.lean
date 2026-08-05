@@ -220,6 +220,30 @@ theorem exists_tube_width : ∃ δ > 0, ∀ z ∈ segment ℝ s.a s.b, ∀ w : �
   refine Metric.mem_thickening_iff.mpr ⟨z, hz, ?_⟩
   simpa [dist_eq_norm] using hw
 
+/-- The closed half-rectangle of half-width `δ` on one side of the segment, in chart
+coordinates: `lineMap a b u + v · i · (b - a)` with `u ∈ [0,1]` and `v` ranging over
+`[0, δ]` (`side = 1`) or `[-δ, 0]` (`side = -1`).
+
+The normal direction is `i · (b - a)` rather than an abstract choice of side, and that
+is what makes the two half-tubes glue across junctions: transition maps of
+`riemannAtlas X` are biholomorphic, hence orientation-preserving, so `i · (b - a)`
+points the same way in every chart along the ray. -/
+def halfRect (s : PLSeg O) (δ : ℝ) (side : ℝ) : Set ℂ :=
+  (fun q : ℝ × ℝ => AffineMap.lineMap s.a s.b q.1 + (q.2 : ℂ) * (Complex.I * (s.b - s.a)))
+    '' (Set.Icc (0 : ℝ) 1 ×ˢ (if 0 ≤ side then Set.Icc (0 : ℝ) δ else Set.Icc (-δ) 0))
+
+theorem halfRect_isCompact (s : PLSeg O) (δ side : ℝ) : IsCompact (s.halfRect δ side) := by
+  refine (isCompact_Icc.prod ?_).image (by fun_prop)
+  split <;> exact isCompact_Icc
+
+theorem segment_subset_halfRect (s : PLSeg O) {δ : ℝ} (hδ : 0 ≤ δ) (side : ℝ) :
+    segment ℝ s.a s.b ⊆ s.halfRect δ side := by
+  intro z hz
+  rw [segment_eq_image_lineMap] at hz
+  obtain ⟨u, hu, rfl⟩ := hz
+  refine ⟨(u, 0), ⟨hu, ?_⟩, by simp⟩
+  split <;> simp [hδ, neg_nonpos.mpr hδ]
+
 /-- Refinement of `exists_tube_width` keeping the tube inside a given open set that
 contains the segment's image — in the application, the end `Z`.  Both conditions come
 from one thickening, taken inside `e.target ∩ e.symm ⁻¹' U`. -/
