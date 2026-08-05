@@ -1594,6 +1594,15 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       obtain ⟨N, hN⟩ := Nat.sSup_mem (Set.range_nonempty j) hbdd
       exact ⟨N, hN⟩
     exact ⟨N, fun m hm => le_antisymm (hN ▸ le_csSup hbdd ⟨m, rfl⟩) (hjmono N m hm)⟩
+  -- Once `j` has stabilised at `j N`, an arc that *is* its own frozen prefix is pinned:
+  -- it equals `(Acc N).L.take (j N)`, hence has a fixed endpoint.
+  have hpinned : ∀ N m, N ≤ m → j m = j N → (Acc m).L.length = j m →
+      (Acc m).L = (Acc N).L.take (j N) := by
+    intro N m hm hjm hlen
+    have hpre := hjfrozen N m hm
+    have hlenN : ((Acc N).L.take (j N)).length = j N := by
+      have := hj_le N; rw [List.length_take]; omega
+    exact (List.IsPrefix.eq_of_length_le hpre (by omega)).symm
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
