@@ -2023,7 +2023,21 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   -- * (P3) `hshell` from simplicity + local finiteness + `MetrizableSpace X`
   --   (from `[T2Space X]` + `SecondCountableTopology X` via Urysohn) and
   --   `Disjoint.exists_thickenings`.
-  sorry
+  -- ### Assembly
+  exact ⟨{
+    e := fun i => (f i).e
+    he := fun i => (f i).he
+    a := fun i => (f i).a
+    b := fun i => (f i).b
+    hab := hf_nd
+    htgt := fun i => (f i).htgt
+    hZ := fun i => (f i).hsub
+    hchain := hf_chain
+    hstart := hf_start
+    hadj := hf_adj
+    hfar := hf_far
+    hesc := fun K hK hKZ => hf_esc K hK hKZ
+    hshell := hf_shell }⟩
 
 /-- **An embedded, proper, chart-polyline ray exists in a noncompact end
 (W7 step A1).**  Immediate from `polyRay_of_simple` and `nonempty_simpleRayData`. -/
