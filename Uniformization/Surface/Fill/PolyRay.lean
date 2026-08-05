@@ -1636,6 +1636,24 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         simpa [Nat.sub_add_cancel hjpos] using hc
       exact Set.disjoint_left.mp (hbdry_disj n _ hprev u hu)
         (hchainstep ▸ PLSeg.p1_mem _) hmem
+  -- **The descending chain.**  Once `j` has stabilised, the boundary segment at the next
+  -- stage sits inside the current one — this is the whole purpose of the shrinking clause.
+  have hdescend : ∀ N n, Nz ≤ n → N ≤ n → j n = j N → j (n + 1) = j N →
+      ∀ (h : j n < (Acc n).L.length) (h' : j (n + 1) < (Acc (n + 1)).L.length),
+      ((Acc (n + 1)).L[j (n + 1)]).img ⊆ ((Acc n).L[j n]).img := by
+    intro N n hnz hNn hjn hjn1 h h'
+    obtain ⟨v, hv, hvimg, _⟩ := hstep_shrink n (Acc n) _ _ _ (hbdry n h)
+      (hbdry_disj n) (hbdry_p0 n hnz h)
+    -- `v` is the boundary segment of `Acc (n+1)`, because `j` did not move
+    have hlen : ((Acc n).L.take (j n)).length = j n := by
+      have := hj_le n; rw [List.length_take]; omega
+    have hidx : (Acc (n + 1)).L[j (n + 1)] = v := by
+      have hd : ((Acc (n + 1)).L.drop (j n)).head? = some v := by rw [← hlen]; exact hv
+      rw [List.head?_eq_getElem?, List.getElem?_drop,
+        List.getElem?_eq_getElem (by omega)] at hd
+      have : j (n + 1) = j n := by omega
+      simpa [this] using hd
+    exact hidx ▸ hvimg
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
