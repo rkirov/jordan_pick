@@ -149,8 +149,38 @@ orientation-preserving.  Taking the normal direction as `i · (b - a)` in each c
 therefore already agrees across junctions — the usual orientability side-condition is
 discharged by holomorphy of the atlas rather than by simple connectivity.
 
-What genuinely remains delicate is the termination at the circle edge, where
-`hCZm`/`hCZp` must reproduce `γ` on an `ε`-arc either side of `p`.
+*The coordinates are not the hard part either.*  `TubeData` constrains `sm, tm`
+(resp. `sp, tp`) only by: continuity on the half-collar, range (`sm ∈ [0,1]`,
+`tm ≥ 0`), vanishing on the ray edge (`hsm_R`), and the circle-edge relations
+`hCZm`/`hCZp`.  Their behaviour in between is unconstrained, so they need not be
+faithful transverse/longitudinal coordinates.  The prescription
+
+* `sm = 0` on `R`, `sm = θ/ε` on `Sm ∩ CZ` (where `γ θ = x`),
+* `tm = 0` on `Sm ∩ CZ`, `tm` arbitrary `≥ 0` elsewhere,
+
+is continuous on the closed set `R ∪ (Sm ∩ CZ)` — the two pieces meet only at
+`p = γ 0`, where both give `0` — so **Tietze** extends it to `Sm`.  `X` is normal
+(metrizable, as `RayCollar.lean` already uses), so this is available.
+
+**So the real content of gap #2 is the SETS.**  Construct closed `R, Sm, Sp` with
+`R ⊆ Sm ∩ Sp`, `R \ {p} ⊆ Z`, `Sm ∪ Sp ⊆ Z ∪ CZ`, `Sm ∩ Sp ⊆ R`, circle traces
+`Sm ∩ CZ = γ '' [0,ε]` and `Sp ∩ CZ = γ '' [1-ε,1]`, and the covering conditions
+`hCZcover`, `hcov`, `hcovp`.  Given those, the coordinates follow by Tietze and the
+`RayCollar`/collapse layers finish the job.
+
+The delicate point is the circle-edge termination: arranging the half-collars to
+meet `CZ` in exactly those two arcs.
+
+**Interface mismatch to fix first.**  `nonempty_simpleRayData` produces a ray starting
+at a point `z₀ ∈ Z` — the *open* end — whereas `TubeData` needs the ray edge `R` to
+satisfy `p ∈ R` and `R \ {p} ⊆ Z` with `p = γ 0` on the frontier circle `CZ`.  So the
+escaping ray has to be *extended backwards* from `z₀` to `p`: a path from the frontier
+point `p` into `Z`, met to the ray at `z₀`, with the join staying embedded.  `Z` is open
+and locally connected (`Rado.locallyConnectedSpace`) and `p ∈ frontier Z`, so such a
+path exists; keeping the concatenation injective and closed is the work.
+
+This is a real gap between the two layers, not bookkeeping: the ray layer as built
+starts in the interior, the tube layer needs it to start on the boundary circle.
 
 This is a construction of the same order as the ray itself, not a final step. -/
 theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace X]
