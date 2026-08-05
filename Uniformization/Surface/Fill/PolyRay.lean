@@ -1603,6 +1603,17 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     have hlenN : ((Acc N).L.take (j N)).length = j N := by
       have := hj_le N; rw [List.length_take]; omega
     exact (List.IsPrefix.eq_of_length_le hpre (by omega)).symm
+  -- The decomposition `Acc n = (frozen prefix) ++ boundary :: rest`, in the exact shape
+  -- `hstep_shrink` consumes.
+  have hbdry : ∀ n (h : j n < (Acc n).L.length),
+      (Acc n).L = (Acc n).L.take (j n) ++ (Acc n).L[j n] :: (Acc n).L.drop (j n + 1) := by
+    intro n h
+    conv_lhs => rw [← List.take_append_drop (j n) (Acc n).L]
+    congr 1
+    exact (List.drop_eq_getElem_cons h).symm ▸ rfl
+  -- The frozen prefix's segments are disjoint from every segment of stage `n`.
+  have hbdry_disj : ∀ n, ∀ t ∈ (Acc n).L.take (j n), ∀ u ∈ Rw n, Disjoint t.img u.img :=
+    fun n t ht u hu => (hj_spec n t ht).mono_right (hRw_far n u hu)
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
