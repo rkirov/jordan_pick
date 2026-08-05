@@ -1562,6 +1562,25 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
           simpa [List.getElem?_eq_getElem h] using ht'
         exact hte ▸ hdisj
     exact absurd hstep (Nat.findGreatest_is_greatest (Nat.lt_succ_self _) h)
+  -- **`j` is nondecreasing, and the frozen prefixes are nested.**  The prefix frozen at
+  -- stage `n` is still a prefix at stage `m ≥ n` (`hjfrozen`), and its segments still
+  -- avoid `Om m ⊆ Om n`; so it is a candidate for `j m`, whence `j n ≤ j m`.
+  have hjmono : ∀ n m, n ≤ m → j n ≤ j m := by
+    intro n m hnm
+    have hpre := hjfrozen n m hnm
+    have hlen : ((Acc n).L.take (j n)).length = j n := by
+      have := hj_le n; rw [List.length_take]; omega
+    -- the frozen prefix of stage `n` *is* stage `m`'s prefix of that length
+    have heq : (Acc m).L.take (j n) = (Acc n).L.take (j n) := by
+      have h := List.prefix_iff_eq_take.mp hpre
+      rw [hlen] at h; exact h.symm
+    have hcand : Frozen m (j n) := by
+      intro t ht
+      rw [heq] at ht
+      exact (hj_spec n t ht).mono_right (hOmdec hnm)
+    refine Nat.le_findGreatest ?_ hcand
+    have := hpre.length_le
+    rw [hlen] at this; exact this
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
