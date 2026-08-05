@@ -171,18 +171,33 @@ is continuous on the closed set `R ∪ (Sm ∩ CZ)` — the two pieces meet only
 The delicate point is the circle-edge termination: arranging the half-collars to
 meet `CZ` in exactly those two arcs.
 
-**Interface mismatch to fix first.**  `nonempty_simpleRayData` produces a ray starting
-at a point `z₀ ∈ Z` — the *open* end — whereas `TubeData` needs the ray edge `R` to
-satisfy `p ∈ R` and `R \ {p} ⊆ Z` with `p = γ 0` on the frontier circle `CZ`.  So the
-escaping ray has to be *extended backwards* from `z₀` to `p`: a path from the frontier
-point `p` into `Z`, met to the ray at `z₀`, with the join staying embedded.  `Z` is open
-and locally connected (`Rado.locallyConnectedSpace`) and `p ∈ frontier Z`, so such a
-path exists; keeping the concatenation injective and closed is the work.
+**Interface mismatch — the entry segment is now built.**  `nonempty_simpleRayData` produces
+a ray starting at a point `z₀ ∈ Z` — the *open* end — whereas `TubeData` needs the ray edge
+`R` to satisfy `p ∈ R` and `R \ {p} ⊆ Z` with `p = γ 0` on the frontier circle `CZ`.  The
+half of this that enters `Z` through `p` is discharged in `Fill/BoundaryEntry.lean`:
 
-This is a real gap between the two layers, not bookkeeping: the ray layer as built
-starts in the interior, the tube layer needs it to start on the boundary circle.
+* `exists_halfdisk_chart` puts the frontier into the half-plane normal form at `p`.  The
+  lever is `exists_biholo_chart_germ` (`Surface/LevelChart.lean`): promoting `F ∘ e` to a
+  maximal-atlas chart `ψ` gives a coordinate whose **real part is `f` itself**, so the
+  collar dichotomy `V = {f > c}` reads off as `closure V = {Re ≥ c}` on a disk about `p`.
+* `exists_boundary_entry_segment` then produces a *chart-straight* segment from `ψ p` — the
+  leftward radius `[ψ p, ψ p − r/2]` — whose punctured image lies in `Z`.  It lands in `Z`
+  specifically (not some other component of `(closure V)ᶜ`) because the open half-disk is
+  convex, hence connected, and meets `Z` since `p ∈ closure Z`.
 
-This is a construction of the same order as the ray itself, not a final step. -/
+Being chart-straight, the entry segment has the same shape as a `PLSeg`, so it can be
+prepended to the polyline ray rather than glued as a foreign arc.
+
+**What remains.**  Two things, both still open:
+
+1. *Joining* the entry segment to the escaping ray while keeping the concatenation
+   injective and closed.  `SimpleRayData.hesc` bounds how often the ray can revisit a
+   compact subset of `Z`, but "finitely often" is not "never", so the join needs the ray to
+   be *built* avoiding the entry segment rather than merely intersected with it afterwards.
+2. The half-collars `Sm`, `Sp` themselves, and in particular the circle-edge termination:
+   arranging them to meet `CZ` in exactly the two `ε`-arcs.
+
+This is still a construction of the same order as the ray itself, not a final step. -/
 theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace X]
     {V : Set X} (hVo : IsOpen V) (hVconn : IsConnected V) (hVcl : IsCompact (closure V))
     {f : X → ℝ} {c : ℝ} {A : Set X} (hAo : IsOpen A) (hfrA : frontier V ⊆ A)
