@@ -1730,6 +1730,52 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       _ = (Acc (stg i)).L[i]'(hstg_lt i) := List.getElem_take ..
   -- the limit family
   set f : ℕ → PLSeg Z := fun i => (Acc (stg i)).L[i]'(hstg_lt i) with hfdef
+  -- a single stage that sees any given finite set of indices
+  -- `stg` is an arbitrary choice function, not monotone, so the common stage must
+  -- dominate `stg l` for *every* index `l` involved, not just the largest one.
+  have hbig : ∀ i, ∃ m, (∀ l, l ≤ i + 1 → stg l ≤ m) ∧ i + 1 < (Acc m).L.length := by
+    intro i
+    refine ⟨max ((Finset.range (i + 2)).sup stg) (stg (i + 1)), fun l hl => ?_, ?_⟩
+    · exact le_max_of_le_left (Finset.le_sup (Finset.mem_range.mpr (by omega)))
+    · have h1 := hstg (i + 1)
+      have h2 := hjmono (stg (i + 1)) _ (le_max_right ((Finset.range (i + 2)).sup stg) _)
+      have h3 := hj_le (max ((Finset.range (i + 2)).sup stg) (stg (i + 1)))
+      omega
+  have hf_at : ∀ i m, stg i ≤ m → ∀ (h : i < (Acc m).L.length), (Acc m).L[i] = f i :=
+    fun i m hm h => hstable i m hm h
+  -- `f` chains, starts at `z₀`, and is nondegenerate
+  have hf_chain : ∀ i, (f i).p1 = (f (i + 1)).p0 := by
+    intro i
+    obtain ⟨m, hdom, hlt⟩ := hbig i
+    have e1 : (Acc m).L[i] = f i := hf_at i m (hdom i (by omega)) (by omega)
+    have e2 : (Acc m).L[i + 1] = f (i + 1) := hf_at (i + 1) m (hdom (i + 1) le_rfl) hlt
+    have := List.isChain_iff_getElem.mp (Acc m).chain i (by omega)
+    rw [e1, e2] at this; exact this
+  have hf_start : (f 0).p0 = z₀ := by
+    have hlt := hstg_lt 0
+    have hh := (Acc (stg 0)).head
+    rw [List.head?_eq_getElem?, List.getElem?_eq_getElem hlt] at hh
+    exact hh
+  have hf_nd : ∀ i, (f i).a ≠ (f i).b :=
+    fun i => (Acc (stg i)).nd _ (List.getElem_mem _)
+  -- simplicity, in the ℕ-indexed form `simple_family_adj_far` consumes
+  have hf_simp : ∀ i, (f i).img ∩ (⋃ l ∈ Finset.range i, (f l).img) ⊆ {(f i).p0} := by
+    intro i
+    obtain ⟨m, hdom, hlt⟩ := hbig i
+    have hi : i < (Acc m).L.length := by omega
+    have hsim := (Acc m).simple i hi
+    intro y hy
+    have he : (Acc m).L[i] = f i := hf_at i m (hdom i (by omega)) hi
+    rw [← he]
+    refine hsim ⟨?_, ?_⟩
+    · rw [he]; exact hy.1
+    · obtain ⟨l, hl, hyl⟩ := Set.mem_iUnion₂.mp hy.2
+      rw [Finset.mem_range] at hl
+      have hml : stg l ≤ m := hdom l (by omega)
+      refine Set.mem_biUnion (List.mem_take_iff_getElem.mpr
+        ⟨l, by omega, rfl⟩) ?_
+      rw [hf_at l m hml (by omega)]; exact hyl
+  have hf_p0 : ∀ i, (f i).p0 = ((Acc (stg i)).L[i]'(hstg_lt i)).p0 := fun _ => rfl
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
