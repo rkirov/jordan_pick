@@ -1066,14 +1066,21 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
       -- `hescape` be applied to it at all.
       (∀ (L₁ L₂ : List (PLSeg O)) (w : PLSeg O), L = L₁ ++ w :: L₂ →
         (∀ t ∈ L₁, Disjoint t.img σ.img) → w.p0 ∉ σ.img →
-        ∃ v, (L'.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) := by
+        ∃ v, (L'.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) ∧
+      -- **Tail provenance.**  `L'` is a pointwise-shrunk prefix of `L` followed by at
+      -- most one new segment, which comes from `σ`.  Unconditional, hence composable.
+      (∃ k, k ≤ L.length ∧ L'.length ≤ k + 1 ∧
+        (∀ i (h : i < L'.length), i < k → ∀ (h' : i < L.length), L'[i].img ⊆ (L[i]'h').img) ∧
+        (∀ i (h : i < L'.length), k ≤ i → L'[i].img ⊆ σ.img)) := by
   set K : Set X := ⋃ t ∈ L, t.img with hKdef
   by_cases hdeg : σ.p0 = σ.p1
   · -- degenerate raw segment: keep the arc unchanged
     have hp : p = σ.p1 := hσ0.symm.trans hdeg
     refine ⟨L, hsimple, hchain, hstart, hnd, ?_, Set.subset_union_left,
       fun s hs => Or.inl (img_subset_biUnion hs), fun hpre _ => hpre,
-      fun L₁ L₂ w hL _ _ => ⟨w, by rw [hL, List.drop_left, List.head?_cons], subset_rfl, rfl⟩⟩
+      fun L₁ L₂ w hL _ _ => ⟨w, by rw [hL, List.drop_left, List.head?_cons], subset_rfl, rfl⟩,
+      ⟨L.length, le_rfl, by omega, fun i _ _ _ => subset_rfl,
+        fun i h hge => absurd h (by omega)⟩⟩
     rw [hp] at hend; exact hend
   -- nondegenerate raw segment
   have hσab : σ.a ≠ σ.b := by
@@ -1084,7 +1091,9 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
     have hsp : src = p := by simpa using hend
     refine ⟨[σ], (simpleList_nil.snoc (by simp)), List.IsChain.singleton σ, ?_,
       ?_, ?_, ?_, ?_, fun hpre _ => by rw [List.prefix_nil.mp hpre]; exact List.nil_prefix,
-      fun L₁ L₂ w hL _ _ => by simp at hL⟩
+      fun L₁ L₂ w hL _ _ => by simp at hL,
+      ⟨0, by simp, by simp, fun i _ hik _ => absurd hik (by omega),
+        fun i h _ => by rw [List.getElem_singleton]⟩⟩
     · show σ.p0 = src; rw [hσ0, hsp]
     · intro s hs; rw [List.mem_singleton] at hs; subst hs; exact hσab
     · show σ.p1 = σ.p1; rfl
@@ -1116,7 +1125,9 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
         Set.disjoint_right.mp (hdisj t ht) ⟨_, hcTseg, rfl⟩),
       fun L₁ L₂ w hL hdisj hp0 => hShr' hL
         (fun t ht => Set.disjoint_right.mp (hdisj t ht) ⟨_, hcTseg, rfl⟩)
-        (fun hx => hp0 (hx ▸ ⟨_, hcTseg, rfl⟩))⟩
+        (fun hx => hp0 (hx ▸ ⟨_, hcTseg, rfl⟩)),
+      ⟨L'.length, hLen', by omega, fun i h _ h' => hIdx' i h h',
+        fun i h hge => absurd h (by omega)⟩⟩
     rw [hxp1] at hE'
     cases hgl' : L'.getLast? with
     | none => simp only [hgl', Option.elim] at hE' ⊢; exact hE'.symm
@@ -1149,7 +1160,17 @@ theorem prune_step [T2Space X] {O : Set X} {src p : X}
         have hle : L₁.length ≤ L'.length :=
           le_of_not_gt fun hc => hnn (List.drop_eq_nil_of_le hc.le)
         exact ⟨v, by rw [List.drop_append_of_le_length hle, List.head?_append, hv]; rfl,
-          hvimg, hvp0⟩⟩
+          hvimg, hvp0⟩,
+      ⟨L'.length, hLen', by simp only [List.length_append, List.length_singleton]; omega,
+        (fun i h hik h' => by rw [List.getElem_append_left hik]; exact hIdx' i hik h'),
+        (fun i h hge => by
+          -- past the truncation only the residual tail `σ'` sits, a piece of `σ`
+          have hik : i = L'.length := by
+            simp only [List.length_append, List.length_singleton] at h; omega
+          subst hik
+          simp only [List.getElem_append_right (le_refl _), Nat.sub_self,
+            List.getElem_singleton]
+          exact σ.splitR_img_sub _ hcTseg)⟩⟩
     · refine List.IsChain.append hC' (List.IsChain.singleton _) ?_
       intro g hg' y hy
       rw [List.head?_singleton, Option.mem_some_iff] at hy
@@ -1311,7 +1332,7 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
       intro p q L hsimple hchain hstart hnd hend hRchain hRhead hRlast
       simp only [List.head?_cons, Option.elim] at hRhead
       -- one last-exit prune against `σ` …
-      obtain ⟨L₁, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ :=
+      obtain ⟨L₁, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ :=
         prune_step hsimple hchain hstart hnd hend σ hRhead
       -- … then recurse along the rest of the stage
       have hR'head : R'.head?.elim (σ.p1 = q) (fun s => s.p0 = σ.p1) := by
