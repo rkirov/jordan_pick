@@ -1318,7 +1318,13 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
         -- the start point is still available to re-establish the hypothesis.
         (∀ (L₁ L₂ : List (PLSeg O)) (w : PLSeg O), L = L₁ ++ w :: L₂ →
           (∀ t ∈ L₁, ∀ u ∈ R, Disjoint t.img u.img) → (∀ u ∈ R, w.p0 ∉ u.img) →
-          ∃ v, (L'.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) := by
+          ∃ v, (L'.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) ∧
+        -- **Tail provenance, folded along the stage.**  Composes because it is
+        -- unconditional: at each step take the smaller of the two split indices.
+        (∃ k, k ≤ L.length ∧
+          (∀ i (h : i < L'.length), i < k → ∀ (h' : i < L.length),
+            L'[i].img ⊆ (L[i]'h').img) ∧
+          (∀ i (h : i < L'.length), k ≤ i → L'[i].img ⊆ (⋃ t ∈ R, t.img))) := by
   intro R
   induction R with
   | nil =>
@@ -1327,7 +1333,8 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
       subst hRhead
       exact ⟨L, hsimple, hchain, hstart, hnd, hend, by simp, fun hpre _ => hpre,
         fun L₁ L₂ w hL _ _ =>
-          ⟨w, by rw [hL, List.drop_left, List.head?_cons], subset_rfl, rfl⟩⟩
+          ⟨w, by rw [hL, List.drop_left, List.head?_cons], subset_rfl, rfl⟩,
+        ⟨L.length, le_rfl, fun i _ _ _ => subset_rfl, fun i h hge => absurd h (by omega)⟩⟩
   | cons σ R' ih =>
       intro p q L hsimple hchain hstart hnd hend hRchain hRhead hRlast
       simp only [List.head?_cons, Option.elim] at hRhead
@@ -1352,9 +1359,9 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
             cases hw : (hd :: tl).getLast? with
             | none => exact absurd (List.getLast?_eq_none_iff.mp hw) (by simp)
             | some w => rw [hw] at hRlast; simpa using hRlast
-      obtain ⟨L₂, g1, g2, g3, g4, g5, g6, g7, g8⟩ :=
+      obtain ⟨L₂, g1, g2, g3, g4, g5, g6, g7, g8, g9⟩ :=
         ih h1 h2 h3 h4 h5 (hRchain.tail) hR'head hR'last
-      refine ⟨L₂, g1, g2, g3, g4, g5, ?_, ?_, ?_⟩
+      refine ⟨L₂, g1, g2, g3, g4, g5, ?_, ?_, ?_, ?_⟩
       · -- material: `⋃L₂ ⊆ ⋃L₁ ∪ ⋃R' ⊆ (⋃L ∪ σ.img) ∪ ⋃R' = ⋃L ∪ ⋃(σ :: R')`
         refine g6.trans ?_
         rw [biUnion_img_cons]
@@ -1381,6 +1388,23 @@ theorem prune_chain [T2Space X] {O : Set X} {src : X} :
           (fun t ht u hu => hdisj t ht u (List.mem_cons_of_mem _ hu))
           (fun u hu => hw'p0 ▸ hp0 u (List.mem_cons_of_mem _ hu))
         exact ⟨v, hv, hvimg.trans hw'img, hvp0.trans hw'p0⟩
+      · -- compose the two split indices: below `min` both stages agree with `L`
+        -- pointwise; at or above it the material comes from `σ` or from `R'`.
+        obtain ⟨k₁, hk₁L, hk₁len, hk₁lo, hk₁hi⟩ := h10
+        obtain ⟨k₂, hk₂L, hk₂lo, hk₂hi⟩ := g9
+        refine ⟨min k₁ k₂, le_trans (min_le_left _ _) hk₁L, ?_, ?_⟩
+        · intro i hi hik h'
+          have hik₂ : i < k₂ := lt_of_lt_of_le hik (min_le_right _ _)
+          have hi₁ : i < L₁.length := lt_of_lt_of_le hik₂ hk₂L
+          exact (hk₂lo i hi hik₂ hi₁).trans
+            (hk₁lo i hi₁ (lt_of_lt_of_le hik (min_le_left _ _)) h')
+        · intro i hi hge
+          rw [biUnion_img_cons]
+          rcases Nat.lt_or_ge i k₂ with hik₂ | hik₂
+          · have hi₁ : i < L₁.length := lt_of_lt_of_le hik₂ hk₂L
+            exact Set.subset_union_of_subset_left
+              ((hk₂lo i hi hik₂ hi₁).trans (hk₁hi i hi₁ (by omega))) _
+          · exact Set.subset_union_of_subset_right (hk₂hi i hi hik₂) _
 
 /-- `prune_chain` packaged as an extension of `ArcTo` along one stage.  This is the
 step the `Nat.rec` in `nonempty_simpleRayData` iterates. -/
@@ -1394,10 +1418,14 @@ theorem ArcTo.extend [T2Space X] {O : Set X} {src p q : X} (A : ArcTo O src p)
         (∀ t ∈ L₁, ∀ u ∈ R, Disjoint t.img u.img) → L₁ <+: B.L) ∧
       (∀ (L₁ L₂ : List (PLSeg O)) (w : PLSeg O), A.L = L₁ ++ w :: L₂ →
         (∀ t ∈ L₁, ∀ u ∈ R, Disjoint t.img u.img) → (∀ u ∈ R, w.p0 ∉ u.img) →
-        ∃ v, (B.L.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) := by
-  obtain ⟨L', h1, h2, h3, h4, h5, h6, h7, h8⟩ :=
+        ∃ v, (B.L.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) ∧
+      (∃ k, k ≤ A.L.length ∧
+        (∀ i (h : i < B.L.length), i < k → ∀ (h' : i < A.L.length),
+          (B.L[i]).img ⊆ (A.L[i]'h').img) ∧
+        (∀ i (h : i < B.L.length), k ≤ i → (B.L[i]).img ⊆ (⋃ t ∈ R, t.img))) := by
+  obtain ⟨L', h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ :=
     prune_chain R A.simple A.chain A.head A.nd A.fin hRchain hRhead hRlast
-  exact ⟨⟨L', h1, h2, h3, h4, h5⟩, h6, fun _ hpre hdisj => h7 hpre hdisj, h8⟩
+  exact ⟨⟨L', h1, h2, h3, h4, h5⟩, h6, fun _ hpre hdisj => h7 hpre hdisj, h8, h9⟩
 
 /-- **The pruning obligation (P1–P3), frozen.**  A noncompact complement end
 `Z = connectedComponentIn (closure V)ᶜ x₀` admits, from any base point `z₀ ∈ Z`,
@@ -1509,9 +1537,13 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         (∀ t ∈ L₁, ∀ u ∈ Rw n, Disjoint t.img u.img) → L₁ <+: B.L) ∧
       (∀ (L₁ L₂ : List (PLSeg Z)) (w : PLSeg Z), A.L = L₁ ++ w :: L₂ →
         (∀ t ∈ L₁, ∀ u ∈ Rw n, Disjoint t.img u.img) → (∀ u ∈ Rw n, w.p0 ∉ u.img) →
-        ∃ v, (B.L.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) :=
+        ∃ v, (B.L.drop L₁.length).head? = some v ∧ v.img ⊆ w.img ∧ v.p0 = w.p0) ∧
+      (∃ k, k ≤ A.L.length ∧
+        (∀ i (h : i < B.L.length), i < k → ∀ (h' : i < A.L.length),
+          (B.L[i]).img ⊆ (A.L[i]'h').img) ∧
+        (∀ i (h : i < B.L.length), k ≤ i → (B.L[i]).img ⊆ (⋃ t ∈ Rw n, t.img))) :=
     fun n A => A.extend (hRwchain n) (hRwhead n) (hRwlast n)
-  choose stepFn hstep_img hstep_pre hstep_shrink using hstep
+  choose stepFn hstep_img hstep_pre hstep_shrink hstep_tail using hstep
   -- The accumulated arc after `n` stages, from `z₀` to `a n`.
   have ha0 : (a 0 : X) = z₀ := rfl
   set Acc : ∀ n, ArcTo Z z₀ (a n : X) := fun n =>
