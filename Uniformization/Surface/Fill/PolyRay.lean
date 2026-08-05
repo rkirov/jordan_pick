@@ -1875,6 +1875,25 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         · -- beyond it: the material is stage `m`'s, which sits inside `Om n`
           refine (hkhi i h hik).trans ?_
           exact Set.iUnion₂_subset fun u hu => (hRw_far m u hu).trans (hOmdec hnm)
+  -- **`hesc`.**  Given a compact `K ⊆ Z`, `hescape` supplies a stage `n` whose material
+  -- misses `K`; every segment of index at least `|Acc n|` then lies in `Om n`, hence
+  -- misses `K` too.
+  have hf_esc : ∀ K : Set X, IsCompact K → K ⊆ Z →
+      ∃ N : ℕ, ∀ i ≥ N, Disjoint (f i).img K := by
+    intro K hK hKZ
+    obtain ⟨n, hn⟩ := hescape K hK hKZ
+    refine ⟨(Acc n).L.length, fun i hi => ?_⟩
+    -- read `f i` at a stage past both `stg i` and `n`
+    set m := max (stg i) n with hmdef
+    have hm1 : stg i ≤ m := le_max_left _ _
+    have hm2 : n ≤ m := le_max_right _ _
+    have hlt : i < (Acc m).L.length := by
+      have h1 := hstg i
+      have h2 := hjmono (stg i) m hm1
+      have h3 := hj_le m
+      omega
+    have he : (Acc m).L[i] = f i := hf_at i m hm1 hlt
+    exact (hn n le_rfl).symm.mono_left (he ▸ hAcc_tail n m hm2 i hlt hi)
   obtain ⟨hf_adj, hf_far⟩ := simple_family_adj_far f hf_ne hf_chain hf_simp
   -- the material of the accumulated arcs only ever grows by stage material
   have hAcc_img : ∀ n m, n ≤ m → (Acc m).img ⊆ (Acc n).img ∪ Om n := by
