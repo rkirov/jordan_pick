@@ -20,7 +20,8 @@ simple-connectivity transfer in `Fill.lean`:
 
 The mathematical content is the Anghel–Stan ray-cut Tietze collapse: each end
 `Z` (a component of `(closure V)ᶜ`, of which there are finitely many by
-`finite_ends`, each noncompact by `not_isCompact_end`) carries a continuous
+`finite_ends`, and which must be an end at infinity rather than a hole — see the
+counterexample in `exists_end_collapse`'s docstring) carries a continuous
 **collapse** map `h_Z : X → X` fixing everything outside `Z` and mapping `Z`
 into `closure V`.  Because distinct ends are disjoint and every `h_Z` fixes
 `closure V`, the finitely many collapses **compose** (via `compList`) to a
@@ -110,12 +111,50 @@ theorem not_isCompact_end [T2Space X] [ConnectedSpace X] {V : Set X}
   exact hVne.ne_empty (Set.subset_eq_empty subset_closure hcvempty)
 
 /-- **Per-end collapse (the remaining geometric input, W7 L5.5–L6).**  For a
-noncompact complement end `Z = connectedComponentIn (closure V)ᶜ x`, there is a
+complement end `Z = connectedComponentIn (closure V)ᶜ x` whose *containing component of
+`Vᶜ` is noncompact*, there is a
 continuous self-map `h` fixing everything outside `Z` and mapping all of `Z`
 into `closure V` (in fact onto the single frontier circle `frontier Z ⊆
 frontier V`).  Constructed by cutting `Z` along an escaping ray, Tietze-extending
 the angular coordinate of the periodic frontier parametrisation, and composing
 with the parametrisation.
+
+## The hypothesis `hWnc`, and why `¬ IsCompact Z` will not do
+
+This theorem previously assumed only `¬ IsCompact Z`.  **That is not enough — the
+statement is false under it.**  Counterexample:
+
+> `X = ℂ`, `V = {z | 1 < ‖z‖ < 2}`, `c = 0`.  On `{1/2 < ‖z‖ < 3/2}` put `f = log ‖z‖`,
+> on `{3/2 < ‖z‖ < 3}` put `f = log 2 - log ‖z‖`; `A` is their (disjoint) union, so `f` is
+> harmonic on `A`, vanishes on both frontier circles, and has `V`-side `{f > 0}` at each,
+> with `F = Log z` resp. `F = log 2 - Log z` giving `hchart` (`deriv F ≠ 0`).  Take `x = 0`,
+> so `Z = {‖z‖ < 1}`, which is **not compact**, so the old hypothesis held.
+
+The conclusion would supply `h : C(ℂ, ℂ)` fixing `{‖z‖ ≥ 1}` with `h '' Z ⊆ closure V`.
+Restricted to the closed unit disk this is a map `D̄ → {1 ≤ ‖z‖ ≤ 2}` that is the identity
+on `∂D̄`.  No such map exists: `∂D̄ ↪ closure V` generates `π₁(closure V) ≅ ℤ`, yet it would
+factor through the contractible `D̄`.
+
+The defect is that `¬ IsCompact Z` does not exclude a *relatively* compact end — a hole
+rather than an end at infinity — and a hole cannot be collapsed onto its own boundary.
+`not_isCompact_end` proves `¬ IsCompact Z` unconditionally, so it never had any content
+here.
+
+The correct hypothesis is on the component of `Vᶜ` (a **closed** set, so its components are
+closed and "noncompact" genuinely means unbounded):
+
+    hWnc : ¬ IsCompact (connectedComponentIn Vᶜ x)
+
+which fails for the counterexample, where that component is the closed unit disk.  It is
+exactly what `exists_level_piece_regular_frontier` already delivers and what
+`exists_retraction_onto_closure` already receives — that hypothesis was being passed in and
+then **ignored** (it was named `_hVnc`).  So no caller changes were needed.
+
+A prover of this theorem will want `closure Z = connectedComponentIn Vᶜ x`, which turns
+`hWnc` into `¬ IsCompact (closure Z)`.  That equality is a clopen argument in the
+`Vᶜ`-component, and the open half of it is exactly `halfdisk_image_subset_end`
+(`Fill/BoundaryEntry.lean`): near a frontier point the closed half-disk `{re ≤ c}` is the
+closure of the open half-disk `{re < c}`, and the latter lies in `Z`.
 
 ## Status: reduced to one construction
 
@@ -233,7 +272,7 @@ theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace
           (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0)
     (hdich : ∀ ξ ∈ frontier V, ∀ᶠ x in 𝓝 ξ, (x ∈ V ↔ c < f x))
     {x : X} (hx : x ∈ (closure V)ᶜ)
-    (hZnc : ¬ IsCompact (connectedComponentIn (closure V)ᶜ x)) :
+    (hWnc : ¬ IsCompact (connectedComponentIn Vᶜ x)) :
     ∃ h : C(X, X),
       (∀ y ∉ connectedComponentIn (closure V)ᶜ x, h y = y) ∧
       (∀ y ∈ connectedComponentIn (closure V)ᶜ x, h y ∈ closure V) := by
@@ -251,7 +290,7 @@ many collapses (`finite_ends`, `compList_collapse`). -/
 theorem exists_retraction_onto_closure [T2Space X] [ConnectedSpace X]
     [SimplyConnectedSpace X] {V : Set X} (hVo : IsOpen V) (hVconn : IsConnected V)
     (hVcl : IsCompact (closure V))
-    (_hVnc : ∀ x ∉ V, ¬ IsCompact (connectedComponentIn Vᶜ x))
+    (hVnc : ∀ x ∉ V, ¬ IsCompact (connectedComponentIn Vᶜ x))
     {f : X → ℝ} {c : ℝ} {A : Set X} (hAo : IsOpen A) (hfrA : frontier V ⊆ A)
     (hharm : SurfaceHarmonicOn f A)
     (hfc : ∀ ξ ∈ frontier V, f ξ = c)
@@ -268,8 +307,9 @@ theorem exists_retraction_onto_closure [T2Space X] [ConnectedSpace X]
   have hcollapse : ∀ Z ∈ Ends, ∃ h : C(X, X),
       (∀ y ∉ Z, h y = y) ∧ (∀ y ∈ Z, h y ∈ closure V) := by
     rintro Z ⟨z, hz, rfl⟩
-    have hnc := not_isCompact_end hVconn.nonempty hz
-    exact exists_end_collapse hVo hVconn hVcl hAo hfrA hharm hfc hchart hdich hz hnc
+    have hzV : z ∉ V := fun hzV => hz (subset_closure hzV)
+    exact exists_end_collapse hVo hVconn hVcl hAo hfrA hharm hfc hchart hdich hz
+      (hVnc z hzV)
   set H : Set X → C(X, X) :=
     fun Z => if hZ : Z ∈ Ends then (hcollapse Z hZ).choose else ContinuousMap.id X with hHdef
   have hHid : ∀ Z ∈ Ends, ∀ y ∉ Z, H Z y = y := by
