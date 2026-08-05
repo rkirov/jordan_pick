@@ -1708,6 +1708,28 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       have hbig : M₁ ≤ max M₁ M₂ := le_max_left _ _
       exact hjmax _ (hlt _ hbig)
         ((hM₂ _ (le_max_right _ _)).mono_left (hchainD _ hbig))
+  -- ### The limit family
+  -- `stg i` is a stage whose frozen prefix already covers index `i`; the frozen prefixes
+  -- nest, so the segment found there is the same at every later stage.
+  choose stg hstg using fun i => hjunbdd (i + 1)
+  have hstg_lt : ∀ i, i < (Acc (stg i)).L.length := fun i =>
+    lt_of_lt_of_le (by omega) (le_trans (hstg i) (hj_le _))
+  -- reading index `i` at any stage past `stg i` gives the same segment
+  have hstable : ∀ i m, stg i ≤ m → ∀ (h : i < (Acc m).L.length),
+      (Acc m).L[i] = (Acc (stg i)).L[i]'(hstg_lt i) := by
+    intro i m hm h
+    have hpre := hjfrozen (stg i) m hm
+    have hlen : ((Acc (stg i)).L.take (j (stg i))).length = j (stg i) := by
+      have := hj_le (stg i); rw [List.length_take]; omega
+    obtain ⟨t, ht⟩ := hpre
+    have hi : i < ((Acc (stg i)).L.take (j (stg i))).length := by
+      have := hstg i; rw [hlen]; omega
+    calc (Acc m).L[i] = ((Acc (stg i)).L.take (j (stg i)) ++ t)[i]'(by rw [ht]; exact h) := by
+          congr 1; exact ht.symm
+      _ = ((Acc (stg i)).L.take (j (stg i)))[i]'hi := List.getElem_append_left hi
+      _ = (Acc (stg i)).L[i]'(hstg_lt i) := List.getElem_take ..
+  -- the limit family
+  set f : ℕ → PLSeg Z := fun i => (Acc (stg i)).L[i]'(hstg_lt i) with hfdef
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
