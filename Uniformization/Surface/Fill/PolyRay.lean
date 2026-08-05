@@ -205,6 +205,21 @@ theorem img_compact : IsCompact s.img := by
 theorem img_conn : IsConnected s.img :=
   ((convex_segment s.a s.b).isConnected ⟨s.a, left_mem_segment ℝ _ _⟩).image _ s.symm_contOn
 
+/-- **Uniform tube width for one chart segment.**  The straight segment is compact and
+sits inside the open chart target, so some fixed `δ > 0` of room is available all along
+it.  This is the per-segment block out of which the ray's tubular neighbourhood
+(`TubeData`, `RayBuild.lean`) is glued: the rectangle around the segment of half-width
+`δ` is carried by the chart. -/
+theorem exists_tube_width : ∃ δ > 0, ∀ z ∈ segment ℝ s.a s.b, ∀ w : ℂ, ‖w‖ < δ →
+    z + w ∈ s.e.target := by
+  have hcomp : IsCompact (segment ℝ s.a s.b) := by
+    rw [segment_eq_image_lineMap]; exact isCompact_Icc.image (by fun_prop)
+  obtain ⟨δ, hδ, hsub⟩ :=
+    hcomp.exists_thickening_subset_open s.e.open_target s.htgt
+  refine ⟨δ, hδ, fun z hz w hw => hsub ?_⟩
+  refine Metric.mem_thickening_iff.mpr ⟨z, hz, ?_⟩
+  simpa [dist_eq_norm] using hw
+
 /-- Left sub-segment `[a, c]` for `c` in the segment; a chart-straight segment. -/
 def splitL (c : ℂ) (hc : c ∈ segment ℝ s.a s.b) : PLSeg O where
   e := s.e; he := s.he; a := s.a; b := c
