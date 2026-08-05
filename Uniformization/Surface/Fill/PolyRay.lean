@@ -1776,6 +1776,18 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         ⟨l, by omega, rfl⟩) ?_
       rw [hf_at l m hml (by omega)]; exact hyl
   have hf_p0 : ∀ i, (f i).p0 = ((Acc (stg i)).L[i]'(hstg_lt i)).p0 := fun _ => rfl
+  -- nondegeneracy at the level of endpoints, and the adjacency/far-separation package
+  have hf_ne : ∀ i, (f i).p0 ≠ (f i).p1 := fun i => PLSeg.p0_ne_p1 _ (hf_nd i)
+  obtain ⟨hf_adj, hf_far⟩ := simple_family_adj_far f hf_ne hf_chain hf_simp
+  -- the material of the accumulated arcs only ever grows by stage material
+  have hAcc_img : ∀ n m, n ≤ m → (Acc m).img ⊆ (Acc n).img ∪ Om n := by
+    intro n m hnm
+    induction m, hnm using Nat.le_induction with
+    | base => exact Set.subset_union_left
+    | succ m hnm ih =>
+        refine (hstep_img m (Acc m)).trans (Set.union_subset ih ?_)
+        exact Set.iUnion₂_subset fun u hu =>
+          (hRw_far m u hu).trans ((hOmdec hnm).trans Set.subset_union_right)
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
