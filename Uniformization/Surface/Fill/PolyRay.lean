@@ -1529,6 +1529,23 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
         refine hstep_pre m (Acc m) L₁ ih ?_
         intro t ht u hu
         exact (hdisj t ht).mono_right ((hRw_far m u hu).trans (hOmdec hnm))
+  -- ### The frozen length
+  -- `j n` is the longest prefix of `Acc n` whose segments all avoid stage `n`'s
+  -- material.  `Nat.findGreatest` needs the predicate decidable, which it is only
+  -- classically; that is harmless here since nothing is computed.
+  classical
+  set Frozen : ℕ → ℕ → Prop :=
+    fun n k => ∀ t ∈ (Acc n).L.take k, Disjoint t.img (Om n) with hFrozendef
+  set j : ℕ → ℕ := fun n => Nat.findGreatest (Frozen n) (Acc n).L.length with hjdef
+  have hFrozen0 : ∀ n, Frozen n 0 := by intro n t ht; simp at ht
+  have hj_spec : ∀ n, Frozen n (j n) := fun n =>
+    Nat.findGreatest_spec (Nat.zero_le _) (hFrozen0 n)
+  have hj_le : ∀ n, j n ≤ (Acc n).L.length := fun n => Nat.findGreatest_le _
+  -- the frozen prefix is a genuine prefix, and it is frozen forever
+  have hjpre : ∀ n, (Acc n).L.take (j n) <+: (Acc n).L := fun n => List.take_prefix _ _
+  have hjfrozen : ∀ n m, n ≤ m → (Acc n).L.take (j n) <+: (Acc m).L := by
+    intro n m hnm
+    exact hfrozenOm n _ (hjpre n) (hj_spec n) m hnm
   -- **Growth input.**  The stage endpoints leave every compact subset of `↥Z`: `a n`
   -- avoids `Kex n`, and `Kex` both increases and exhausts.  This is what forbids the
   -- accumulated arc from stabilising outright — if it did, its endpoint `a n` would be
