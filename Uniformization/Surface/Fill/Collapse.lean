@@ -135,13 +135,22 @@ sharing the ray edge `R`, with transverse/longitudinal coordinates `sm, tm`
 the circle apart from the far arc (`hCZcover`).
 
 **Shape of that construction.**  The ray is a *chart polyline*: each segment is
-straight in a chart.  Thicken each segment to a rectangle in its own chart, then
-glue across junctions.  `SimpleRayData.hshell` is what makes the gluing possible —
-it gives each segment a neighbourhood meeting only its two neighbours, so the
-per-segment tubes interfere only where intended.  Two things need care: a
-*consistent side* (which rectangle half is `Sm` vs `Sp`) transported along the ray,
-and the termination at the circle edge, where `hCZm`/`hCZp` must reproduce `γ` on
-an `ε`-arc either side of `p`.
+straight in a chart.  Thicken each segment to a rectangle in its own chart
+(`PLSeg.exists_tube_width` gives the uniform half-width), then glue across
+junctions.  `SimpleRayData.hshell` is what makes the gluing possible — it gives each
+segment a neighbourhood meeting only its two neighbours, so the per-segment tubes
+interfere only where intended.
+
+*Side consistency comes for free here.*  One would normally have to transport a
+choice of side (which rectangle half is `Sm`, which is `Sp`) along the ray and argue
+it is globally coherent.  That is unnecessary: the charts are drawn from
+`riemannAtlas X`, so all transition maps are **biholomorphic**, hence
+orientation-preserving.  Taking the normal direction as `i · (b - a)` in each chart
+therefore already agrees across junctions — the usual orientability side-condition is
+discharged by holomorphy of the atlas rather than by simple connectivity.
+
+What genuinely remains delicate is the termination at the circle edge, where
+`hCZm`/`hCZp` must reproduce `γ` on an `ε`-arc either side of `p`.
 
 This is a construction of the same order as the ray itself, not a final step. -/
 theorem exists_end_collapse [T2Space X] [ConnectedSpace X] [SimplyConnectedSpace X]
