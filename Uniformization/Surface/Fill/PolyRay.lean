@@ -1857,6 +1857,7 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hf_p0 : ∀ i, (f i).p0 = ((Acc (stg i)).L[i]'(hstg_lt i)).p0 := fun _ => rfl
   -- nondegeneracy at the level of endpoints, and the adjacency/far-separation package
   have hf_ne : ∀ i, (f i).p0 ≠ (f i).p1 := fun i => PLSeg.p0_ne_p1 _ (hf_nd i)
+  obtain ⟨hf_adj, hf_far⟩ := simple_family_adj_far f hf_ne hf_chain hf_simp
   -- **The `Acc` tail invariant.**  For `m ≥ n`, every segment of `Acc m` at index at
   -- least `|Acc n|` lies in `Om n`: iterating the stage clause, the pointwise-agreeing
   -- part never extends past `|Acc n|`, and everything beyond comes from stages `≥ n`.
@@ -1894,7 +1895,47 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       omega
     have he : (Acc m).L[i] = f i := hf_at i m hm1 hlt
     exact (hn n le_rfl).symm.mono_left (he ▸ hAcc_tail n m hm2 i hlt hi)
-  obtain ⟨hf_adj, hf_far⟩ := simple_family_adj_far f hf_ne hf_chain hf_simp
+  -- **P3: the shell separation.**  No metric is needed.  `hf_esc` makes the family
+  -- locally finite — only finitely many segments meet a compact neighbourhood of
+  -- `(f n).img` — and disjoint compacts in a `T2` space have disjoint neighbourhoods, so
+  -- a *finite* intersection of separating opens does the job.
+  have hf_shell : ∀ n : ℕ, ∃ U : Set X, IsOpen U ∧ (f n).img ⊆ U ∧
+      ∀ m : ℕ, (U ∩ (f m).img).Nonempty → (m + 1 = n ∨ m = n ∨ n + 1 = m) := by
+    intro n
+    have hfnZ : (f n).img ⊆ Z := PLSeg.img_sub _
+    obtain ⟨K, hKcomp, hKnhd, hKZ⟩ :=
+      exists_compact_between (PLSeg.img_compact (f n)) hZopen hfnZ
+    obtain ⟨N, hN⟩ := hf_esc K hKcomp hKZ
+    -- the indices that must be separated by hand: below `N` and not adjacent to `n`
+    set B : Finset ℕ := (Finset.range N).filter
+      (fun i => ¬ (i + 1 = n ∨ i = n ∨ n + 1 = i)) with hBdef
+    -- stated for *every* `i`, so the chosen family does not depend on a membership proof
+    -- and the intersection below is non-dependent (hence visibly open)
+    have hBsep : ∀ i : ℕ, ∃ V : Set X, IsOpen V ∧ (f n).img ⊆ V ∧
+        (i ∈ B → Disjoint V (f i).img) := by
+      intro i
+      by_cases hi : i ∈ B
+      · rw [hBdef, Finset.mem_filter] at hi
+        have hdisj : Disjoint (f n).img (f i).img := by
+          rcases Nat.lt_or_ge i n with h | h
+          · exact (hf_far i n (by omega)).symm
+          · exact hf_far n i (by omega)
+        obtain ⟨V, W, hVo, _, hnV, hiW, hVW⟩ :=
+          SeparatedNhds.of_isCompact_isCompact (PLSeg.img_compact _) (PLSeg.img_compact _) hdisj
+        exact ⟨V, hVo, hnV, fun _ => hVW.mono_right hiW⟩
+      · exact ⟨Set.univ, isOpen_univ, Set.subset_univ _, fun h => absurd h hi⟩
+    choose Vs hVo hnV hVdisj using hBsep
+    refine ⟨interior K ∩ ⋂ i ∈ B, Vs i, ?_, ?_, ?_⟩
+    · exact isOpen_interior.inter (isOpen_biInter_finset fun i _ => hVo i)
+    · exact Set.subset_inter hKnhd (Set.subset_iInter₂ fun i _ => hnV i)
+    · rintro m ⟨y, ⟨hyK, hyV⟩, hym⟩
+      by_contra hcon
+      rcases Nat.lt_or_ge m N with hmN | hmN
+      · -- separated by hand
+        have hmB : m ∈ B := by rw [hBdef, Finset.mem_filter]; exact ⟨Finset.mem_range.mpr hmN, hcon⟩
+        exact Set.disjoint_left.mp (hVdisj m hmB) (Set.mem_iInter₂.mp hyV m hmB) hym
+      · -- too far along to meet `K` at all
+        exact Set.disjoint_left.mp (hN m hmN) hym (interior_subset hyK)
   -- the material of the accumulated arcs only ever grows by stage material
   have hAcc_img : ∀ n m, n ≤ m → (Acc m).img ⊆ (Acc n).img ∪ Om n := by
     intro n m hnm
