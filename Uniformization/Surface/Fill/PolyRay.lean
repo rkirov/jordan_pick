@@ -1857,6 +1857,24 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hf_p0 : ∀ i, (f i).p0 = ((Acc (stg i)).L[i]'(hstg_lt i)).p0 := fun _ => rfl
   -- nondegeneracy at the level of endpoints, and the adjacency/far-separation package
   have hf_ne : ∀ i, (f i).p0 ≠ (f i).p1 := fun i => PLSeg.p0_ne_p1 _ (hf_nd i)
+  -- **The `Acc` tail invariant.**  For `m ≥ n`, every segment of `Acc m` at index at
+  -- least `|Acc n|` lies in `Om n`: iterating the stage clause, the pointwise-agreeing
+  -- part never extends past `|Acc n|`, and everything beyond comes from stages `≥ n`.
+  have hAcc_tail : ∀ n m, n ≤ m → ∀ i (h : i < (Acc m).L.length),
+      (Acc n).L.length ≤ i → ((Acc m).L[i]).img ⊆ Om n := by
+    intro n m hnm
+    induction m, hnm using Nat.le_induction with
+    | base => intro i h hge; exact absurd h (by omega)
+    | succ m hnm ih =>
+        intro i h hge
+        obtain ⟨k, hkL, hklo, hkhi⟩ := hstep_tail m (Acc m)
+        rcases Nat.lt_or_ge i k with hik | hik
+        · -- inside the pointwise-agreeing part: inherit from stage `m`
+          have hi : i < (Acc m).L.length := lt_of_lt_of_le hik hkL
+          exact (hklo i h hik hi).trans (ih i hi hge)
+        · -- beyond it: the material is stage `m`'s, which sits inside `Om n`
+          refine (hkhi i h hik).trans ?_
+          exact Set.iUnion₂_subset fun u hu => (hRw_far m u hu).trans (hOmdec hnm)
   obtain ⟨hf_adj, hf_far⟩ := simple_family_adj_far f hf_ne hf_chain hf_simp
   -- the material of the accumulated arcs only ever grows by stage material
   have hAcc_img : ∀ n m, n ≤ m → (Acc m).img ⊆ (Acc n).img ∪ Om n := by
