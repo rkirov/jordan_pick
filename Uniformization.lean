@@ -33,6 +33,9 @@ import Uniformization.Surface.Fill.Parity
 import Uniformization.Surface.Fill.Transfer
 import Uniformization.Surface.Fill.Collar
 import Uniformization.Surface.Fill.BoundaryEntry
+import Uniformization.Surface.Fill.PolyRay
+import Uniformization.Surface.Fill.RayBuild
+import Uniformization.Surface.Fill.RayCollar
 import Uniformization.Surface.Fill.Push
 import Uniformization.Surface.Fill.BoundaryCircle
 import Uniformization.Surface.Fill.CircleChain
