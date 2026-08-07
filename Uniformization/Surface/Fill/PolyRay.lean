@@ -706,6 +706,28 @@ noncomputable def polyRay_of_simple {Z : Set X} {z₀ : X} (d : SimpleRayData Z 
 /-! ## The noncompact-subcomponent step (copied from `Ends.lean`, which keeps it
 `private`).  Abstract topology on a space `W` with the right instances. -/
 
+/-- **The `X`-closure invariant is stronger than the `Z`-closure one.**  For `C` a set in the
+subspace `Z`, if the closure of `C` *in the ambient `X`* is noncompact then so is its closure
+in `Z`.
+
+This is the bridge between the invariant `nonempty_simpleRayData` currently carries and the
+one it needs (see the note on `SimpleRayData`).  The converse fails, which is exactly the
+problem: a set running into `frontier Z` has noncompact closure in `Z` — points near the
+frontier lie in no compact subset of `Z` — while its closure in `X` picks up the frontier and
+can be compact.  So strengthening the recursion's invariant to the `X`-form is a genuine
+strengthening, and this lemma says it is a legitimate one to carry: anything proved from the
+`X`-form still implies the old `Z`-form. -/
+theorem not_isCompact_closure_subtype {X : Type*} [TopologicalSpace X] [T2Space X]
+    {Z : Set X} (C : Set ↥Z) (h : ¬ IsCompact (closure ((↑) '' C : Set X))) :
+    ¬ IsCompact (closure C) := by
+  intro hK
+  refine h ?_
+  -- the ambient image of the subspace closure is compact, hence closed, hence contains the
+  -- ambient closure
+  have himg : IsCompact ((↑) '' closure C : Set X) := hK.image continuous_subtype_val
+  refine himg.of_isClosed_subset isClosed_closure ?_
+  exact closure_minimal (Set.image_mono subset_closure) himg.isClosed
+
 /-- **Key existence step for the escaping ray.**  In a locally compact, locally
 connected, preconnected Hausdorff space `W` with a compact exhaustion `Kex`, if
 `C = connectedComponentIn (Kex n)ᶜ a` is a complement component whose closure is
