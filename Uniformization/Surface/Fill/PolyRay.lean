@@ -753,11 +753,32 @@ theorem isCompact_closure_of_finite_cover {X : Type*} [TopologicalSpace X] [T2Sp
   refine hcpt.of_isClosed_subset isClosed_closure (closure_minimal (hcov.trans ?_) hcl)
   exact Set.union_subset_union_left _ (Set.iUnion₂_mono fun _ _ => subset_closure)
 
-/-- **Key existence step for the escaping ray.**  In a locally compact, locally
-connected, preconnected Hausdorff space `W` with a compact exhaustion `Kex`, if
-`C = connectedComponentIn (Kex n)ᶜ a` is a complement component whose closure is
-*not* compact, then inside `C` there is a point `b` outside `Kex (n+1)` whose
-component in `(Kex (n+1))ᶜ` again has noncompact closure. -/
+/-- **Step lemma, generalised over an abstract boundedness predicate `B`.**  The proof of
+`exists_noncompact_subcomponent` touches its invariant in only four places, and all four
+factor through `hBsub` and `hBfin`; the remaining ~90 lines (frontier crossing, injection of
+the candidate components into the compact `frontier (Kex (n+2))`, the accumulation point and
+the subsingleton contradiction) never mention closures.  Instantiating at
+`B := fun s => IsCompact (closure s)` recovers the original.
+
+**Correction (2026-08-07): this does NOT yield the ambient `X`-closure version.**  An earlier
+commit message claimed `hBfin` at `B := fun s => IsCompact (closure ((↑) '' s))` was "exactly
+the property the frontier-adapted exhaustion was built to have".  That is false, twice over:
+
+* `hBfin` demands the finite union be *contained in some exhaustion member*.  A collar piece
+  hugging `frontier Z` has compact `X`-closure but lies in no compact subset of `Z`, hence in
+  no `Kex p`.  So `hBfin` fails outright for that predicate.
+* Weakening `hBfin` to "closed under finite unions" does not rescue it, because `hRinf`'s
+  contradiction genuinely needs absorption: it derives `c m ∈ Kex p ⊆ Kex m` against
+  `c m ∉ Kex m`.  With only `X`-compactness the `c m` may all lie in one compact subset of
+  `X` while still escaping every `Kex m`, by accumulating on `frontier Z` — which is the very
+  behaviour the strengthening is meant to forbid.
+
+So this generalisation is a clean refactor and it pins down exactly which two properties the
+argument rests on, but the strengthened `hesc` does **not** follow from it.  Getting the
+ambient invariant needs a different route through `hRinf`, not a different instantiation of
+this lemma.  `isCompact_closure_of_finite_cover` is likewise not the missing piece: the proof
+never covers `C` by the candidate components, since components of `(Kex (n+1))ᶜ` meeting `C`
+need not contain any chosen `c m`. -/
 private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
     [T2Space W] [LocallyCompactSpace W] [LocallyConnectedSpace W] [PreconnectedSpace W]
     (Kex : CompactExhaustion W) (B : Set W → Prop)
