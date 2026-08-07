@@ -453,23 +453,62 @@ noncompact subset of a locally compact second countable space, hence admits a
 `CompactExhaustion` whose members are compact subsets of `Z` bounded away from
 `frontier Z`.  So there is somewhere for a proper-in-`X` ray to go.
 
-**Warning — swapping the exhaustion is necessary but NOT sufficient.**  It is tempting to
-conclude that feeding that exhaustion to the existing machinery, in place of the
-`CompactExhaustion ↥Z` currently used at the top of `nonempty_simpleRayData`, already gives
-escape from the compacts of `X`.  It does not.  Escaping `Dₙ = (Z \ U) ∩ Kₙ` constrains the
-ray only while it is outside `U`; it says nothing while the ray is inside `U ∩ Kₙ`.  A ray
-that oscillates — dipping into `U`, emerging further out, dipping back — escapes every `Dₙ`
-and still fails to escape `Kₙ`, and still accumulates on `frontier Z`.  Ruling that out
-needs the extra conclusion that the ray *eventually leaves `U` for good*, which is a genuine
-additional condition on the construction, not a consequence of the exhaustion choice.
+**Swapping the exhaustion alone is NOT sufficient.**  Escaping `Dₙ = (Z \ U) ∩ Kₙ`
+constrains the ray only while it is outside `U`; it says nothing while the ray is inside
+`U ∩ Kₙ`.  A ray that oscillates — dipping into `U`, emerging further out, dipping back —
+escapes every `Dₙ` and still accumulates on `frontier Z`.  Two changes are needed together.
 
-**Scope of the change.**  `hesc` is consumed at `polyRay_of_simple`'s properness argument and
-produced by the `Acc` recursion; the exhaustion `Kex` is fixed at the top of
-`nonempty_simpleRayData` (`(default : CompactExhaustion ↥Z).shiftr`).  The last-exit pruning
-is indifferent to which exhaustion it is handed, so *that* part of the edit is localised —
-but the "eventually leaves `U`" clause has to be established inside the recursion, so the
-change is not confined to the `Kex` choice.  Treat the localisation claim as applying to the
-exhaustion only.
+**The plan that does work.**  The recursion here already carries exactly the right *shape* of
+invariant: `exists_noncompact_subcomponent` and the `A` chain in `nonempty_simpleRayData`
+propagate
+
+    ¬ IsCompact (closure (connectedComponentIn (Kex m)ᶜ x))
+
+— a *noncompact-closure* complement component.  Two things about it are wrong for our
+purpose, and both are fixable:
+
+1. *The closure is taken in `↥Z`.*  Take it in `X` instead.  The step lemma adapts: its
+   `hesc` (`C ⊄ Kex m`) follows from noncompact `X`-closure just as well, and its
+   pigeonhole (if every candidate subcomponent had compact closure then `C` would be covered
+   by finitely many compacts together with `Kex (n+1)`) is unchanged, because each `Kex n`
+   is compact in `↥Z` hence compact in `X`.
+2. *The seed is the weak hypothesis.*  `hbase` currently unfolds to `¬ CompactSpace ↥Z`,
+   i.e. `¬ IsCompact Z`.  Replace it with `¬ IsCompact (closure Z)`, which
+   `Fill/Collapse.lean`'s `not_isCompact_closure_end` now supplies from `exists_end_collapse`'s
+   corrected hypothesis `hWnc`.
+
+That alone still does not separate the two ends of `Z`, which is where the exhaustion comes
+in.  Choose it adapted to `X` and to the frontier — with `Lₘ` a compact exhaustion of `X`
+and `d` a metric (`X` is metrizable: second countable by Radó, plus locally Euclidean):
+
+    Kex m := {x ∈ Z | x ∈ Lₘ ∧ 1/m ≤ d x (frontier Z)}
+
+These are compact subsets of `Z` (closed in `X`: the distance bound keeps them off the
+frontier) and they exhaust `Z`.  For large `m` the complement `Z \ Kex m` splits into
+*collar* components, inside the `1/m`-neighbourhood of the compact `frontier Z`, and *far*
+components, outside `Lₘ`; the two are disjoint once `m` is large enough that a compact
+neighbourhood of `frontier Z` sits inside `Lₘ`.  Collar components have **compact**
+`X`-closure, so invariant (1) forces the ray into the far components — hence eventually
+outside `Lₘ`, which is escape from the compacts of `X`.
+
+So: exhaustion *and* invariant *and* seed, together.  None of the three suffices alone, and
+the third is the one that only became available once `closure Z = connectedComponentIn Vᶜ x`
+was proved.
+
+**Scope of the change.**  Three edit sites, none of them the pruning itself:
+
+* the exhaustion `Kex`, fixed at the top of `nonempty_simpleRayData`
+  (`(default : CompactExhaustion ↥Z).shiftr`) — replace by the adapted one above;
+* `exists_noncompact_subcomponent` and the `A` chain — retake the closure in `X`;
+* `hbase` — reseed from `not_isCompact_closure_end`.
+
+The last-exit pruning (`prune_step`, `prune_chain`) is indifferent to which exhaustion it is
+handed and needs no change; what changes is which sets it is handed and which invariant
+travels alongside.  `hesc` itself is consumed only at `polyRay_of_simple`'s properness
+argument, so the restatement propagates in one direction.
+
+This is a real edit to a long proof, but it is not open-ended: the invariant already has the
+right shape, and each of the three sites has a named replacement.
 
 The other two obstructions to a `TubeData` — seeding the recursion with the boundary entry
 segment of `Fill/BoundaryEntry.lean`, and the global half-collars — are independent of this
