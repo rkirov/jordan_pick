@@ -210,6 +210,36 @@ theorem closure_end_eq_component_compl [T2Space X] [ConnectedSpace X]
       hcover ⟨x, mem_connectedComponentIn hxVc, hclU (subset_closure hxZ)⟩ ⟨w, hwW, hwn⟩
   exact hyn (hUVc ⟨hyU, connectedComponentIn_subset _ _ hyW⟩)
 
+/-- **Building block for the adapted exhaustion.**  For `L` compact and `U` an open
+neighbourhood of `frontier Z`, the slab `closure Z ∩ L \ U` is compact *and* contained in
+`Z`.
+
+The strengthened escape clause needs a compact exhaustion of `Z` whose members are bounded
+away from `frontier Z` — so that the complement components split into collar pieces inside
+`U` and far pieces outside `L`, the first kind being excluded by
+`inter_diff_nonempty_of_not_isCompact_closure`.  This supplies the members: take `L` from a
+compact exhaustion of `X` and `U` from a neighbourhood basis of the compact `frontier Z`.
+
+Containment in `Z` is the point worth noticing.  The slab is cut from `closure Z`, not from
+`Z`, which is what makes it closed in `X` and hence compact; deleting `U ⊇ frontier Z` then
+removes exactly `closure Z \ Z`, so nothing on the frontier survives.  Stated without a
+metric, so no metrizability instance is needed. -/
+theorem isCompact_slab_and_subset {Z L U : Set X} (hZo : IsOpen Z)
+    (hL : IsCompact L) (hUo : IsOpen U) (hfrU : frontier Z ⊆ U) :
+    IsCompact ((closure Z ∩ L) \ U) ∧ ((closure Z ∩ L) \ U) ⊆ Z := by
+  constructor
+  · -- closed ∩ compact
+    have hre : (closure Z ∩ L) \ U = (closure Z ∩ Uᶜ) ∩ L := by
+      ext y; constructor
+      · rintro ⟨⟨hz, hl⟩, hu⟩; exact ⟨⟨hz, hu⟩, hl⟩
+      · rintro ⟨⟨hz, hu⟩, hl⟩; exact ⟨⟨hz, hl⟩, hu⟩
+    rw [hre]
+    exact hL.inter_left (isClosed_closure.inter hUo.isClosed_compl)
+  · -- deleting `U` removes exactly the frontier
+    rintro y ⟨⟨hz, -⟩, hu⟩
+    by_contra hyZ
+    exact hu (hfrU (by rw [hZo.frontier_eq]; exact ⟨hz, hyZ⟩))
+
 /-- **The `X`-closure invariant forces a set out of the frontier collar.**  If `U` is a
 relatively compact open set and `C ⊆ Z` has noncompact closure in `X`, then `C` must meet
 `Z \ U`.
