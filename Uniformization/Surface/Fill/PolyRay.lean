@@ -728,6 +728,31 @@ theorem not_isCompact_closure_subtype {X : Type*} [TopologicalSpace X] [T2Space 
   refine himg.of_isClosed_subset isClosed_closure ?_
   exact closure_minimal (Set.image_mono subset_closure) himg.isClosed
 
+/-- **Pigeonhole for the `X`-closure invariant.**  If `C` is covered by finitely many sets
+of compact closure together with one compact set, then `C` itself has compact closure.
+
+Contrapositive: a set of *noncompact* closure covered that way must have one of the finitely
+many pieces of noncompact closure.  That is the step
+`exists_noncompact_subcomponent` performs — it covers the component `C` by the finitely many
+components of `(Kex (n+1))ᶜ` that meet it, plus `Kex (n+1)` itself, and concludes that one of
+them inherits noncompactness.
+
+Stated here in the ambient form, so it serves the strengthened `X`-closure invariant
+(see `SimpleRayData`'s docstring).  The existing proof already establishes the finiteness by
+injecting the candidate components into the compact `frontier (Kex (n+2))`; what this lemma
+supplies is the other half, and it is the half that has to change when the closure is taken
+in `X` rather than in `Z`, since it is where compactness of the pieces is actually used. -/
+theorem isCompact_closure_of_finite_cover {X : Type*} [TopologicalSpace X] [T2Space X]
+    {C K : Set X} {D : Set (Set X)} (hDfin : D.Finite) (hK : IsCompact K)
+    (hcov : C ⊆ (⋃ d ∈ D, d) ∪ K) (hD : ∀ d ∈ D, IsCompact (closure d)) :
+    IsCompact (closure C) := by
+  have hcl : IsClosed ((⋃ d ∈ D, closure d) ∪ K) :=
+    (hDfin.isClosed_biUnion fun _ _ => isClosed_closure).union hK.isClosed
+  have hcpt : IsCompact ((⋃ d ∈ D, closure d) ∪ K) :=
+    (hDfin.isCompact_biUnion fun d hd => hD d hd).union hK
+  refine hcpt.of_isClosed_subset isClosed_closure (closure_minimal (hcov.trans ?_) hcl)
+  exact Set.union_subset_union_left _ (Set.iUnion₂_mono fun _ _ => subset_closure)
+
 /-- **Key existence step for the escaping ray.**  In a locally compact, locally
 connected, preconnected Hausdorff space `W` with a compact exhaustion `Kex`, if
 `C = connectedComponentIn (Kex n)ᶜ a` is a complement component whose closure is
