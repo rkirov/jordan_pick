@@ -758,17 +758,23 @@ connected, preconnected Hausdorff space `W` with a compact exhaustion `Kex`, if
 `C = connectedComponentIn (Kex n)ᶜ a` is a complement component whose closure is
 *not* compact, then inside `C` there is a point `b` outside `Kex (n+1)` whose
 component in `(Kex (n+1))ᶜ` again has noncompact closure. -/
-private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
+private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
     [T2Space W] [LocallyCompactSpace W] [LocallyConnectedSpace W] [PreconnectedSpace W]
-    (Kex : CompactExhaustion W) {n : ℕ} {a : W} (_ha : a ∉ Kex n)
-    (hnc : ¬ IsCompact (closure (connectedComponentIn (Kex n)ᶜ a))) :
+    (Kex : CompactExhaustion W) (B : Set W → Prop)
+    (hBsub : ∀ (s : Set W) (m : ℕ), s ⊆ Kex m → B s)
+    (hBfin : ∀ F : Set (Set W), F.Finite → (∀ s ∈ F, B s) → ∃ p, (⋃ s ∈ F, s) ⊆ Kex p)
+    {n : ℕ} {a : W} (_ha : a ∉ Kex n)
+    (hnc : ¬ B (connectedComponentIn (Kex n)ᶜ a)) :
     ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
-      ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) := by
+      ¬ B (connectedComponentIn (Kex (n + 1))ᶜ b) := by
   classical
   set C := connectedComponentIn (Kex n)ᶜ a with hCdef
   haveI : Nonempty W := ⟨a⟩
   have hWnc : ¬ CompactSpace W := by
-    intro hc; haveI := hc; exact hnc isClosed_closure.isCompact
+    intro hc
+    haveI := hc
+    obtain ⟨p, hp⟩ := Kex.exists_superset_of_isCompact (isCompact_univ (X := W))
+    exact hnc (hBsub _ p fun x _ => hp (Set.mem_univ x))
   have hFopen : IsOpen ((Kex (n + 1))ᶜ) := (Kex.isCompact (n + 1)).isClosed.isOpen_compl
   by_contra hcon
   push Not at hcon
@@ -776,31 +782,25 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
     intro m
     by_contra h
     push Not at h
-    exact hnc ((Kex.isCompact m).of_isClosed_subset isClosed_closure
-      (closure_minimal (fun x hx => h x hx) (Kex.isCompact m).isClosed))
+    exact hnc (hBsub _ m fun x hx => h x hx)
   choose c hcC hcK using hesc
   set D : ℕ → Set W := fun m => connectedComponentIn (Kex (n + 1))ᶜ (c m) with hDdef
   have hcF : ∀ m, n + 1 ≤ m → c m ∈ (Kex (n + 1))ᶜ := by
     intro m hm hmem
     exact hcK m (Kex.subset hm hmem)
   have hcD : ∀ m, n + 1 ≤ m → c m ∈ D m := fun m hm => mem_connectedComponentIn (hcF m hm)
-  have hDcompact : ∀ m, n + 1 ≤ m → IsCompact (closure (D m)) := by
+  have hDcompact : ∀ m, n + 1 ≤ m → B (D m) := by
     intro m hm
     exact hcon (c m) (hcF m hm) (hcC m)
   set R : Set (Set W) := {D' | ∃ m, n + 2 ≤ m ∧ D' = D m} with hRdef
   have hRinf : R.Infinite := by
     intro hRfin
-    have hUcompact : IsCompact (⋃ D' ∈ R, closure D') := by
-      refine hRfin.isCompact_biUnion ?_
-      rintro D' ⟨m, hm, rfl⟩
-      exact hDcompact m (by omega)
-    obtain ⟨p, hp⟩ := Kex.exists_superset_of_isCompact hUcompact
+    obtain ⟨p, hp⟩ := hBfin R hRfin (by rintro D' ⟨m, hm, rfl⟩; exact hDcompact m (by omega))
     set m := max p (n + 2) with hmdef
     have hm2 : n + 2 ≤ m := le_max_right _ _
     have hmp : p ≤ m := le_max_left _ _
     have hcmDm : c m ∈ D m := hcD m (by omega)
-    have hcmU : c m ∈ ⋃ D' ∈ R, closure D' :=
-      mem_biUnion ⟨m, hm2, rfl⟩ (subset_closure hcmDm)
+    have hcmU : c m ∈ ⋃ D' ∈ R, D' := mem_biUnion ⟨m, hm2, rfl⟩ hcmDm
     exact hcK m (Kex.subset hmp (hp hcmU))
   have hcross : ∀ D' ∈ R, (D' ∩ frontier (Kex (n + 2))).Nonempty := by
     rintro D' ⟨m, hm, rfl⟩
@@ -820,9 +820,12 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
       rcases isClopen_iff.mp hclopen with h | h
       · exact absurd (h ▸ hcmDm) (Set.notMem_empty _)
       · refine hWnc ?_
+        have hBu : B (Set.univ : Set W) := by rw [← h]; exact hDcompact m (by omega)
+        obtain ⟨p, hp⟩ :=
+          hBfin {Set.univ} (Set.finite_singleton _) (by rintro s rfl; exact hBu)
         rw [← isCompact_univ_iff]
-        have := hDcompact m (by omega)
-        rwa [h, closure_univ] at this
+        exact (Kex.isCompact p).of_isClosed_subset isClosed_univ
+          fun x _ => hp (Set.mem_biUnion rfl (Set.mem_univ x))
     obtain ⟨w, hwfr⟩ := hfrne
     have hwcl : w ∈ closure (D m) := hwfr.1
     obtain ⟨w', hw'int, hw'D⟩ :=
@@ -903,6 +906,25 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
     have : D m₁ = D m₂ := by rw [e1, f1, ← f2, ← e2]
     rw [this]
   exact hYNinf hSub.finite
+
+/-- **Key existence step for the escaping ray** (closure in `W`).  The original form of
+`exists_unbounded_subcomponent`, recovered by taking `B` to be "has compact closure". -/
+private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
+    [T2Space W] [LocallyCompactSpace W] [LocallyConnectedSpace W] [PreconnectedSpace W]
+    (Kex : CompactExhaustion W) {n : ℕ} {a : W} (_ha : a ∉ Kex n)
+    (hnc : ¬ IsCompact (closure (connectedComponentIn (Kex n)ᶜ a))) :
+    ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
+      ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) :=
+  exists_unbounded_subcomponent Kex (fun s => IsCompact (closure s))
+    (fun s m hs => (Kex.isCompact m).of_isClosed_subset isClosed_closure
+      (closure_minimal hs (Kex.isCompact m).isClosed))
+    (fun F hF hB => by
+      obtain ⟨p, hp⟩ :=
+        Kex.exists_superset_of_isCompact (hF.isCompact_biUnion fun s hs => hB s hs)
+      refine ⟨p, fun x hx => hp ?_⟩
+      obtain ⟨s, hsF, hxs⟩ := Set.mem_iUnion₂.mp hx
+      exact Set.mem_biUnion hsF (subset_closure hxs))
+    _ha hnc
 
 /-! ## Simplicity infrastructure for the pruning -/
 
