@@ -210,6 +210,31 @@ theorem closure_end_eq_component_compl [T2Space X] [ConnectedSpace X]
       hcover ⟨x, mem_connectedComponentIn hxVc, hclU (subset_closure hxZ)⟩ ⟨w, hwW, hwn⟩
   exact hyn (hUVc ⟨hyU, connectedComponentIn_subset _ _ hyW⟩)
 
+/-- **The `X`-closure invariant forces a set out of the frontier collar.**  If `U` is a
+relatively compact open set and `C ⊆ Z` has noncompact closure in `X`, then `C` must meet
+`Z \ U`.
+
+This is the crux of the strengthened escape clause (see `SimpleRayData`'s docstring in
+`Fill/PolyRay.lean`).  With the exhaustion chosen so that the complement components of `Z`
+split into *collar* pieces inside `U` and *far* pieces outside a compact of `X`, this lemma
+says the collar pieces are exactly the ones the `X`-closure invariant excludes: anything
+trapped in `U` has closure inside the compact `closure U`.  So a ray carrying that invariant
+cannot accumulate on `frontier Z`, which is the failure mode the current `hesc` permits.
+
+Note the contrast with the `Z`-closure invariant, which does *not* exclude them: a collar
+piece has noncompact closure in `Z`, because its points approach `frontier Z` and so lie in
+no compact subset of `Z`. -/
+theorem inter_diff_nonempty_of_not_isCompact_closure {Z U C : Set X}
+    (hUcl : IsCompact (closure U)) (hCZ : C ⊆ Z) (hC : ¬ IsCompact (closure C)) :
+    (C ∩ (Z \ U)).Nonempty := by
+  rw [Set.nonempty_iff_ne_empty]
+  intro hempty
+  refine hC (hUcl.of_isClosed_subset isClosed_closure (closure_mono ?_))
+  -- `C` misses `Z \ U` and sits in `Z`, so it sits in `U`
+  intro y hy
+  by_contra hyU
+  exact absurd (Set.eq_empty_iff_forall_notMem.mp hempty y ⟨hy, hCZ hy, hyU⟩) not_false
+
 /-- **An end reaches infinity.**  Restatement of `exists_end_collapse`'s hypothesis `hWnc`
 in the form its proof needs: the end has noncompact closure, so a cutting ray inside it can
 escape every compact set of `X` and the ray edge `R` can be closed in `X`.
