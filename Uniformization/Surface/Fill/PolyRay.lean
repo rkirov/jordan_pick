@@ -780,6 +780,33 @@ which is genuinely weaker and is automatic at `x ∈ Z` since `Z` is open — bu
 `x ∈ CZ \ R` a ray accumulating on `CZ` defeats the relative version too.  So relative
 closedness buys nothing here, and the properness strengthening is unavoidable.
 
+**The route through `hRinf` (2026-08-08).**  The obstruction below is real but avoidable,
+and the fix is *where the escaping points are chosen*, not which predicate is used.
+
+At present `c m` is chosen in `C` outside `Kex m`, the exhaustion of `Z`.  Choose it outside
+`L m` instead, where `L` is a compact exhaustion of the **ambient** `X`.  That choice is
+available precisely because of the `X`-closure invariant: if `C ⊆ L m` then
+`closure_X C ⊆ L m` is compact, contradicting `¬ B C`.  With that single change every step
+goes through, checked line by line against the proof below:
+
+* `c m ∉ L m ⊇ L (n+1) ⊇ Kex (n+1)` for `m ≥ n+1`, so `c m ∈ (Kex (n+1))ᶜ` as before, and
+  likewise `c m ∉ Kex (n+2)` for `hcmnot`;
+* `hRinf`: if `R` were finite then `⋃ R` is a finite union of `B`-sets, so has compact
+  `X`-closure, so `⋃ R ⊆ L p` for some `p`; take `m = max p (n+2)` and
+  `c m ∈ D m ⊆ ⋃ R ⊆ L p ⊆ L m` contradicts `c m ∉ L m`.  **This is the step that fails
+  with absorption into `Kex`, and it is exactly what an ambient exhaustion repairs** — the
+  `c m` can escape every `Kex m` by hugging `frontier Z`, but they cannot escape every
+  `L m` while lying in one compact subset of `X`;
+* the `D m = univ` branch of `hfrne` gives `B univ`, hence `Z ⊆ L p`, hence `closure_X Z`
+  compact — contradicting the seed `not_isCompact_closure_end` directly, so `hWnc` is no
+  longer needed;
+* `hcross`, `hInjOn`, `hYinf`, the accumulation point and `hSub` mention only `Kex`, and are
+  unaffected.
+
+So the right generalisation is over *two* filtrations — the `Kex` whose complements define
+the components, and an ambient `L` measuring size — rather than over one predicate.  This
+has been checked on paper only; it is not yet formalised.
+
 **Correction (2026-08-07): this does NOT yield the ambient `X`-closure version.**  An earlier
 commit message claimed `hBfin` at `B := fun s => IsCompact (closure ((↑) '' s))` was "exactly
 the property the frontier-adapted exhaustion was built to have".  That is false, twice over:
