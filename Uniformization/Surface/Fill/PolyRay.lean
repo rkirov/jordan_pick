@@ -845,7 +845,7 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
     (hBuniv : ¬ B (Set.univ : Set W))
     {n : ℕ} {a : W} (_ha : a ∉ Kex n)
     (hnc : ¬ B (connectedComponentIn (Kex n)ᶜ a)) :
-    ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
+    ∃ b : W, b ∉ Kex (n + 1) ∧ b ∉ L n ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
       ¬ B (connectedComponentIn (Kex (n + 1))ᶜ b) := by
   classical
   set C := connectedComponentIn (Kex n)ᶜ a with hCdef
@@ -862,7 +862,7 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
   have hcD : ∀ m, n + 1 ≤ m → c m ∈ D m := fun m hm => mem_connectedComponentIn (hcF m hm)
   have hDcompact : ∀ m, n + 1 ≤ m → B (D m) := by
     intro m hm
-    exact hcon (c m) (hcF m hm) (hcC m)
+    refine hcon (c m) (hcF m hm) (fun hmem => hcK m (hLmono (by omega) hmem)) (hcC m)
   set R : Set (Set W) := {D' | ∃ m, n + 2 ≤ m ∧ D' = D m} with hRdef
   have hRinf : R.Infinite := by
     intro hRfin
@@ -980,8 +980,9 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
     (Kex : CompactExhaustion W) {n : ℕ} {a : W} (_ha : a ∉ Kex n)
     (hnc : ¬ IsCompact (closure (connectedComponentIn (Kex n)ᶜ a))) :
     ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
-      ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) :=
-  exists_unbounded_subcomponent Kex (fun k => Kex k) (fun s => IsCompact (closure s))
+      ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) := by
+  obtain ⟨b, hb1, -, hb2, hb3⟩ :=
+    exists_unbounded_subcomponent Kex (fun k => Kex k) (fun s => IsCompact (closure s))
     (fun _ => subset_rfl) (fun _ _ h => Kex.subset h)
     (fun s hs m => by
       by_contra hcon
@@ -998,6 +999,7 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
       rw [closure_univ] at h
       exact h.of_isClosed_subset isClosed_closure (Set.subset_univ _)))
     _ha hnc
+  exact ⟨b, hb1, hb2, hb3⟩
 
 /-! ## Simplicity infrastructure for the pruning -/
 
