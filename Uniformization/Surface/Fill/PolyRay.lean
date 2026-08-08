@@ -804,8 +804,18 @@ goes through, checked line by line against the proof below:
   unaffected.
 
 So the right generalisation is over *two* filtrations — the `Kex` whose complements define
-the components, and an ambient `L` measuring size — rather than over one predicate.  This
-has been checked on paper only; it is not yet formalised.
+the components, and an ambient `L` measuring size — rather than over one predicate.  **That
+is what this lemma now is**, and `exists_noncompact_subcomponent` is recovered from it by
+taking `L := Kex`.
+
+To obtain the ambient invariant, instantiate instead with `W := ↥Z`,
+`B := fun s => IsCompact (closure ((↑) '' s))` and `L k := (↑) ⁻¹' (Lₖ)` for `Lₖ` a compact
+exhaustion of `X`.  Then `hBesc` holds because `s ⊆ L m` forces `closure_X ((↑) '' s)`
+compact; `hBunion` because a finite union of relatively `X`-compact sets is relatively
+`X`-compact, hence absorbed by some `Lₚ`; `hBuniv` is `not_isCompact_closure_end`; and
+`hKL` is the requirement that the exhaustion of `Z` sit inside the ambient one, which
+`isCompact_slab_and_subset` provides by construction.  All four are about `B` and `L` only —
+none of them re-enters the 90-line argument.
 
 **Correction (2026-08-07): this does NOT yield the ambient `X`-closure version.**  An earlier
 commit message claimed `hBfin` at `B := fun s => IsCompact (closure ((↑) '' s))` was "exactly
@@ -828,9 +838,11 @@ never covers `C` by the candidate components, since components of `(Kex (n+1))�
 need not contain any chosen `c m`. -/
 private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
     [T2Space W] [LocallyCompactSpace W] [LocallyConnectedSpace W] [PreconnectedSpace W]
-    (Kex : CompactExhaustion W) (B : Set W → Prop)
-    (hBsub : ∀ (s : Set W) (m : ℕ), s ⊆ Kex m → B s)
-    (hBfin : ∀ F : Set (Set W), F.Finite → (∀ s ∈ F, B s) → ∃ p, (⋃ s ∈ F, s) ⊆ Kex p)
+    (Kex : CompactExhaustion W) (L : ℕ → Set W) (B : Set W → Prop)
+    (hKL : ∀ k, (Kex k : Set W) ⊆ L k) (hLmono : Monotone L)
+    (hBesc : ∀ s : Set W, ¬ B s → ∀ m, ∃ x ∈ s, x ∉ L m)
+    (hBunion : ∀ F : Set (Set W), F.Finite → (∀ s ∈ F, B s) → ∃ p, (⋃ s ∈ F, s) ⊆ L p)
+    (hBuniv : ¬ B (Set.univ : Set W))
     {n : ℕ} {a : W} (_ha : a ∉ Kex n)
     (hnc : ¬ B (connectedComponentIn (Kex n)ᶜ a)) :
     ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
@@ -838,24 +850,15 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
   classical
   set C := connectedComponentIn (Kex n)ᶜ a with hCdef
   haveI : Nonempty W := ⟨a⟩
-  have hWnc : ¬ CompactSpace W := by
-    intro hc
-    haveI := hc
-    obtain ⟨p, hp⟩ := Kex.exists_superset_of_isCompact (isCompact_univ (X := W))
-    exact hnc (hBsub _ p fun x _ => hp (Set.mem_univ x))
   have hFopen : IsOpen ((Kex (n + 1))ᶜ) := (Kex.isCompact (n + 1)).isClosed.isOpen_compl
   by_contra hcon
   push Not at hcon
-  have hesc : ∀ m, ∃ x, x ∈ C ∧ x ∉ Kex m := by
-    intro m
-    by_contra h
-    push Not at h
-    exact hnc (hBsub _ m fun x hx => h x hx)
+  have hesc : ∀ m, ∃ x, x ∈ C ∧ x ∉ L m := fun m => hBesc C hnc m
   choose c hcC hcK using hesc
   set D : ℕ → Set W := fun m => connectedComponentIn (Kex (n + 1))ᶜ (c m) with hDdef
   have hcF : ∀ m, n + 1 ≤ m → c m ∈ (Kex (n + 1))ᶜ := by
     intro m hm hmem
-    exact hcK m (Kex.subset hm hmem)
+    exact hcK m (hLmono hm (hKL (n + 1) hmem))
   have hcD : ∀ m, n + 1 ≤ m → c m ∈ D m := fun m hm => mem_connectedComponentIn (hcF m hm)
   have hDcompact : ∀ m, n + 1 ≤ m → B (D m) := by
     intro m hm
@@ -863,13 +866,13 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
   set R : Set (Set W) := {D' | ∃ m, n + 2 ≤ m ∧ D' = D m} with hRdef
   have hRinf : R.Infinite := by
     intro hRfin
-    obtain ⟨p, hp⟩ := hBfin R hRfin (by rintro D' ⟨m, hm, rfl⟩; exact hDcompact m (by omega))
+    obtain ⟨p, hp⟩ := hBunion R hRfin (by rintro D' ⟨m, hm, rfl⟩; exact hDcompact m (by omega))
     set m := max p (n + 2) with hmdef
     have hm2 : n + 2 ≤ m := le_max_right _ _
     have hmp : p ≤ m := le_max_left _ _
     have hcmDm : c m ∈ D m := hcD m (by omega)
     have hcmU : c m ∈ ⋃ D' ∈ R, D' := mem_biUnion ⟨m, hm2, rfl⟩ hcmDm
-    exact hcK m (Kex.subset hmp (hp hcmU))
+    exact hcK m (hLmono hmp (hp hcmU))
   have hcross : ∀ D' ∈ R, (D' ∩ frontier (Kex (n + 2))).Nonempty := by
     rintro D' ⟨m, hm, rfl⟩
     have hDopen : IsOpen (D m) := hFopen.connectedComponentIn
@@ -887,18 +890,13 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
       have hclopen : IsClopen (D m) := isClopen_iff_frontier_eq_empty.mpr hemp
       rcases isClopen_iff.mp hclopen with h | h
       · exact absurd (h ▸ hcmDm) (Set.notMem_empty _)
-      · refine hWnc ?_
-        have hBu : B (Set.univ : Set W) := by rw [← h]; exact hDcompact m (by omega)
-        obtain ⟨p, hp⟩ :=
-          hBfin {Set.univ} (Set.finite_singleton _) (by rintro s rfl; exact hBu)
-        rw [← isCompact_univ_iff]
-        exact (Kex.isCompact p).of_isClosed_subset isClosed_univ
-          fun x _ => hp (Set.mem_biUnion rfl (Set.mem_univ x))
+      · refine hBuniv ?_
+        rw [← h]; exact hDcompact m (by omega)
     obtain ⟨w, hwfr⟩ := hfrne
     have hwcl : w ∈ closure (D m) := hwfr.1
     obtain ⟨w', hw'int, hw'D⟩ :=
       _root_.mem_closure_iff.mp hwcl (interior (Kex (n + 2))) isOpen_interior (hfrint hwfr)
-    have hcmnot : c m ∉ Kex (n + 2) := fun h => hcK m (Kex.subset hm h)
+    have hcmnot : c m ∉ Kex (n + 2) := fun h => hcK m (hLmono hm (hKL (n + 2) h))
     have hpre : IsPreconnected (D m) := isPreconnected_connectedComponentIn
     have hdisj : Disjoint (interior (Kex (n + 2))) ((Kex (n + 2))ᶜ) :=
       disjoint_compl_right.mono_left interior_subset
@@ -983,15 +981,22 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
     (hnc : ¬ IsCompact (closure (connectedComponentIn (Kex n)ᶜ a))) :
     ∃ b : W, b ∉ Kex (n + 1) ∧ b ∈ connectedComponentIn (Kex n)ᶜ a ∧
       ¬ IsCompact (closure (connectedComponentIn (Kex (n + 1))ᶜ b)) :=
-  exists_unbounded_subcomponent Kex (fun s => IsCompact (closure s))
-    (fun s m hs => (Kex.isCompact m).of_isClosed_subset isClosed_closure
-      (closure_minimal hs (Kex.isCompact m).isClosed))
+  exists_unbounded_subcomponent Kex (fun k => Kex k) (fun s => IsCompact (closure s))
+    (fun _ => subset_rfl) (fun _ _ h => Kex.subset h)
+    (fun s hs m => by
+      by_contra hcon
+      push Not at hcon
+      exact hs ((Kex.isCompact m).of_isClosed_subset isClosed_closure
+        (closure_minimal (fun x hx => hcon x hx) (Kex.isCompact m).isClosed)))
     (fun F hF hB => by
       obtain ⟨p, hp⟩ :=
         Kex.exists_superset_of_isCompact (hF.isCompact_biUnion fun s hs => hB s hs)
       refine ⟨p, fun x hx => hp ?_⟩
       obtain ⟨s, hsF, hxs⟩ := Set.mem_iUnion₂.mp hx
       exact Set.mem_biUnion hsF (subset_closure hxs))
+    (fun h => hnc (by
+      rw [closure_univ] at h
+      exact h.of_isClosed_subset isClosed_closure (Set.subset_univ _)))
     _ha hnc
 
 /-! ## Simplicity infrastructure for the pruning -/
