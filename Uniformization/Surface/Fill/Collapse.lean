@@ -470,6 +470,28 @@ discharging the set-level `TubeData` fields `hpR`, `hRSm`, `hRSp`, `hRZ`, `hSmZ`
 tractable: near `p` the frontier circle is a straight diameter, so cutting it at `p` into
 the two arcs is cutting the diameter into halves.
 
+**Source check (2026-08-08): the half-collars are this repository's device, not the
+paper's.**  Anghel–Stan (arXiv:2008.12189, Thm 12) do not build a two-sided collar at all.
+They write: *"We cut `Z` along `δ` to obtain a topological surface `Z̃` with connected
+boundary `∂Z̃ = δ′ ∪ [p′,p″] ∪ δ″`"*, define `μ : ∂Z̃ → [0,1]` to be `0` on `δ′`, `γ⁻¹`
+along the original boundary arc and `1` on `δ″`, Tietze-extend it to `μ̃ : Z̃ → [0,1]`, and
+compose with `γ`.  A tubular neighbourhood appears only in the *earlier* argument that
+`∂Z` is connected, not in the retraction.
+
+So `RayCollar`'s `Sm`/`Sp` with their `dm`/`dp` coordinates, and `TubeData`'s
+`sm, tm, sp, tp`, half-widths and corner matching, exist to *simulate* the cut surface `Z̃`
+without constructing it — Lean has no cheap "cut along an arc" operation, and forming `Z̃`
+as a quotient and proving it is a surface with boundary is its own project.  The trade is
+deliberate and `collapse_of_rayCollar` is already proved, so the device works; but it means
+the collar's requirements are ours to choose, not constraints handed down by the source.
+
+Two consequences.  First, when a collar field looks awkward, check whether the paper needs
+anything like it before treating it as fixed — `hRcl` was checked this way and does turn out
+to be needed (see `SimpleRayData` in `Fill/PolyRay.lean`), but that was not obvious in
+advance.  Second, the "circle-edge termination in exactly two `ε`-arcs" below is *entirely*
+an artefact of the collar encoding: in the paper the two arcs are just the two sides `δ′`,
+`δ″` of the cut, and there is no `ε`.
+
 **What remains.**  Three things, all still open:
 
 1. **`SimpleRayData` is not strong enough as stated.**  Its escape clause is
