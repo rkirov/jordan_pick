@@ -76,6 +76,27 @@ no index-`n` critical points — equivalently a handle decomposition with no `n`
 Morse theory is essentially absent from Mathlib at the pin, so this remains a project, but
 it uses structure `X` already carries and avoids Schoenflies altogether.
 
+**Better still — the complex-analytic route, which is the one to take.**  `X` is not merely
+smooth, it is a Riemann surface, and that gives a sharper chain with two *named* classical
+theorems in place of the smooth folklore above:
+
+1. **Behnke–Stein.**  A connected Riemann surface is a Stein manifold **iff** it is open,
+   i.e. noncompact.  Our `X` is connected and noncompact, so it is Stein.
+2. **Andreotti–Frankel.**  An `n`-dimensional Stein manifold is homotopy equivalent to a CW
+   complex of real dimension `≤ n`.  For `n = 1` that is a graph.
+3. A graph has free fundamental group, and `Uniformization/Pi1Free.lean` finishes.
+
+This is strictly better specified than the smooth route: both inputs are standard named
+theorems with textbook treatments (Forstnerič, *Stein Manifolds and Holomorphic Mappings*,
+for the Stein side; Milnor, *Morse Theory* §7, or Andreotti–Frankel 1959 for the homotopy
+type), rather than a folklore statement whose attribution could not be pinned down.  It is
+also closer to the machinery this repository already has — `Rado/` carries Perron families
+and Dirichlet solutions, which is the analytic neighbourhood of Behnke–Stein.
+
+None of Stein theory is in Mathlib at the pin, so gap #3 is still a project on any route.
+But the target to state is `IsFreeGroup (FundamentalGroup X x)` via Behnke–Stein plus
+Andreotti–Frankel, not via Radó triangulability.
+
 Literature, searched 2026-08-05.  Bishop–Rempe, *Non-compact Riemann surfaces are
 equilaterally triangulable* (arXiv:2103.16702), proves triangulability in exactly our
 setting, but by quasiconformal/dynamical methods far heavier than needed — **not** a
