@@ -760,6 +760,26 @@ the candidate components into the compact `frontier (Kex (n+2))`, the accumulati
 the subsingleton contradiction) never mention closures.  Instantiating at
 `B := fun s => IsCompact (closure s)` recovers the original.
 
+**Source check (2026-08-08).**  Anghel-Stan (arXiv:2008.12189, proof of Thm 12) construct
+"a simple path in `Z` starting at `p` escaping from every compact subset of `Z`".  Read
+literally that is properness *in `Z`*, which is exactly what `hesc` implements — and it is
+**not enough** for `TubeData.hRcl`.  Two readings, and it matters which:
+
+* If the phrase is literal, the paper has a gap at this point: a ray proper in `Z` may
+  accumulate on `frontier Z`, and then `R` is not closed and the cut surface is wrong.
+* More likely the phrase is loose for "proper in `X`" — `Z` is a component of `X \ Kₙ` for
+  compact `Kₙ` and is not relatively compact, so a ray aimed at its end at infinity exists.
+  Then `hesc` is a faithful but *too weak* transcription, and the strengthening is required.
+
+Either way the fix is on the ray side.  Weakening `hRcl` instead does **not** work, and this
+was checked rather than assumed: `hRcl` has exactly one use, in `collapse_of_rayCollar`
+(`RayCollar.lean`), supplying `Rᶜ ∈ 𝓝 x` for `x ∈ cZ \ R` so that `continuousWithinAt_inter`
+upgrades continuity within `cZ ∩ Rᶜ = Y` to continuity within `cZ`.  Switching to
+`continuousWithinAt_inter'` needs only `Rᶜ ∈ 𝓝[cZ] x`, i.e. `R` relatively closed in `cZ`,
+which is genuinely weaker and is automatic at `x ∈ Z` since `Z` is open — but at
+`x ∈ CZ \ R` a ray accumulating on `CZ` defeats the relative version too.  So relative
+closedness buys nothing here, and the properness strengthening is unavoidable.
+
 **Correction (2026-08-07): this does NOT yield the ambient `X`-closure version.**  An earlier
 commit message claimed `hBfin` at `B := fun s => IsCompact (closure ((↑) '' s))` was "exactly
 the property the frontier-adapted exhaustion was built to have".  That is false, twice over:
