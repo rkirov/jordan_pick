@@ -241,7 +241,7 @@ theorem exists_branch_log_of_homTrivial {X : Type*} [TopologicalSpace X] [Locall
   have hx₀ : g x₀ ≠ 0 := hgne ⟨x₀, hx₀U⟩
   set a₀ : ↥U := ⟨x₀, hx₀U⟩ with ha₀
   set fC : C(↥U, {z : ℂ // z ≠ 0}) :=
-    ⟨fun x ↦ ⟨g ↑x, hgne x⟩, (continuousOn_iff_continuous_restrict.mp hgc).subtype_mk hgne⟩ with hfC
+    ⟨fun x ↦ ⟨g ↑x, hgne x⟩, (continuousOn_iff_continuous_domRestrict.mp hgc).subtype_mk hgne⟩ with hfC
   set e₀ : ℂ := Complex.log (g x₀) with he₀
   have he : expCovMap e₀ = fC a₀ := Subtype.ext (Complex.exp_log hx₀)
   -- the range condition, via the hom-trivial hypothesis and the winding homomorphism
@@ -263,7 +263,7 @@ theorem exists_branch_log_of_homTrivial {X : Type*} [TopologicalSpace X] [Locall
   obtain ⟨f, hf⟩ : ∃ f : X → ℂ, ∀ z : ↥U, f ↑z = F z :=
     ⟨fun z ↦ if hz : z ∈ U then F ⟨z, hz⟩ else 0, by intro z; simp⟩
   refine ⟨f, ?_, ?_⟩
-  · rw [continuousOn_iff_continuous_restrict]
+  · rw [continuousOn_iff_continuous_domRestrict]
     convert map_continuous F using 1
     ext z; exact hf z
   · intro x hx
@@ -279,8 +279,8 @@ theorem exists_branch_nthRoot_of_homTrivial {X : Type*} [TopologicalSpace X]
   classical
   rcases exists_branch_log_of_homTrivial hUt hUconn hUo hgc hU₀ with ⟨f, hfc, hf⟩
   refine ⟨U.piecewise (Complex.exp <| f · / n) (g · ^ (1 / n : ℂ)), ?_, fun z ↦ ?_⟩
-  · rw [continuousOn_iff_continuous_restrict, restrict_piecewise,
-      ← continuousOn_iff_continuous_restrict]
+  · rw [continuousOn_iff_continuous_domRestrict, restrict_piecewise,
+      ← continuousOn_iff_continuous_domRestrict]
     fun_prop
   · by_cases hz : z ∈ U
     · simp [hz, ← Complex.exp_nat_mul, mul_div_cancel₀ (b := ↑n) (f z) (mod_cast hn), ← hf hz,

@@ -97,7 +97,7 @@ open set `(closure V)ᶜ` is open; were it compact it would be clopen, hence
 theorem not_isCompact_end [T2Space X] [ConnectedSpace X] {V : Set X}
     (hVne : V.Nonempty) {x : X} (hx : x ∈ (closure V)ᶜ) :
     ¬ IsCompact (connectedComponentIn (closure V)ᶜ x) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   intro hK
   set W := connectedComponentIn (closure V)ᶜ x with hW
   have hWopen : IsOpen W := isClosed_closure.isOpen_compl.connectedComponentIn
@@ -141,7 +141,7 @@ theorem closure_end_eq_component_compl [T2Space X] [ConnectedSpace X]
     {x : X} (hx : x ∈ (closure V)ᶜ) :
     closure (connectedComponentIn (closure V)ᶜ x) = connectedComponentIn Vᶜ x := by
   classical
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   obtain ⟨A', hA'o, hfrA', hpos, hneg, -⟩ := exists_collar_dichotomy hdich hfc
   set Z : Set X := connectedComponentIn (closure V)ᶜ x with hZdef
   set W : Set X := connectedComponentIn Vᶜ x with hWdef
@@ -314,7 +314,7 @@ theorem not_isCompact_end_diff [T2Space X] [ConnectedSpace X]
     (hUcl : IsCompact (closure U)) :
     IsClosed (connectedComponentIn (closure V)ᶜ x \ U) ∧
       ¬ IsCompact (connectedComponentIn (closure V)ᶜ x \ U) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Z : Set X := connectedComponentIn (closure V)ᶜ x with hZdef
   have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   have hnc : ¬ IsCompact (closure Z) :=

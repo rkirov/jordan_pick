@@ -92,7 +92,7 @@ private theorem harnack_le' {h : ℂ → ℝ} {z₀ w : ℂ} {R : ℝ} (hR : 0 <
   have hrep : Real.circleAverage (poissonKernel z₀ w • h) z₀ R = h w :=
     hh.circleAverage_poissonKernel_smul hw
   have hmv : Real.circleAverage h z₀ R = h z₀ := by
-    apply HarmonicOnNhd.circleAverage_eq
+    apply InnerProductSpace.HarmonicOnNhd.circleAverage_eq
     rwa [abs_of_pos hR]
   have hint1 : CircleIntegrable (poissonKernel z₀ w • h) z₀ R :=
     (hker.smul hcont).circleIntegrable hR.le
@@ -381,7 +381,7 @@ theorem LocBoundedPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → �
   have hPSbddB : ∀ w ∈ ball c r, BddAbove ((fun g ↦ g (e.symm w)) '' 𝓕) := fun w hw ↦
     ⟨M, by rintro v ⟨g', hg', rfl⟩; exact hMbound g' hg' w hw⟩
   -- a dense sequence in the disk
-  haveI hnB : Nonempty (ball c r) := ⟨⟨c, mem_ball_self hr⟩⟩
+  have hnB : Nonempty (ball c r) := ⟨⟨c, mem_ball_self hr⟩⟩
   set zs : ℕ → ℂ := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j : ℂ) with hzs_def
   have hzs_mem : ∀ j, zs j ∈ ball c r := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j).2
   have hzs_dense : ∀ w ∈ ball c r, w ∈ closure (range zs) := by
@@ -489,7 +489,7 @@ theorem LocBoundedPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → �
           (𝓝[range zs] w)
           (𝓝 (⨆ n, perronSeq' e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w))) :=
         ((hW₂harm w hw).1.continuousAt).continuousWithinAt
-      haveI : (𝓝[range zs] w).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hzs_dense w hw)
+      have : (𝓝[range zs] w).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hzs_dense w hw)
       have hcongr :
           (fun w' ↦ ⨆ n, perronSeq' e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w'))
           =ᶠ[𝓝[range zs] w] fun w' ↦ ⨆ n, perronSeq' e c r cseq n (e.symm w') := by
@@ -587,7 +587,7 @@ private theorem isPreconnected_norm_annulus {r₁ r₂ : ℝ} (h₁ : 0 < r₁) 
       · rw [Complex.log_re]; exact Real.log_lt_log h₁ hw₁
       · rw [Complex.log_re]; exact Real.log_lt_log (norm_pos_iff.mpr hw0) hw₂
     · rintro ⟨z, ⟨hz₁, hz₂⟩, rfl⟩
-      rw [mem_setOf_eq, Complex.norm_exp]
+      rw [mem_ofPred_eq, Complex.norm_exp]
       constructor
       · calc r₁ = Real.exp (Real.log r₁) := (Real.exp_log h₁).symm
           _ < Real.exp z.re := Real.exp_lt_exp.mpr hz₁
@@ -623,7 +623,7 @@ private theorem surfaceHarmonicOn_eqOn_const_component {u : X → ℝ} {s : Set 
     (hs : IsOpen s) (hu : SurfaceHarmonicOn u s) {M : ℝ} (hle : ∀ x ∈ s, u x ≤ M)
     {y : X} (hy : y ∈ s) (huy : u y = M) :
     EqOn u (fun _ ↦ M) (connectedComponentIn s y) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   have hCo : IsOpen (connectedComponentIn s y) := hs.connectedComponentIn
   have hCs : connectedComponentIn s y ⊆ s := connectedComponentIn_subset s y
   have hCpc : IsPreconnected (connectedComponentIn s y) := isPreconnected_connectedComponentIn
@@ -991,7 +991,7 @@ private theorem exists_h1_bound [T2Space X]
     (hfr0 : ∀ ξ ∈ frontier U, h1 ξ = 0) :
     ∃ a : ℝ, 0 ≤ a ∧ a < 1 ∧ ∀ x ∈ e.symm '' sphere 0 1, h1 x ≤ a := by
   classical
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Dh := e.symm '' closedBall (0:ℂ) (1/2) with hDh_def
   set Bh := e.symm '' ball (0:ℂ) (1/2) with hBh_def
   set Sin := e.symm '' sphere (0:ℂ) (1/2) with hSin_def
@@ -1076,7 +1076,7 @@ private theorem exists_h1_bound [T2Space X]
   have hcontra : ∀ S : Set X, S ⊆ closure U → EqOn h1 (fun _ ↦ (1:ℝ)) S →
       ∀ η ∈ frontier U, η ∈ closure S → False := by
     intro S hSclU hS1 η hη hηcl
-    haveI : (𝓝[S] η).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hηcl
+    have : (𝓝[S] η).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hηcl
     have h1tend : Tendsto h1 (𝓝[S] η) (𝓝 (h1 η)) := by
       have hηclU : η ∈ closure U := frontier_subset_closure hη
       exact (hcont η hηclU).mono_left (nhdsWithin_mono η hSclU)
@@ -1560,7 +1560,7 @@ theorem exists_green_function [T2Space X]
     {x₀ : X} (hx₀ : x₀ ∈ U) :
     ∃ G : X → ℝ, IsGreenFunction U x₀ G := by
   classical
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
   obtain ⟨e, he, hx₀e, hex₀, htgt, hDU⟩ := exists_normalized_chart hUo hx₀
   obtain ⟨h1, h1harm, h1cont, h1bd, h1Dh, h1fr⟩ :=
     exists_h1_basic hUo hUc hfr hreg he htgt hDU
@@ -1918,7 +1918,7 @@ theorem exists_green_function [T2Space X]
     rcases (hGnn y hyclU).lt_or_eq with hlt | heq
     · exact hlt
     · exfalso
-      haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+      have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
       have hGnegharm : SurfaceHarmonicOn (-G) s := hGharm.neg
       have hle' : ∀ x ∈ s, (-G) x ≤ 0 := fun x hx ↦ by
         simp only [Pi.neg_apply, neg_nonpos]

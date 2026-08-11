@@ -61,8 +61,8 @@ theorem _root_.AnalyticOnNhd.exists_finset_eq_prod_smul_nonzero
     exact hf₀ <| hfs.eqOn_zero_of_preconnected_of_eventuallyEq_zero hs_conn hx hfx
   obtain ⟨t, hts⟩ : ∃ t : Finset 𝕜, ∀ x, x ∈ t ↔ x ∈ s ∧ f x = 0 := by
     use hs_comp.finite_sdiff_of_mem_codiscreteWithin
-      hfs.codiscreteWithin_setOf_analyticOrderAt_eq_zero_or_top |>.toFinset
-    simp only [Finite.mem_toFinset, Set.mem_sdiff, mem_setOf_eq, not_or, analyticOrderAt_eq_zero,
+      hfs.codiscreteWithin_setOfPred_analyticOrderAt_eq_zero_or_top |>.toFinset
+    simp only [Finite.mem_toFinset, Set.mem_sdiff, mem_ofPred_eq, not_or, analyticOrderAt_eq_zero,
       and_congr_right_iff]
     push Not
     intro x hx
@@ -248,10 +248,10 @@ theorem eqOn_zero_or_forall_ne_zero_of_tendstoLocallyUniformlyOn {ι : Type*} {U
             analyticOrderAt_eq_top, hfd.analyticAt (hUo.mem_nhds hc), hR₀]
         rw [eventually_nhdsWithin_iff] at hfc₀
         refine Frequently.mp ?_ hfc₀
-        rw [frequently_iff_neBot, setOf_mem_eq, ← nhdsWithin]
+        rw [frequently_iff_neBot, ofPred_mem_eq, ← nhdsWithin]
         infer_instance
       · have := (isCompact_closedBall c R).finite_sdiff_of_mem_codiscreteWithin
-          ((hfd.analyticOnNhd hUo).mono hRU).codiscreteWithin_setOf_analyticOrderAt_eq_zero_or_top
+          ((hfd.analyticOnNhd hUo).mono hRU).codiscreteWithin_setOfPred_analyticOrderAt_eq_zero_or_top
         refine this.subset ?_
         simp +contextual [subset_def, analyticOrderNatAt, le_of_lt]
     · exact hfd.analyticOnNhd hUo |>.mono hRU
@@ -295,13 +295,13 @@ theorem exists_branch_log {X : Type*} [TopologicalSpace X] [LocallyPathConnected
   have hx₀ : g x₀ ≠ 0 := ne_of_mem_of_not_mem (mem_image_of_mem g hx₀U) hU₀
   lift x₀ to U using hx₀U
   rcases isCoveringMapOn_exp.existsUnique_continuousMap_lifts
-    ⟨U.restrict g, continuousOn_iff_continuous_restrict.mp hgc⟩ (exp_log hx₀)
+    ⟨U.domRestrict g, continuousOn_iff_continuous_domRestrict.mp hgc⟩ (exp_log hx₀)
     (fun x ↦ ne_of_mem_of_not_mem (mem_image_of_mem g x.2) hU₀) with ⟨f, ⟨-, hf⟩, -⟩
   obtain ⟨g, hg⟩ : ∃ g : X → ℂ, ∀ z : U, g z = f z :=
     ⟨fun z ↦ if hz : z ∈ U then f ⟨z, hz⟩ else 0, by simp⟩
   refine ⟨g, ?hg_cont, ?hg_inv⟩
   case hg_cont =>
-    rw [continuousOn_iff_continuous_restrict]
+    rw [continuousOn_iff_continuous_domRestrict]
     convert map_continuous f
     ext z
     exact hg z
@@ -317,8 +317,8 @@ theorem exists_branch_nthRoot {X : Type*} [TopologicalSpace X] [LocallyPathConne
   classical
   rcases exists_branch_log hUc hUo hgc hU₀ with ⟨f, hfc, hf⟩
   refine ⟨U.piecewise (exp <| f · / n) (g · ^ (1 / n : ℂ)), ?_, fun z ↦ ?_⟩
-  · rw [continuousOn_iff_continuous_restrict, restrict_piecewise,
-      ← continuousOn_iff_continuous_restrict]
+  · rw [continuousOn_iff_continuous_domRestrict, domRestrict_piecewise,
+      ← continuousOn_iff_continuous_domRestrict]
     fun_prop
   · by_cases hz : z ∈ U
     · simp [hz, ← exp_nat_mul, mul_div_cancel₀ (b := ↑n) (f z) (mod_cast hn), ← hf hz,
@@ -562,7 +562,7 @@ theorem uniformEquicontinuousOn_of_thickening_subset_of_forall_norm_le {ι E F :
   rcases hf with ⟨C, hC⟩
   rcases exists_pos_mul_lt hε (2 * C / r) with ⟨δ, hδ₀, hδ⟩
   use min δ r, by positivity
-  simp only [mem_setOf, mem_inter_iff, prodMk_mem_set_prod_eq]
+  simp only [mem_ofPred, mem_inter_iff, prodMk_mem_set_prod_eq]
   rintro x y ⟨hdist, hx, hy⟩ i
   rw [lt_min_iff] at hdist
   rw [thickening_eq_biUnion_ball, iUnion₂_subset_iff] at hU

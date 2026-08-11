@@ -6,7 +6,7 @@
 - `lake build` only when no agents are running (shared lock; rebuilds mid-edit files).
 - Beware bash cwd persisting (do not get stranded in `.lake/packages/mathlib`).
 - Machine has 4 cores ⇒ at most 2 concurrent prover agents.
-- Pin: Lean v4.32.2, Mathlib 905b9581 (browse `.lake/packages/mathlib/Mathlib/`).
+- Pin: Lean v4.33.0, Mathlib db584cd6 (browse `.lake/packages/mathlib/Mathlib/`).
 - No `sorry`, no new axioms; audit with `#print axioms` (expect propext,
   Classical.choice, Quot.sound only).
 

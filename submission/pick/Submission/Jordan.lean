@@ -1060,7 +1060,7 @@ lemma winding_section_ae_continuousAt_passthrough (P : LatticePolygon) (k : ZMod
       fun i => crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1)))
         (toReal (P.vert k)).2)).finite_toSet.measure_zero _)
   intro x hx
-  rw [Set.mem_setOf_eq] at hx
+  rw [Set.mem_ofPred_eq] at hx
   by_contra hc
   simp only [Finset.coe_insert, Finset.coe_image, Set.mem_insert_iff, Set.mem_image,
     Finset.mem_coe, not_or, not_exists, not_and] at hc
@@ -1089,7 +1089,7 @@ lemma winding_section_ae_continuousAt_of_not_vertex (P : LatticePolygon) (y₀ :
     ((Finset.univ.image fun i =>
       crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1))) y₀).finite_toSet.measure_zero _)
   intro x hx
-  rw [Set.mem_setOf_eq] at hx
+  rw [Set.mem_ofPred_eq] at hx
   by_contra hc
   rw [Finset.coe_image] at hc
   simp only [Set.mem_image, Finset.mem_coe, Finset.mem_univ, true_and, not_exists] at hc
@@ -1317,7 +1317,7 @@ theorem winding_integrable (P : LatticePolygon) :
     (g := {q : ℝ × ℝ | P.winding q ≠ 0}.indicator (fun _ => (P.n : ℝ)))
     ?_ (measurable_winding_real P).aestronglyMeasurable ?_
   · rw [MeasureTheory.integrable_indicator_iff hS]
-    haveI : Fact (MeasureTheory.volume {q : ℝ × ℝ | P.winding q ≠ 0} < ⊤) := ⟨hSμ⟩
+    have : Fact (MeasureTheory.volume {q : ℝ × ℝ | P.winding q ≠ 0} < ⊤) := ⟨hSμ⟩
     exact MeasureTheory.integrable_const _
   · filter_upwards with q
     by_cases hq : P.winding q = 0
@@ -1334,7 +1334,7 @@ theorem area_eq_integral_of_mem01 (P : LatticePolygon)
     P.area = ∫ q, (P.winding q : ℝ) := by
   have hfun : (fun q => (P.winding q : ℝ)) = P.interiorRegion.indicator (fun _ => (1 : ℝ)) := by
     funext q
-    simp only [Set.indicator_apply, LatticePolygon.interiorRegion, Set.mem_setOf_eq]
+    simp only [Set.indicator_apply, LatticePolygon.interiorRegion, Set.mem_ofPred_eq]
     rcases h01 q with h | h <;> simp [h]
   rw [hfun, MeasureTheory.integral_indicator_const 1 (interiorRegion_measurableSet P),
     smul_eq_mul, mul_one]
@@ -1350,7 +1350,7 @@ theorem area_eq_integral_of_mem01_ae (P : LatticePolygon)
   have hfun : (fun q => (P.winding q : ℝ))
       =ᵐ[MeasureTheory.volume] P.interiorRegion.indicator (fun _ => (1 : ℝ)) := by
     filter_upwards [h01] with q hq
-    simp only [Set.indicator_apply, LatticePolygon.interiorRegion, Set.mem_setOf_eq]
+    simp only [Set.indicator_apply, LatticePolygon.interiorRegion, Set.mem_ofPred_eq]
     rcases hq with h | h <;> simp [h]
   rw [MeasureTheory.integral_congr_ae hfun,
     MeasureTheory.integral_indicator_const 1 (interiorRegion_measurableSet P), smul_eq_mul, mul_one]
@@ -1496,7 +1496,7 @@ lemma integrable_Iio_indicator_sub (a b : ℝ) (h : b ≤ a) :
         - (Set.Iio b).indicator (fun _ => (1 : ℝ)) x)
         = (Set.Ico b a).indicator (fun _ => (1 : ℝ)) from ?_]
   · rw [MeasureTheory.integrable_indicator_iff measurableSet_Ico]
-    haveI : Fact (MeasureTheory.volume (Set.Ico b a) < ⊤) := ⟨by
+    have : Fact (MeasureTheory.volume (Set.Ico b a) < ⊤) := ⟨by
       rw [Real.volume_Ico]; exact ENNReal.ofReal_lt_top⟩
     exact MeasureTheory.integrable_const _
   · funext x
@@ -1828,7 +1828,7 @@ theorem greens_theorem (P : LatticePolygon) :
       rw [MeasureTheory.mem_ae_iff,
         show {y : ℝ | ∀ i, (toReal (P.vert i)).2 ≠ y}ᶜ
             = {y : ℝ | ∃ i, (toReal (P.vert i)).2 = y} from by
-          ext y; simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_forall, not_not]]
+          ext y; simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall, not_not]]
       exact (vertexHeights_finite P).measure_zero MeasureTheory.volume
     filter_upwards [hco] with y hy
     exact crossSection_value P y hy
@@ -1858,9 +1858,9 @@ lemma crossSection_pos_somewhere_generic (P : LatticePolygon) (horient : P.Posit
     rw [MeasureTheory.ae_iff]
     apply MeasureTheory.measure_mono_null _ ((vertexHeights_finite P).measure_zero _)
     intro y hy
-    rw [Set.mem_setOf_eq] at hy
+    rw [Set.mem_ofPred_eq] at hy
     by_contra hcon
-    rw [Set.mem_setOf_eq] at hcon
+    rw [Set.mem_ofPred_eq] at hcon
     push Not at hcon
     exact hy (h y hcon)
   have hle : (∫ y, ∫ x, (P.winding (x, y) : ℝ)) ≤ 0 :=
@@ -2145,7 +2145,7 @@ lemma crossSection_band1_eq (P : LatticePolygon) (hn : P.n = 3) (ℓ : ZMod P.n)
   have hy := band1_generic P hn ℓ y hL hm1 hp1
   have hspan := band1_spanning_eq P hn ℓ y hL hm1 hp1
   have hone : (1 : ZMod P.n) ≠ 0 := by
-    haveI : Fact (1 < P.n) := ⟨by rw [hn]; norm_num⟩
+    have : Fact (1 < P.n) := ⟨by rw [hn]; norm_num⟩
     exact one_ne_zero
   have hab : ℓ - 1 ≠ ℓ := fun h => hone (sub_eq_self.mp h)
   rw [crossSection_value_two_spanning P y hy (ℓ - 1) ℓ hab hspan, sub_add_cancel,
@@ -2270,9 +2270,9 @@ lemma winding_nonneg_ae_triangle_of_crossSection_pos (P : LatticePolygon) (hn : 
   rw [MeasureTheory.ae_iff]
   apply MeasureTheory.measure_mono_null _ (vertexHeight_lines_null P)
   rintro ⟨x, y⟩ hq
-  rw [Set.mem_setOf_eq] at hq
+  rw [Set.mem_ofPred_eq] at hq
   by_contra hc
-  rw [Set.mem_setOf_eq] at hc
+  rw [Set.mem_ofPred_eq] at hc
   push Not at hc
   refine hq ?_
   by_cases hsp : (Finset.univ.filter fun i =>
@@ -2325,7 +2325,7 @@ lemma winding_section_dominated (P : LatticePolygon) :
   obtain ⟨R, hR⟩ := exists_winding_zero_far_x P
   refine ⟨R, MeasureTheory.Integrable.const_mul ?_ _, fun x y => ?_⟩
   · rw [MeasureTheory.integrable_indicator_iff measurableSet_Icc]
-    haveI : Fact (MeasureTheory.volume (Set.Icc (-R) R) < ⊤) :=
+    have : Fact (MeasureTheory.volume (Set.Icc (-R) R) < ⊤) :=
       ⟨by rw [Real.volume_Icc]; exact ENNReal.ofReal_lt_top⟩
     exact MeasureTheory.integrable_const _
   · by_cases hx : |x| ≤ R

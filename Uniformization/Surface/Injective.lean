@@ -494,7 +494,7 @@ private theorem isCompact_sublevel [T2Space X] {U : Set X} {x₀ : X} {G : X →
   refine hUc.of_isClosed_subset ?_ hKsub
   rw [← closure_subset_iff_isClosed]
   intro p hp
-  haveI : (𝓝[K] p).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hp
+  have : (𝓝[K] p).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hp
   have hpclU : p ∈ closure U := by
     have := closure_mono hKsub hp; rwa [closure_closure] at this
   by_cases hpU : p ∈ U
@@ -675,7 +675,7 @@ theorem phi_injOn [T2Space X] {U : Set X} {x₀ : X} {G : X → ℝ} {φ : X →
   -- `A` is relatively closed in `U`
   have hAclosed : U ∩ closure A ⊆ A := by
     rintro p ⟨hpU, hpcl⟩
-    haveI hacc : (𝓝[A] p).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hpcl
+    have hacc : (𝓝[A] p).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hpcl
     have hφcp : ContinuousAt φ p := hφ.continuousOn.continuousAt (hUo.mem_nhds hpU)
     refine ⟨hpU, ?_, ?_⟩
     · -- nonvanishing derivative at `p` (else the `k ≥ 2` normal form breaks fibers)

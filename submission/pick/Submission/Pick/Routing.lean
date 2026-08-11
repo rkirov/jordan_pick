@@ -178,8 +178,8 @@ lemma notMem_boundary_in_consecutive_gap (hP : P.IsSimple) (y₁ y₂ : ℝ)
     · rw [hkiL]
     · have hd : P.edgeThr y k ≠ P.edgeThr y iL :=
         crossThreshold_ne_distinct_spanning P hP y (hgen y hy) k iL hkiL
-          (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hkY)
-          (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hiL)
+          ((Finset.mem_filter.mp hkY).2)
+          ((Finset.mem_filter.mp hiL).2)
       exact le_of_lt (chord_order_preserved_in_slab P hP y₁ y₂ hslab k iL hy hkY hiL
         (lt_of_le_of_ne hle hd) ht)
   · right
@@ -187,8 +187,8 @@ lemma notMem_boundary_in_consecutive_gap (hP : P.IsSimple) (y₁ y₂ : ℝ)
     · rw [hkiR]
     · have hd : P.edgeThr y iR ≠ P.edgeThr y k :=
         crossThreshold_ne_distinct_spanning P hP y (hgen y hy) iR k (Ne.symm hkiR)
-          (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hiR)
-          (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hkY)
+          ((Finset.mem_filter.mp hiR).2)
+          ((Finset.mem_filter.mp hkY).2)
       exact le_of_lt (chord_order_preserved_in_slab P hP y₁ y₂ hslab iR k hy hiR hkY
         (lt_of_le_of_ne hge hd) ht)
 
@@ -236,7 +236,7 @@ lemma lift_across_level (hP : P.IsSimple) (y w y' : ℝ)
   have hspan_w : ∀ k ∈ P.spanningSet w,
       ((toReal (P.vert k)).2 < w ∧ w < (toReal (P.vert (k + 1))).2) ∨
       ((toReal (P.vert (k + 1))).2 < w ∧ w < (toReal (P.vert k)).2) := by
-    intro k hk; simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hk
+    intro k hk; exact (Finset.mem_filter.mp hk).2
   have hdiL : (toReal (P.vert (iL+1))).2 ≠ (toReal (P.vert iL)).2 := by
     rcases hspan_w iL hiL_w with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> · intro h; linarith
   have hdiR : (toReal (P.vert (iR+1))).2 ≠ (toReal (P.vert iR)).2 := by
@@ -1238,7 +1238,7 @@ lemma plateau_edgeThr_lt_enter_of_outer (hsimple : P.IsSimple) (p eL : ZMod P.n)
   · exfalso
     have heL_span_w' : (((toReal (P.vert eL)).2 < w ∧ w < (toReal (P.vert (eL + 1))).2) ∨
         ((toReal (P.vert (eL + 1))).2 < w ∧ w < (toReal (P.vert eL)).2)) := by
-      simpa [LatticePolygon.spanningSet, Finset.mem_filter] using heL_span_w
+      exact (Finset.mem_filter.mp heL_span_w).2
     have hmem : (P.edgeThr w eL, w) ∈ P.edgeSeg eL := by
       rw [LatticePolygon.edgeThr, LatticePolygon.edgeSeg]
       rcases heL_span_w' with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -1312,7 +1312,7 @@ lemma plateau_leave_lt_edgeThr_of_outer (hsimple : P.IsSimple) (p eR : ZMod P.n)
   · exfalso
     have heR_span_w' : (((toReal (P.vert eR)).2 < w ∧ w < (toReal (P.vert (eR + 1))).2) ∨
         ((toReal (P.vert (eR + 1))).2 < w ∧ w < (toReal (P.vert eR)).2)) := by
-      simpa [LatticePolygon.spanningSet, Finset.mem_filter] using heR_span_w
+      exact (Finset.mem_filter.mp heR_span_w).2
     have hmem : (P.edgeThr w eR, w) ∈ P.edgeSeg eR := by
       rw [LatticePolygon.edgeThr, LatticePolygon.edgeSeg]
       rcases heR_span_w' with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -1346,7 +1346,7 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
   -- (c, w) lies on edgeSeg e
   have he_span_w' : (((toReal (P.vert e)).2 < w ∧ w < (toReal (P.vert (e + 1))).2) ∨
       ((toReal (P.vert (e + 1))).2 < w ∧ w < (toReal (P.vert e)).2)) := by
-    simpa [LatticePolygon.spanningSet, Finset.mem_filter] using he_span_w
+    exact (Finset.mem_filter.mp he_span_w).2
   have hmem_e : ((c, w) : ℝ × ℝ) ∈ P.edgeSeg e := by
     rw [hc, LatticePolygon.edgeThr, LatticePolygon.edgeSeg]
     rcases he_span_w' with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -1542,7 +1542,7 @@ lemma edgeThr_lt_apex_of_outer (hsimple : P.IsSimple) (k eL : ZMod P.n)
   · exfalso
     have heL_span_w' : (((toReal (P.vert eL)).2 < w ∧ w < (toReal (P.vert (eL + 1))).2) ∨
         ((toReal (P.vert (eL + 1))).2 < w ∧ w < (toReal (P.vert eL)).2)) := by
-      simpa [LatticePolygon.spanningSet, Finset.mem_filter] using heL_span_w
+      exact (Finset.mem_filter.mp heL_span_w).2
     have hmem : (P.edgeThr w eL, w) ∈ P.edgeSeg eL := by
       rw [LatticePolygon.edgeThr, LatticePolygon.edgeSeg]
       rcases heL_span_w' with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -1613,7 +1613,7 @@ lemma apex_lt_edgeThr_of_outer (hsimple : P.IsSimple) (k eR : ZMod P.n)
   · exfalso
     have heR_span_w' : (((toReal (P.vert eR)).2 < w ∧ w < (toReal (P.vert (eR + 1))).2) ∨
         ((toReal (P.vert (eR + 1))).2 < w ∧ w < (toReal (P.vert eR)).2)) := by
-      simpa [LatticePolygon.spanningSet, Finset.mem_filter] using heR_span_w
+      exact (Finset.mem_filter.mp heR_span_w).2
     have hmem : (P.edgeThr w eR, w) ∈ P.edgeSeg eR := by
       rw [LatticePolygon.edgeThr, LatticePolygon.edgeSeg]
       rcases heR_span_w' with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -1769,8 +1769,8 @@ lemma apex_cross_ordered (hsimple : P.IsSimple) (k eL eLft eRgt eR : ZMod P.n)
       a ≠ b → P.edgeThr y a ≠ P.edgeThr y b := by
     intro a b ha hb hab
     exact crossThreshold_ne_distinct_spanning P hsimple y hygen a b hab
-      (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using ha)
-      (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hb)
+      ((Finset.mem_filter.mp ha).2)
+      ((Finset.mem_filter.mp hb).2)
   -- LEFT gap consecutivity preserved across the slab
   have hgapL : ∀ z ∈ Set.Ioo y₀ w, ∀ i ∈ P.spanningSet z,
       P.edgeThr z i ≤ P.edgeThr z eL ∨ P.edgeThr z eLft ≤ P.edgeThr z i := by

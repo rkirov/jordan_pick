@@ -699,7 +699,7 @@ theorem exists_uniformizer (hnc : ¬ CompactSpace X) :
         have hsub : S (j + 1) ⊆ V (j + 1) := by rw [hSsucc]; exact hchain j
         have hcont : ContinuousOn (ψ (j + 1)) (S (j + 1)) := (hholo (j + 1)).continuousOn.mono hsub
         obtain ⟨g, hg⟩ := ContinuousMap.exists_restrict_eq hcl
-          ⟨(S (j + 1)).restrict (ψ (j + 1)), hcont.restrict⟩
+          ⟨(S (j + 1)).domRestrict (ψ (j + 1)), hcont.domRestrict⟩
         refine ⟨g, fun y hy => ?_⟩
         have := DFunLike.congr_fun hg ⟨y, hy⟩
         simpa using this

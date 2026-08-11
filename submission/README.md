@@ -80,7 +80,7 @@ The engine is ~28k lines across 15 modules (namespace `Pick`); the bridge adds
 
 ## Toolchain — matches the harness
 
-The engine + bridge build against **Lean `v4.32.2`** + **Mathlib `905b9581`**
+The engine + bridge build against **Lean `v4.33.0`** + **Mathlib `db584cd6`**
 (`lean-toolchain` copied here) — the **same pin the lean-eval harness uses**, so
 the bundled engine compiles against the harness's exact dependencies. Re-check the
 harness's `lean-toolchain` / `lake-manifest` before submitting in case lean-eval

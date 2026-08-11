@@ -34,7 +34,7 @@ theorem inside_eq {n : ℕ} (hn : 0 < n) (v : Fin n → ℤ × ℤ)
       = {x | x ∉ (ourPoly hn v).boundary ∧ (ourPoly hn v).winding x ≠ 0} := by
   set Q := ourPoly hn v with hQ
   ext x
-  simp only [inside, Set.mem_setOf_eq]
+  simp only [inside, Set.mem_ofPred_eq]
   constructor
   · -- bounded component ⟹ winding ≠ 0
     rintro ⟨hxb, hxbd⟩
@@ -57,7 +57,7 @@ theorem inside_eq {n : ℕ} (hn : 0 < n) (v : Fin n → ℤ × ℤ)
       intro y hy
       have hconst : Q.winding y = Q.winding x :=
         Pick.winding_const_on_connectedComponentIn Q hxb hy
-      rw [Set.mem_setOf_eq, hconst]; exact hxw
+      rw [Set.mem_ofPred_eq, hconst]; exact hxw
     exact (Pick.windingSupport_bounded Q).subset hcompsub
 
 end LeanEval.Geometry.PicksTheorem

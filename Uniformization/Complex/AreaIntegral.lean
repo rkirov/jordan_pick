@@ -380,7 +380,7 @@ theorem integral_winding_eq_shoelace (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h
     have hRpos : 0 < R := lt_of_le_of_lt (norm_nonneg _) (hcurve 0)
     have hmem : ∀ θ : ℝ, circleMap 0 t θ ∈ exteriorUnit := by
       intro θ
-      simp only [exteriorUnit, mem_setOf_eq, norm_circleMap_zero, abs_of_pos htpos]
+      simp only [exteriorUnit, mem_ofPred_eq, norm_circleMap_zero, abs_of_pos htpos]
       exact ht
     have hGA : AnalyticOnNhd ℂ (extMap h) exteriorUnit := extMap_analyticOnNhd h hh
     have hGcont : Continuous (fun θ : ℝ => G (circleMap 0 t θ)) := by

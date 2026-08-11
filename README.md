@@ -17,7 +17,7 @@ All proved **sorry-free**; `#print axioms` shows only the three standard axioms
 | theorem | location | statement |
 |---|---|---|
 | **Pick's theorem** | `Pick.pick` (`JordanPick/PicksTheorem/Pick.lean`) | a simple, positively-oriented lattice polygon has `area = I + B/2 − 1` (area = Lebesgue measure of the winding interior; `I`/`B` interior/boundary lattice-point counts) |
-| **Polygonal Jordan curve theorem** | `Pick.LatticePolygon.compl_boundary_atMost_two` (`JordanPick/PicksTheorem/Pick.lean`) | the complement of a simple polygon's boundary has at most two connected components, with the winding number locally constant `∈ {0, 1}` |
+| **Polygonal Jordan curve theorem** | `Pick.compl_boundary_atMost_two` (`JordanPick/PicksTheorem/Pick.lean`) | the complement of a simple polygon's boundary has at most two connected components, with the winding number locally constant `∈ {0, 1}` |
 | **lean-eval Pick** | `LeanEval.Geometry.PicksTheorem.pick` (`JordanPick/PicksTheorem/EvalBridgeMain.lean`) | the exact statement of <https://lean-lang.org/eval/problems/pick/> (Mathlib `Polygon`, *topological* interior, no orientation hypothesis), bridged to `Pick.pick` |
 | **Jordan curve theorem (continuous)** | `JordanCurve.jordan_curve` (`JordanPick/JordanCurve.lean`) | the exact statement of <https://lean-lang.org/eval/problems/jordan_curve/>: a continuous injection `S¹ → ℝ²` has a complement with exactly two connected components (`Nat.card (ConnectedComponents (range r)ᶜ) = 2`) |
 | **Brouwer fixed point theorem (2D)** | `JordanCurve.Brouwer.brouwerFPT` (`JordanPick/JordanCurve/Brouwer.lean`) | every continuous self-map of a nonempty compact convex subset of `ℝ²` has a fixed point |
@@ -64,25 +64,29 @@ case (nearest-point projection).
 lake build
 ```
 
-Pinned to **Lean `v4.32.2`** + **Mathlib `905b9581`** (the `v4.32.2` release tag)
-via `lean-toolchain` / `lakefile.toml` — chosen to **match the lean-eval harness**,
-so both eval submissions build against the harness's exact dependencies. Mathlib
-is fetched as a dependency. (The proof is version-robust: the `v4.31.0` →
-`v4.32.0-rc1` port needed no code changes at all, and `v4.32.0-rc1` → `v4.32.2`
-needed only a mechanical rename, `LocPathConnectedSpace` →
-`LocallyPathConnectedSpace`, across eight `Uniformization/` files. Because that
-name did not exist before Mathlib's 2026-06-21 rename, the tree no longer builds
-on the older pins.)
+Pinned to **Lean `v4.33.0`** + **Mathlib `db584cd6`** (the `v4.33.0` release tag)
+via `lean-toolchain` / `lakefile.toml`. Mathlib is fetched as a dependency.
 
-`v4.32.2` is the first release carrying both of the mid-2026 kernel soundness
-fixes — [#14484](https://github.com/leanprover/lean4/issues/14484) (missing
-closure check on `opaque` declarations) in `v4.32.1`, and
-[#14576](https://github.com/leanprover/lean4/issues/14576) (nested inductives
-with phantom parameters escaping the type checker) in `v4.32.2`. Both were
-reachable only by an adversarial metaprogram calling `addDecl` directly, never
-from ordinary tactics, but the axiom audits below are worth more on a kernel that
-has them. Note that Mathlib `master` is *not* the right target here: it still
-pins Lean `v4.33.0-rc1`, cut before either fix.
+`v4.33.0` carries both of the mid-2026 kernel soundness fixes —
+[#14484](https://github.com/leanprover/lean4/issues/14484) (missing closure check
+on `opaque` declarations), first released in `v4.32.1`, and
+[#14576](https://github.com/leanprover/lean4/issues/14576) (nested inductives with
+phantom parameters escaping the type checker), first released in `v4.32.2`. Both
+were reachable only by an adversarial metaprogram calling `addDecl` directly,
+never from ordinary tactics, but the axiom audits below are worth more on a kernel
+that has them.
+
+The development has been ported forward repeatedly and is fairly version-robust,
+though not free: `v4.31.0` → `v4.32.0-rc1` needed no changes at all;
+`v4.32.0-rc1` → `v4.32.2` needed one mechanical rename (`LocPathConnectedSpace` →
+`LocallyPathConnectedSpace`); `v4.32.2` → `v4.33.0` cost rather more. Lean 4.33
+matches `rw`/`simp` patterns at *reducible* transparency, and this development
+builds several `LatticePolygon`s whose `n` field is defined from another
+polygon's (`shearP`, `linP`, `deleteLast`, `rotateP`). `ZMod (shearP P k).n` and
+`ZMod P.n` are definitionally equal but not reducibly so, and rewrites that used
+to fire silently across that gap stopped firing. The repairs are marked in place;
+alongside them, Mathlib's `Set.setOf` → `Set.ofPred` and `Set.restrict` →
+`Set.domRestrict` renames account for the rest of the diff.
 
 ## Layout
 

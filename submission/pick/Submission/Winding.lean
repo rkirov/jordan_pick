@@ -381,7 +381,7 @@ theorem interiorLattice_finite (P : LatticePolygon) : P.interiorLattice.Finite :
   refine Set.Finite.subset (winding_support_finite P) ?_
   intro q hq
   have : P.winding (toReal q) = 1 := hq.1
-  simp only [Set.mem_setOf_eq, this, ne_eq, one_ne_zero, not_false_eq_true]
+  simp only [Set.mem_ofPred_eq, this, ne_eq, one_ne_zero, not_false_eq_true]
 
 /-- The boundary lattice points form a finite set: the boundary lies in the
 convex bounding box of the vertices. So `B` is well-defined. -/
@@ -415,7 +415,7 @@ theorem boundaryLattice_finite (P : LatticePolygon) : P.boundaryLattice.Finite :
       by exact_mod_cast hxM i, by exact_mod_cast hyM i⟩
   refine Set.Finite.subset (Set.finite_Icc ((xm, ym) : Pt) (xM, yM)) ?_
   intro q hq
-  rw [LatticePolygon.boundaryLattice, Set.mem_setOf_eq, LatticePolygon.boundary,
+  rw [LatticePolygon.boundaryLattice, Set.mem_ofPred_eq, LatticePolygon.boundary,
     Set.mem_iUnion] at hq
   obtain ⟨i, hqi⟩ := hq
   rw [LatticePolygon.edgeSeg] at hqi
@@ -498,7 +498,7 @@ theorem interiorLattice_disjoint_boundaryLattice (P : LatticePolygon) :
 /-- Every vertex is a boundary lattice point (it is an endpoint of its edge). -/
 theorem vert_mem_boundaryLattice (P : LatticePolygon) (i : ZMod P.n) :
     P.vert i ∈ P.boundaryLattice := by
-  rw [LatticePolygon.boundaryLattice, Set.mem_setOf_eq, LatticePolygon.boundary, Set.mem_iUnion]
+  rw [LatticePolygon.boundaryLattice, Set.mem_ofPred_eq, LatticePolygon.boundary, Set.mem_iUnion]
   exact ⟨i, by rw [LatticePolygon.edgeSeg]; exact left_mem_segment ℝ _ _⟩
 
 /-- **Per-edge local constancy (off the two endpoint heights).** If `q₀` lies on

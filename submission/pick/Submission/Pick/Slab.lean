@@ -119,7 +119,7 @@ lemma vertLineBoundary_finite (x : ℝ) (hgen : ∀ i, (toReal (P.vert i)).1 ≠
       (Set.finite_univ (α := ZMod P.n)))
   intro y hy
   simp only [LatticePolygon.boundary, LatticePolygon.edgeSeg, Set.mem_iUnion,
-    Set.mem_setOf_eq] at hy
+    Set.mem_ofPred_eq] at hy
   obtain ⟨i, hi⟩ := hy
   exact ⟨i, Set.mem_univ _,
     (eq_vertThr_of_mem_segment_vertical _ _ x y (hgen i).symm (hgen (i + 1)).symm hi).symm⟩
@@ -150,7 +150,7 @@ lemma inside_nonempty (horient : P.PositivelyOriented) :
     rw [MeasureTheory.ae_iff]
     apply MeasureTheory.measure_mono_null _ (hfin.measure_zero volume)
     intro x hx
-    simp only [Set.mem_setOf_eq, not_le] at hx
+    simp only [Set.mem_ofPred_eq, not_le] at hx
     by_contra hxb
     exact absurd (hle x hxb) (by exact_mod_cast not_le.mpr hx)
   have hle0 : (∫ x, (P.winding (x, y) : ℝ)) ≤ 0 :=
@@ -209,7 +209,7 @@ lemma convex_slabGap (aL bL aR bR : ℝ × ℝ) (y₁ y₂ : ℝ)
   clear_value sL sR
   rw [convex_iff_forall_pos]
   rintro z hz w hw t u ht hu htu
-  simp only [Set.mem_setOf_eq, hrwL, hrwR] at hz hw ⊢
+  simp only [Set.mem_ofPred_eq, hrwL, hrwR] at hz hw ⊢
   obtain ⟨hz1, hz2, hz3, hz4⟩ := hz
   obtain ⟨hw1, hw2, hw3, hw4⟩ := hw
   simp only [Prod.smul_fst, Prod.smul_snd, Prod.fst_add, Prod.snd_add, smul_eq_mul]
@@ -304,7 +304,7 @@ lemma chord_order_preserved_in_slab (hP : P.IsSimple) (y₁ y₂ : ℝ)
       ((toReal (P.vert (k + 1))).2 < z ∧ z < (toReal (P.vert k)).2) := by
     intro z hz k hk
     have : k ∈ P.spanningSet z := by rw [hconst z hz]; exact hk
-    simpa [LatticePolygon.spanningSet, Finset.mem_filter] using this
+    exact (Finset.mem_filter.mp this).2
   -- non-equality of thresholds at every slab height
   have hne : ∀ z, z ∈ Set.Ioo y₁ y₂ → P.edgeThr z i ≠ P.edgeThr z j := by
     intro z hz
@@ -386,7 +386,7 @@ lemma joinedIn_consecutive_gap_in_slab (hP : P.IsSimple) (y₁ y₂ : ℝ)
       ((toReal (P.vert (k + 1))).2 < z ∧ z < (toReal (P.vert k)).2) := by
     intro z hz k hk
     have : k ∈ P.spanningSet z := by rw [hconst z hz]; exact hk
-    simpa [LatticePolygon.spanningSet, Finset.mem_filter] using this
+    exact (Finset.mem_filter.mp this).2
   have hdL : (toReal (P.vert (iL+1))).2 ≠ (toReal (P.vert iL)).2 := by
     rcases hspan y hy iL hiL with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> · intro h; linarith
   have hdR : (toReal (P.vert (iR+1))).2 ≠ (toReal (P.vert iR)).2 := by

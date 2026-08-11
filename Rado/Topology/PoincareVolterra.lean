@@ -51,7 +51,7 @@ namespace Rado
 private theorem secondCountableTopology_of_subset {Z : Type*} [TopologicalSpace Z]
     {s t : Set Z} (hst : t ⊆ s) (hs : SecondCountableTopology s) :
     SecondCountableTopology t := by
-  haveI := hs
+  have := hs
   exact (Topology.IsEmbedding.inclusion hst).secondCountableTopology
 
 /-- ccc argument: a family of connected components of a fixed open set `F` in a
@@ -63,7 +63,7 @@ private theorem countable_components_meeting {Z : Type*} [TopologicalSpace Z]
     (hcomp : ∀ U ∈ 𝒱, ∃ z ∈ F, U = connectedComponentIn F z)
     (hmeet : ∀ U ∈ 𝒱, (U ∩ U₀).Nonempty) :
     𝒱.Countable := by
-  haveI := hU₀
+  have := hU₀
   -- distinct members are disjoint (they are components of the same set)
   have hdisj : ∀ U₁ ∈ 𝒱, ∀ U₂ ∈ 𝒱, U₁ ≠ U₂ → Disjoint U₁ U₂ := by
     intro U₁ hU₁ U₂ hU₂ hne

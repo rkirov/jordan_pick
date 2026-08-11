@@ -104,7 +104,7 @@ theorem exists_lower_half [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → �
       · exact absurd (hmemF z hz h) hxc
       · exact absurd (hmemV z hz h) hxc
     · rintro x ⟨z, ⟨hz, hlt⟩, rfl⟩
-      rw [Set.mem_setOf_eq] at hlt
+      rw [Set.mem_ofPred_eq] at hlt
       refine ⟨⟨z, hz, rfl⟩, ?_⟩
       rw [hcl]
       rintro (hV | hF)
@@ -123,7 +123,7 @@ theorem exists_lower_half [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → �
     have hbox_eq : box = ({z : ℂ | z.re < c + δ} ∩ {z : ℂ | c - δ < z.re}) ∩
         ({z : ℂ | z.im < q.im + ε} ∩ {z : ℂ | q.im - ε < z.im}) := by
       ext z
-      simp only [hboxdef, straightBox, mem_setOf_eq, mem_inter_iff, abs_lt]
+      simp only [hboxdef, straightBox, mem_ofPred_eq, mem_inter_iff, abs_lt]
       constructor
       · rintro ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
         exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
@@ -195,7 +195,7 @@ theorem frontier_component_compl_closure_open_in_frontier [T2Space X] {V : Set X
     {x₀ : X} :
     ∃ U : Set X, IsOpen U ∧
       frontier (connectedComponentIn (closure V)ᶜ x₀) = frontier V ∩ U := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZopen : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   have hfrZsub : frontier Z ⊆ frontier V := frontier_component_compl_closure_subset
@@ -245,7 +245,7 @@ theorem frontier_component_compl_closure_biUnion [T2Space X] {V : Set X}
     frontier (connectedComponentIn (closure V)ᶜ x₀)
       = ⋃ ξ ∈ frontier (connectedComponentIn (closure V)ᶜ x₀),
           connectedComponentIn (frontier V) ξ := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hfrZsub : frontier Z ⊆ frontier V := frontier_component_compl_closure_subset
   obtain ⟨U, hUopen, hUeq⟩ :=

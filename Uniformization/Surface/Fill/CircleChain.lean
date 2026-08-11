@@ -172,7 +172,7 @@ theorem isCompact_component (hVcl : IsCompact (closure V)) {x₀ : X} :
     IsCompact (connectedComponentIn (frontier V) x₀) := by
   by_cases hx₀ : x₀ ∈ frontier V
   · rw [connectedComponentIn_eq_image hx₀]
-    haveI : CompactSpace (frontier V) :=
+    have : CompactSpace (frontier V) :=
       isCompact_iff_compactSpace.mp (isCompact_frontier hVcl)
     exact (isClosed_connectedComponent.isCompact).image continuous_subtype_val
   · rw [connectedComponentIn_eq_empty hx₀]; exact isCompact_empty

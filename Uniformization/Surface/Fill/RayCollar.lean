@@ -90,8 +90,8 @@ theorem exists_angle {X : Type*} [TopologicalSpace X] [T2Space X] [MetrizableSpa
   refine ⟨θ, hval, ?_⟩
   -- continuity via sequential continuity of the restriction
   set D : Set X := CZ \ {p} with hDdef
-  rw [continuousOn_iff_continuous_restrict]
-  have hseq : SeqContinuous (D.restrict θ) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  have hseq : SeqContinuous (D.domRestrict θ) := by
     intro U x₀ hU
     -- `u n = (U n : X)`, values in `D`
     set u : ℕ → X := fun n => (U n : X) with hudef
@@ -223,7 +223,7 @@ theorem collapse_of_rayCollar {X : Type*} [TopologicalSpace X] [T2Space X]
   obtain ⟨R, Sm, Sp, dm, dp, ε, hε, hε1, hRcl, hSmcl, hSpcl, hpR, hRSm, hRSp, hRZ,
     hSmZ, hSpZ, hSmSp, hdm_cont, hdp_cont, hdm_range, hdp_range, hdm_R, hdp_R,
     hdm_CZ, hdp_CZ, hCZcover, hcov, hcovp⟩ := rc
-  haveI : MetrizableSpace X := inferInstance
+  have : MetrizableSpace X := inferInstance
   have hγ1 : γ 1 = p := by have h := hγp 0; rw [zero_add] at h; rw [h, hp]
   -- frontier facts
   have hCZcl : IsClosed CZ := by rw [hCZ]; exact isClosed_frontier
@@ -276,7 +276,7 @@ theorem collapse_of_rayCollar {X : Type*} [TopologicalSpace X] [T2Space X]
     intro hxR
     exact hxp (mem_singleton_iff.mpr (hRCZ x hxR hxCZ))
   have hArcY : ∀ x ∈ γ '' Set.Icc ε (1 - ε), x ∈ Y := fun x hx => hCZY x (hBigArc_sub hx)
-  haveI : NormalSpace ↥Y := inferInstance
+  have : NormalSpace ↥Y := inferInstance
   -- corner-matching of the collar coordinates with the angular coordinate
   have hmatch_m : ∀ x ∈ Sm, x ∈ CZ → x ≠ p → dm x = θ x := by
     intro x hxSm hxCZ hxp
@@ -342,7 +342,7 @@ theorem collapse_of_rayCollar {X : Type*} [TopologicalSpace X] [T2Space X]
       (hP_Smcl.union hP_Spcl) hP_arccl
   -- Tietze extension
   obtain ⟨g, hg⟩ :=
-    (⟨Bs.restrict d, continuousOn_iff_continuous_restrict.mp hd_cont⟩ : C(↥Bs, ℝ)).exists_restrict_eq
+    (⟨Bs.domRestrict d, continuousOn_iff_continuous_domRestrict.mp hd_cont⟩ : C(↥Bs, ℝ)).exists_restrict_eq
       hBscl
   have hgd : ∀ y : ↥Y, y ∈ Bs → g y = d y := by
     intro y hy
@@ -351,8 +351,8 @@ theorem collapse_of_rayCollar {X : Type*} [TopologicalSpace X] [T2Space X]
   -- extend to a total real map `M`
   set M : X → ℝ := fun x => if h : x ∈ Y then g ⟨x, h⟩ else 0 with hMdef
   have hM_cont : ContinuousOn M Y := by
-    rw [continuousOn_iff_continuous_restrict]
-    have heq : Y.restrict M = fun y : ↥Y => g y := by
+    rw [continuousOn_iff_continuous_domRestrict]
+    have heq : Y.domRestrict M = fun y : ↥Y => g y := by
       funext y
       show M (y : X) = g y
       simp only [hMdef, dif_pos y.2, Subtype.coe_eta]
@@ -528,9 +528,9 @@ theorem exists_end_collapse_of_rayCollar [T2Space X] [ConnectedSpace X]
     ∃ h : C(X, X),
       (∀ y ∉ connectedComponentIn (closure V)ᶜ x, h y = y) ∧
       (∀ y ∈ connectedComponentIn (closure V)ᶜ x, h y ∈ closure V) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
   set Z := connectedComponentIn (closure V)ᶜ x with hZdef
   have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   obtain ⟨ξ₀, hξ₀⟩ := nonempty_frontier_component_compl_closure hVconn.nonempty hx

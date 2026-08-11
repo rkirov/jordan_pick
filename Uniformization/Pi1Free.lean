@@ -76,8 +76,8 @@ theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup {X : Type*} [Topol
     SimplyConnectedSpace X := by
   rw [simply_connected_iff_loops_nullhomotopic]
   refine ⟨inferInstance, fun x γ => ?_⟩
-  haveI : Subsingleton (FundamentalGroup X x₀) := h
-  haveI hx : Subsingleton (FundamentalGroup X x) :=
+  have : Subsingleton (FundamentalGroup X x₀) := h
+  have hx : Subsingleton (FundamentalGroup X x) :=
     (FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x).symm.injective.subsingleton
   -- `FundamentalGroup X x` is the endomorphism monoid of `x` in the fundamental groupoid,
   -- i.e. `Path.Homotopic.Quotient x x`, but only up to unfolding.

@@ -37,10 +37,10 @@ theorem IsCompact.secondCountableTopology {Z : Type*} [TopologicalSpace Z] {K : 
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover U hUo fun x hx ↦
     mem_iUnion.2 ⟨⟨x, hx⟩, hzU ⟨x, hx⟩⟩
   -- cover the subtype `↥K` by the preimages of the finitely many `U i`, `i ∈ t`
-  haveI : ∀ i : t, SecondCountableTopology
+  have : ∀ i : t, SecondCountableTopology
       (Subtype.val ⁻¹' U i.1 : Set K) := by
     intro i
-    haveI := hUsc i.1
+    have := hUsc i.1
     exact (Topology.IsEmbedding.subtypeVal.restrictPreimage
       (U i.1)).secondCountableTopology
   refine TopologicalSpace.secondCountableTopology_of_countable_cover
@@ -57,8 +57,8 @@ theorem secondCountableTopology_of_countable_setCover {Z : Type*} [TopologicalSp
     {𝒰 : Set (Set Z)} (hct : 𝒰.Countable) (ho : ∀ U ∈ 𝒰, IsOpen U)
     (hsc : ∀ U ∈ 𝒰, SecondCountableTopology U) (hcov : ⋃₀ 𝒰 = univ) :
     SecondCountableTopology Z := by
-  haveI : Countable ↥𝒰 := hct.to_subtype
-  haveI : ∀ U : ↥𝒰, SecondCountableTopology U.1 := fun U ↦ hsc U.1 U.2
+  have : Countable ↥𝒰 := hct.to_subtype
+  have : ∀ U : ↥𝒰, SecondCountableTopology U.1 := fun U ↦ hsc U.1 U.2
   have hcov' : ⋃ U : ↥𝒰, (U : Set Z) = univ := by
     rw [← sUnion_eq_iUnion, hcov]
   exact TopologicalSpace.secondCountableTopology_of_countable_cover
@@ -101,7 +101,7 @@ theorem countable_setOf_reflTransGen {α : Type*} {r : α → α → Prop} (a₀
       rw [reachLevel_succ]
       exact ih.biUnion fun a _ ↦ h a
   refine (countable_iUnion hS).mono fun b hb ↦ ?_
-  simp only [mem_setOf_eq] at hb
+  simp only [mem_ofPred_eq] at hb
   induction hb with
   | refl => exact mem_iUnion.2 ⟨0, mem_singleton a₀⟩
   | tail hab hbc ih =>

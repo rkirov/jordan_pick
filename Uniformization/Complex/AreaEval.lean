@@ -441,7 +441,7 @@ theorem coeff_tsum_le_sq (hh : AnalyticOnNhd ℂ h (ball 0 1))
   have hsub : sphere (0 : ℂ) t ⊆ exteriorUnit := by
     intro w hw
     rw [mem_sphere_zero_iff_norm] at hw
-    simp only [exteriorUnit, mem_setOf_eq]
+    simp only [exteriorUnit, mem_ofPred_eq]
     rw [hw]; exact ht
   have hGcont : ContinuousOn (extMap h) (sphere (0 : ℂ) t) := hGA.continuousOn.mono hsub
   -- a disk of radius `M + 1` containing the image curve
@@ -478,7 +478,7 @@ theorem coeff_tsum_le_sq (hh : AnalyticOnNhd ℂ h (ball 0 1))
   have hae : ∀ᵐ p : ℂ, 0 ≤ (winding h t p).re := by
     have hΓae : ∀ᵐ p : ℂ, p ∉ extMap h '' sphere (0 : ℂ) t := by
       rw [ae_iff]
-      simpa only [not_not, setOf_mem_eq] using hΓnull
+      simpa only [not_not, ofPred_mem_eq] using hΓnull
     filter_upwards [hΓae] with p hp
     rcases hdich p hp with h0 | h1
     · rw [h0]; norm_num

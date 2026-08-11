@@ -61,9 +61,9 @@ private theorem exists_noncompact_subcomponent {W : Type*} [TopologicalSpace W]
   classical
   set C := connectedComponentIn (Kex n)ᶜ a with hCdef
   -- basic openness / non-compactness facts
-  haveI : Nonempty W := ⟨a⟩
+  have : Nonempty W := ⟨a⟩
   have hWnc : ¬ CompactSpace W := by
-    intro hc; haveI := hc; exact hnc isClosed_closure.isCompact
+    intro hc; have := hc; exact hnc isClosed_closure.isCompact
   have hFopen : IsOpen ((Kex (n + 1))ᶜ) := (Kex.isCompact (n + 1)).isClosed.isOpen_compl
   by_contra hcon
   push Not at hcon
@@ -240,7 +240,7 @@ theorem finite_ends [T2Space X] [ConnectedSpace X] {V : Set X} (hVo : IsOpen V)
           (∀ᶠ z in 𝓝 (e ξ), (F z).re = f (e.symm z)) ∧ deriv F (e ξ) ≠ 0) :
     {Z : Set X | ∃ x, x ∈ (closure V)ᶜ ∧ Z = connectedComponentIn (closure V)ᶜ x}.Finite := by
   classical
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set S := (closure V)ᶜ with hSdef
   have hfrcpt : IsCompact (frontier V) :=
     hVcl.of_isClosed_subset isClosed_frontier frontier_subset_closure
@@ -300,20 +300,20 @@ theorem exists_escaping_ray [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ : X
       ∀ K : Set X, IsCompact K → K ⊆ connectedComponentIn (closure V)ᶜ x₀ →
         ∃ T : ℝ, ∀ t, T ≤ t → δ t ∉ K := by
   classical
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
-  haveI : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
+  have : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZopen : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   have hZconn : IsConnected Z := ⟨⟨z₀, hz₀⟩, isPreconnected_connectedComponentIn⟩
   -- subspace instances
-  haveI hWlc : LocallyCompactSpace ↥Z := hZopen.locallyCompactSpace
-  haveI hWsc : SecondCountableTopology ↥Z := inferInstance
-  haveI hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
-  haveI hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
-  haveI hWlpc : LocallyPathConnectedSpace ↥Z := hZopen.locallyPathConnectedSpace
-  haveI hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
+  have hWlc : LocallyCompactSpace ↥Z := hZopen.locallyCompactSpace
+  have hWsc : SecondCountableTopology ↥Z := inferInstance
+  have hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
+  have hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
+  have hWlpc : LocallyPathConnectedSpace ↥Z := hZopen.locallyPathConnectedSpace
+  have hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
   have hWncs : ¬ CompactSpace ↥Z := fun hc => hZnc (isCompact_iff_compactSpace.mpr hc)
   -- compact exhaustion of `↥Z` with `Kex 0 = ∅`
   set Kex : CompactExhaustion ↥Z := (default : CompactExhaustion ↥Z).shiftr with hKexdef

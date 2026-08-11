@@ -350,7 +350,7 @@ theorem perronSup_ge_witness [T2Space X] :
     intro x hx hxe
     have hcl : x ∈ closure (e.source ∩ configY e) :=
       e.open_source.inter_closure ⟨hxe, hx⟩
-    haveI : (𝓝[e.source ∩ configY e] x).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hcl
+    have : (𝓝[e.source ∩ configY e] x).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hcl
     have hcont : ContinuousWithinAt (fun y ↦ ‖e y - 4‖) (e.source ∩ configY e) x :=
       (((e.continuousAt hxe).sub continuousAt_const).norm).continuousWithinAt
     refine ge_of_tendsto hcont ?_

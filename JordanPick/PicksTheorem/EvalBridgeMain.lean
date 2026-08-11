@@ -61,7 +61,7 @@ theorem eval_bridge {n : ℕ} (hn : 3 ≤ n) (v : Fin n → ℤ × ℤ)
       have hset : {z : ℤ × ℤ | toPlane z ∈ {x | x ∉ P.boundary ∧ P.winding x ≠ 0}}
           = Q.interiorLattice := by
         ext z
-        simp only [Set.mem_setOf_eq, Pick.LatticePolygon.interiorLattice]
+        simp only [Set.mem_ofPred_eq, Pick.LatticePolygon.interiorLattice]
         constructor
         · rintro ⟨hb, hw⟩
           exact ⟨(hwind (Pick.toReal z) hb).mpr hw, by rw [hbdry]; exact hb⟩
@@ -74,7 +74,7 @@ theorem eval_bridge {n : ℕ} (hn : 3 ≤ n) (v : Fin n → ℤ × ℤ)
     · -- boundaryPts
       have hset : {z : ℤ × ℤ | toPlane z ∈ P.boundary} = Q.boundaryLattice := by
         ext z
-        simp only [Set.mem_setOf_eq, Pick.LatticePolygon.boundaryLattice, hbdry,
+        simp only [Set.mem_ofPred_eq, Pick.LatticePolygon.boundaryLattice, hbdry,
           toPlane, Pick.toReal]
       unfold boundaryPts
       simp only [Pick.LatticePolygon.B]

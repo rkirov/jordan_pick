@@ -100,7 +100,7 @@ theorem pushz_mem_ball (hρ : 0 < ρ) (hδ : 0 < δ) (hδρ : δ ≤ ρ/2) {z : 
   rw [mem_ball]
   by_cases hd : ρ/2 ≤ dist z q
   · rw [pushz, bump_eq_zero hρ hd]; simpa using (mem_ball.mp hz)
-  · push_neg at hd
+  · push Not at hd
     have hb : bump q ρ z * defic δ c z ≤ δ :=
       le_trans (mul_le_mul (bump_le_one z) (defic_le hδ.le z) (defic_nonneg z) (by norm_num))
         (le_of_eq (one_mul δ))
@@ -470,7 +470,7 @@ theorem exists_push_into [T2Space X] {V : Set X} {f : X → ℝ} {c : ℝ}
   -- a nonempty chart type (needed so the chart-choosing function is total)
   obtain ⟨ξ₀, hξ₀⟩ := hfrNE
   obtain ⟨e₀, -, -⟩ := hchart ξ₀ hξ₀
-  haveI : Nonempty (OpenPartialHomeomorph X ℂ) := ⟨e₀⟩
+  have : Nonempty (OpenPartialHomeomorph X ℂ) := ⟨e₀⟩
   -- per-point chart data
   choose! ch rho hpos hsrc hbl hWre hWdich using
     fun ξ (hξ : ξ ∈ frontier V) => exists_chart_at hdich hchart hξ
@@ -502,7 +502,7 @@ theorem exists_push_into [T2Space X] {V : Set X} {f : X → ℝ} {c : ℝ}
   have hδρ' : ∀ ξ ∈ t, δ ≤ rho ξ / 2 :=
     fun ξ hξt => le_trans (hδle_dfun ξ hξt) (hdle ξ (htsub hξt))
   -- the per-chart pushes
-  haveI : Nonempty C(X, X) := ⟨ContinuousMap.id X⟩
+  have : Nonempty C(X, X) := ⟨ContinuousMap.id X⟩
   have hgex : ∀ ξ ∈ t, ∃ g : C(X, X),
       (∀ x ∈ V, g x ∈ V) ∧
       (∀ x ∈ frontier V, g x = x ∨ g x ∈ V) ∧

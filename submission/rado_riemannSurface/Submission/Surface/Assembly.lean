@@ -81,7 +81,7 @@ theorem locally_secondCountable_subtype {Z : Type*} [TopologicalSpace Z] {C : Se
     (q : C) : ∃ W : Set C, q ∈ W ∧ IsOpen W ∧ SecondCountableTopology W := by
   obtain ⟨U, hqU, hUo, hUsc⟩ := h q.1 q.2
   refine ⟨Subtype.val ⁻¹' U, hqU, hUo.preimage continuous_subtype_val, ?_⟩
-  haveI := hUsc
+  have := hUsc
   exact (Topology.IsEmbedding.subtypeVal.restrictPreimage U).secondCountableTopology
 
 /-- The heart of the proof: `Y = configY e` is second countable, via Perron,
@@ -107,20 +107,20 @@ theorem secondCountable_configY {e : OpenPartialHomeomorph X ℂ}
     rw [hcon] at h1
     linarith
   -- ambient instances
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : T2Space (ConjEtale u Y) := ConjEtale.t2Space
-  haveI : LocallyCompactSpace (ConjEtale u Y) := ConjEtale.locallyCompactSpace
-  haveI : LocallyConnectedSpace (ConjEtale u Y) := ConjEtale.locallyConnectedSpace
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : T2Space (ConjEtale u Y) := ConjEtale.t2Space
+  have : LocallyCompactSpace (ConjEtale u Y) := ConjEtale.locallyCompactSpace
+  have : LocallyConnectedSpace (ConjEtale u Y) := ConjEtale.locallyConnectedSpace
   -- a germ over the witness point and its connected component
   obtain ⟨q₀, hq₀⟩ := ConjEtale.exists_mk hu hYo hwm
   set C : Set (ConjEtale u Y) := connectedComponent q₀ with hC_def
   have hCopen : IsOpen C := isOpen_connectedComponent
-  haveI : ConnectedSpace C := Subtype.connectedSpace isConnected_connectedComponent
-  haveI : LocallyCompactSpace C := hCopen.locallyCompactSpace
-  haveI : LocallyConnectedSpace C := hCopen.locallyConnectedSpace
+  have : ConnectedSpace C := Subtype.connectedSpace isConnected_connectedComponent
+  have : LocallyCompactSpace C := hCopen.locallyCompactSpace
+  have : LocallyConnectedSpace C := hCopen.locallyConnectedSpace
   -- Poincaré–Volterra for the evaluation on the component
-  haveI hCsc : SecondCountableTopology C := by
+  have hCsc : SecondCountableTopology C := by
     refine poincare_volterra
       (locally_secondCountable_subtype fun z _ ↦
         ConjEtale.locally_secondCountable z)
@@ -171,7 +171,7 @@ theorem secondCountableTopology_of_riemannSurface : SecondCountableTopology X :=
     have hopen₂ : IsOpen (e.symm '' ball (0 : ℂ) 8 : Set X) :=
       e.symm.isOpen_image_of_subset_source isOpen_ball (by simpa using hb)
     have hsc₂ : SecondCountableTopology (e.symm '' ball (0 : ℂ) 8 : Set X) := by
-      haveI := e.secondCountableTopology_source
+      have := e.secondCountableTopology_source
       have hsub : (e.symm '' ball (0 : ℂ) 8 : Set X) ⊆ e.source := by
         rintro x ⟨w, hw, rfl⟩
         exact e.map_target (hb hw)

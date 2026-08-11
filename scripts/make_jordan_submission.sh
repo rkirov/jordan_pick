@@ -87,4 +87,4 @@ SHIM
 
 echo "Regenerated solver-owned parts in $OUT: Submission.lean + Submission/ ($(find "$LIB" -name '*.lean' | wc -l) library files)."
 echo "Trusted files (Challenge/Solution/config/holes/lakefile/lean-toolchain/WorkspaceTest/README) left untouched."
-echo "Our main project is pinned to lean-eval's exact deps (v4.32.2 + Mathlib 905b9581), so these build as-is."
+echo "Workspace and main project share the pin (Lean v4.33.0 + Mathlib db584cd6), so these build as-is."

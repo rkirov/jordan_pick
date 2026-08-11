@@ -7,15 +7,22 @@ name: Comparator
 # workspace runs `WorkspaceTest.lean`, which reads the committed `config.json`,
 # overrides `enable_nanoda := true`, and hands the result to comparator. Every
 # Solution is therefore replayed through nanoda's independent kernel, not just
-# Lean's own. That matters here: this repository is pinned to Lean v4.32.2
-# precisely because v4.32.1/v4.32.2 fixed two kernel soundness bugs
-# (leanprover/lean4 #14484 and #14576), and an independent kernel is what turns
-# "our kernel accepted it" into "two kernels accepted it".
+# Lean's own. That matters here: this repository is pinned to Lean v4.33.0, which
+# carries the two mid-2026 kernel soundness fixes (leanprover/lean4 #14484 and
+# #14576, first released in v4.32.1/v4.32.2), and an independent kernel is what
+# turns "our kernel accepted it" into "two kernels accepted it".
 #
-# The four external tools are pinned to the exact immutable commits lean-eval
-# pins in its SECURITY.md "Trusted dependencies and pin policy" table. Keep them
-# in sync with leanprover/lean-eval; a branch or tag here would put the upstream
-# publisher in our trust boundary.
+# Every external tool is pinned to an exact immutable commit; a branch or tag here
+# would put the upstream publisher in our trust boundary. The landrun, comparator
+# and nanoda pins were taken from lean-eval's SECURITY.md "Trusted dependencies and
+# pin policy" table and are kept as they are — that table is where they came from,
+# not a thing we now track.
+#
+# lean4export is the one pin that must follow this repository's toolchain, because
+# comparator writes Challenge.olean with the workspace toolchain and reads it back
+# with lean4export, and olean headers are version-specific. comparator itself does
+# not: it shells out to lean4export rather than reading oleans, which is why its
+# pin has been stable across several Lean releases.
 
 # Deliberately NOT on every push: this job installs a Go toolchain, does a Rust
 # release build, pulls Mathlib and builds three workspaces. Gate it on the
@@ -77,11 +84,14 @@ jobs:
           set -euo pipefail
           git clone https://github.com/leanprover/lean4export.git .ci/lean4export
           cd .ci/lean4export
-          git checkout 4e7915201d3f9f04470d9eae002fa695f7cdc589
-          # Deliberately take THIS repo's toolchain: comparator writes
-          # Challenge.olean with the workspace toolchain and reads it back with
-          # lean4export, and v4.32.0 vs v4.32.2 olean headers are incompatible.
-          cp "$GITHUB_WORKSPACE/lean-toolchain" lean-toolchain
+          # lean4export's own v4.33.0 tag, matching this repository's toolchain.
+          # comparator writes Challenge.olean with the workspace toolchain and
+          # reads it back with lean4export, and olean headers are version-specific,
+          # so the two must agree. While this repo was on v4.32.2 that required
+          # overwriting lean4export's lean-toolchain, because lean4export tags only
+          # minor releases and never published a v4.32.2. On v4.33.0 the tag exists
+          # and already declares v4.33.0, so no override is needed.
+          git checkout 15f6055e299ad5b89345e533cc2192f4cc00f659
           lake build lean4export
           echo "$PWD/.lake/build/bin" >> "$GITHUB_PATH"
 

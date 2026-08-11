@@ -52,7 +52,7 @@ theorem exists_collar_component [T2Space X] {V : Set X} {f : X → ℝ} {c : ℝ
     {x₀ : X} (hx₀ : x₀ ∈ frontier V) :
     ∃ Y : Set X, IsOpen Y ∧ IsPreconnected Y ∧ x₀ ∈ Y ∧ SurfaceHarmonicOn f Y ∧
       connectedComponentIn (frontier V) x₀ ⊆ Y ∧ ∃ x₁ ∈ Y, f x₁ ≠ c := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   have hx₀A : x₀ ∈ A := hfrA hx₀
   refine ⟨connectedComponentIn A x₀, hAo.connectedComponentIn,
     isPreconnected_connectedComponentIn, mem_connectedComponentIn hx₀A,
@@ -127,7 +127,7 @@ theorem continuous_etaleSec {W : Set X} {F : X → ℂ} (hWo : IsOpen W) (hWY : 
   have heq : etaleSec hWo hWY hF ⁻¹' ConjEtale.sheet W' G
       = Subtype.val ⁻¹' (W' ∩ {x : X | F =ᶠ[𝓝 x] G}) := by
     ext z
-    simp only [etaleSec, Set.mem_preimage, ConjEtale.sheet, Set.mem_setOf_eq, Set.mem_inter_iff]
+    simp only [etaleSec, Set.mem_preimage, ConjEtale.sheet, Set.mem_ofPred_eq, Set.mem_inter_iff]
     exact and_congr Iff.rfl Filter.Germ.coe_eq
   rw [heq]
   exact (hW'o.inter Rado.isOpen_eventuallyEq_nhds).preimage continuous_subtype_val
@@ -210,7 +210,7 @@ theorem germ_map_add_eq_iff {y : X} (a : ℂ) (γ : Filter.Germ (𝓝 y) ℂ) (G
 theorem shift_mem_sheet (r : ℝ) {W : Set X} {G : X → ℂ} (q : ConjEtale f Y) :
     shift r q ∈ ConjEtale.sheet W G
       ↔ q ∈ ConjEtale.sheet W (fun z => G z - (r : ℂ) * Complex.I) := by
-  simp only [ConjEtale.sheet, Set.mem_setOf_eq]
+  simp only [ConjEtale.sheet, Set.mem_ofPred_eq]
   exact and_congr Iff.rfl (germ_map_add_eq_iff ((r : ℂ) * Complex.I) q.1.2 G)
 
 /-- The deck action is continuous: preimages of basic sheets are basic sheets
@@ -458,14 +458,14 @@ theorem exists_evIm_section (hCY : connectedComponentIn (frontier V) x₀ ⊆ Y)
     exact hsubC (harc_mem (s - t) hin)
   -- continuity of the section
   have hcontσ : ContinuousOn σ (Set.Ioo a' b') := by
-    rw [continuousOn_iff_continuous_restrict]
+    rw [continuousOn_iff_continuous_domRestrict]
     have hcont1 : Continuous (fun z : ↥(Set.Ioo a' b') =>
         (⟨arc (z.1 - t), hshift z.1 z.2⟩ : ↥(W ∩ Y))) := by
       apply Continuous.subtype_mk
       have hsub : Continuous (fun z : ↥(Set.Ioo a' b') => z.1 - t) :=
         continuous_subtype_val.sub continuous_const
       exact hcont_arc.comp_continuous hsub (fun z => hshiftmem z.1 z.2)
-    have hEq : Set.restrict (Set.Ioo a' b') σ
+    have hEq : Set.domRestrict (Set.Ioo a' b') σ
         = fun z => shift t (etaleSec hWYo Set.inter_subset_right hψconj
             ⟨arc (z.1 - t), hshift z.1 z.2⟩) := by
       funext z
@@ -595,7 +595,7 @@ variable {f : X → ℝ} {Y : Set X}
 a preconnected open sub-box, which is a basic open set. -/
 theorem isOpen_sheet {V : Set X} {F : X → ℂ} (hVo : IsOpen V) (hVY : V ⊆ Y)
     (hF : IsConjugate f F V) : IsOpen (ConjEtale.sheet (u := f) (Y := Y) V F) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   rw [isOpen_iff_mem_nhds]
   intro q hq
   have hqV : ConjEtale.proj q ∈ V := hq.1
@@ -727,11 +727,11 @@ theorem section_unique {J : Set ℝ} (hJ : IsPreconnected J)
     {t₀ : ℝ} (ht₀ : t₀ ∈ J) (hagree : s₁ t₀ = s₂ t₀) :
     ∀ t ∈ J, s₁ t = s₂ t := by
   classical
-  haveI : T2Space (ConjEtale f Y) := ConjEtale.t2Space
-  haveI : PreconnectedSpace ↥J := Subtype.preconnectedSpace hJ
-  have hcont₁ : Continuous (J.restrict s₁) := continuousOn_iff_continuous_restrict.mp hc₁
-  have hcont₂ : Continuous (J.restrict s₂) := continuousOn_iff_continuous_restrict.mp hc₂
-  set E : Set ↥J := {t | J.restrict s₁ t = J.restrict s₂ t} with hE
+  have : T2Space (ConjEtale f Y) := ConjEtale.t2Space
+  have : PreconnectedSpace ↥J := Subtype.preconnectedSpace hJ
+  have hcont₁ : Continuous (J.domRestrict s₁) := continuousOn_iff_continuous_domRestrict.mp hc₁
+  have hcont₂ : Continuous (J.domRestrict s₂) := continuousOn_iff_continuous_domRestrict.mp hc₂
+  set E : Set ↥J := {t | J.domRestrict s₁ t = J.domRestrict s₂ t} with hE
   have hEclosed : IsClosed E := isClosed_eq hcont₁ hcont₂
   have hEopen : IsOpen E := by
     rw [isOpen_iff_mem_nhds]
@@ -742,9 +742,9 @@ theorem section_unique {J : Set ℝ} (hJ : IsPreconnected J)
       exists_evIm_local_inj hVo hdich hfc hchart hYo hCY hqC
     have heq₀ : s₁ t₀'.1 = s₂ t₀'.1 := ht₀'E
     have hqU₂ : s₂ t₀'.1 ∈ U := heq₀ ▸ hqU
-    have hpre₁ : J.restrict s₁ ⁻¹' U ∈ 𝓝 t₀' :=
+    have hpre₁ : J.domRestrict s₁ ⁻¹' U ∈ 𝓝 t₀' :=
       hcont₁.continuousAt.preimage_mem_nhds (hUo.mem_nhds hqU)
-    have hpre₂ : J.restrict s₂ ⁻¹' U ∈ 𝓝 t₀' :=
+    have hpre₂ : J.domRestrict s₂ ⁻¹' U ∈ 𝓝 t₀' :=
       hcont₂.continuousAt.preimage_mem_nhds (hUo.mem_nhds hqU₂)
     refine Filter.mem_of_superset (Filter.inter_mem hpre₁ hpre₂) ?_
     intro t ht
@@ -918,14 +918,14 @@ theorem margin_at {ξ' : X}
     rw [proj_shift, hPeq s (hshift s hs), proj_etaleSec]
     exact hsubC (harc_mem (s - t) hin)
   have hcontσ : ContinuousOn σ (Set.Ioo a' b') := by
-    rw [continuousOn_iff_continuous_restrict]
+    rw [continuousOn_iff_continuous_domRestrict]
     have hcont1 : Continuous (fun z : ↥(Set.Ioo a' b') =>
         (⟨arc (z.1 - t), hshift z.1 z.2⟩ : ↥(W ∩ Y))) := by
       apply Continuous.subtype_mk
       have hsub : Continuous (fun z : ↥(Set.Ioo a' b') => z.1 - t) :=
         continuous_subtype_val.sub continuous_const
       exact hcont_arc.comp_continuous hsub (fun z => hshiftmem z.1 z.2)
-    have hEq : Set.restrict (Set.Ioo a' b') σ
+    have hEq : Set.domRestrict (Set.Ioo a' b') σ
         = fun z => shift t (etaleSec hWYo Set.inter_subset_right hψconj
             ⟨arc (z.1 - t), hshift z.1 z.2⟩) := by
       funext z
@@ -1211,7 +1211,7 @@ theorem reach_extend {q₀ : ConjEtale f Y} {ℓ : ℝ} (hℓpos : 0 < ℓ)
       · intro u hu; exact ⟨by linarith [hu.1], by linarith [hu.2]⟩
       · intro u hu
         show (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u) = σR u
-        have hle : ¬ u ≤ v₀ - n := by push_neg; linarith [hu.1]
+        have hle : ¬ u ≤ v₀ - n := by push Not; linarith [hu.1]
         by_cases hle2 : u ≤ v₀ + n
         · have hueq : u = v₀ + n := le_antisymm hle2 hu.1
           rw [if_neg hle, if_pos hle2, hueq, hσRq]
@@ -1226,8 +1226,8 @@ theorem reach_extend {q₀ : ConjEtale f Y} {ℓ : ℝ} (hℓpos : 0 < ℓ)
       exact hσLev u ⟨by linarith [hu.1], by linarith⟩
     · rw [if_neg hle]
       by_cases hle2 : u ≤ v₀ + n
-      · rw [if_pos hle2]; push_neg at hle; exact hσev u ⟨le_of_lt hle, hle2⟩
-      · rw [if_neg hle2]; push_neg at hle2; exact hσRev u ⟨by linarith, by linarith [hu.2]⟩
+      · rw [if_pos hle2]; push Not at hle; exact hσev u ⟨le_of_lt hle, hle2⟩
+      · rw [if_neg hle2]; push Not at hle2; exact hσRev u ⟨by linarith, by linarith [hu.2]⟩
   · -- projection lands in `C`
     intro u hu
     show ConjEtale.proj (if u ≤ v₀ - n then σL u else if u ≤ v₀ + n then σ u else σR u)
@@ -1237,8 +1237,8 @@ theorem reach_extend {q₀ : ConjEtale f Y} {ℓ : ℝ} (hℓpos : 0 < ℓ)
       exact hσLproj u ⟨by linarith [hu.1], by linarith⟩
     · rw [if_neg hle]
       by_cases hle2 : u ≤ v₀ + n
-      · rw [if_pos hle2]; push_neg at hle; exact hσproj u ⟨le_of_lt hle, hle2⟩
-      · rw [if_neg hle2]; push_neg at hle2; exact hσRproj u ⟨by linarith, by linarith [hu.2]⟩
+      · rw [if_pos hle2]; push Not at hle; exact hσproj u ⟨le_of_lt hle, hle2⟩
+      · rw [if_neg hle2]; push Not at hle2; exact hσRproj u ⟨by linarith, by linarith [hu.2]⟩
   · -- value at `v₀`
     show (if v₀ ≤ v₀ - n then σL v₀ else if v₀ ≤ v₀ + n then σ v₀ else σR v₀) = q₀
     rw [if_neg (by linarith), if_pos (by linarith)]; exact hσv₀
@@ -1316,7 +1316,7 @@ theorem exists_evIm_inverse (hVcl : IsCompact (closure V)) {q₀ : ConjEtale f Y
       Set.InjOn evIm (connectedComponentIn
         (ConjEtale.proj ⁻¹' connectedComponentIn (frontier V) x₀) q₀) := by
   classical
-  haveI : T2Space (ConjEtale f Y) := ConjEtale.t2Space
+  have : T2Space (ConjEtale f Y) := ConjEtale.t2Space
   choose F hFcont hFev hFproj hFv₀ using
     reach_all hVo hdich hfc hchart hYo hCY hVcl hq₀
   set v₀ := evIm q₀ with hv₀
@@ -1379,7 +1379,7 @@ theorem exists_evIm_inverse (hVcl : IsCompact (closure V)) {q₀ : ConjEtale f Y
   -- the section image is all of `Ê` (clopen in the connected component)
   have himg : ∀ q ∈ Ê, E (evIm q) = q := by
     have hÊpre : IsPreconnected Ê := by rw [hÊ]; exact isPreconnected_connectedComponentIn
-    haveI : PreconnectedSpace ↥Ê := Subtype.preconnectedSpace hÊpre
+    have : PreconnectedSpace ↥Ê := Subtype.preconnectedSpace hÊpre
     set A : Set ↥Ê := {q | E (evIm q.1) = q.1} with hA
     have hAclosed : IsClosed A :=
       isClosed_eq (hEcont.comp (continuous_evIm.comp continuous_subtype_val))
@@ -1561,7 +1561,7 @@ theorem proj_image_component_eq (hfY : SurfaceHarmonicOn f Y) {q₀ : ConjEtale 
       exact ⟨shift (evIm p' - evIm w) q, hq', by rw [proj_shift, hqy]⟩
   -- clopen argument in the connected subtype `↥C`
   have hCpre : IsPreconnected C := isPreconnected_connectedComponentIn
-  haveI : PreconnectedSpace ↥C := Subtype.preconnectedSpace hCpre
+  have : PreconnectedSpace ↥C := Subtype.preconnectedSpace hCpre
   set S : Set ↥C := Subtype.val ⁻¹' (ConjEtale.proj '' Ê) with hSdef
   have hSopen : IsOpen S := by
     rw [isOpen_iff_mem_nhds]
@@ -1684,7 +1684,7 @@ theorem exists_periodic_param_aux (hVcl : IsCompact (closure V))
   -- G is nontrivial
   have hGne : ∃ r ∈ G, r ≠ 0 := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hprojinj : Set.InjOn ConjEtale.proj Ê := by
       intro p hp p' hp' hproj
       have hr := hfibG p hp p' hp' hproj
@@ -1828,7 +1828,7 @@ theorem exists_periodic_param_aux (hVcl : IsCompact (closure V))
     rw [hn, abs_mul, abs_of_pos ht₀pos] at hb
     have hn1 : |(n : ℝ)| < 1 := by
       by_contra hcontra
-      push_neg at hcontra
+      push Not at hcontra
       nlinarith
     have hn0 : n = 0 := by
       by_contra hcontra

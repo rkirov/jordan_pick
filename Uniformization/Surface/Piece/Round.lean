@@ -85,7 +85,7 @@ theorem isCompact_posCross [T2Space X] (pos : Finset (ChartDisk X)) :
       ⋃ d ∈ (↑pos : Set (ChartDisk X)),
         ⋃ d' ∈ {d' ∈ (↑pos : Set (ChartDisk X)) | d ≠ d'}, (d.circ ∩ d'.circ) := by
     ext x
-    simp only [mem_setOf_eq, mem_iUnion, mem_inter_iff, mem_setOf_eq, Finset.mem_coe]
+    simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff, mem_ofPred_eq, Finset.mem_coe]
     constructor
     · rintro ⟨d, hd, d', hd', hne, hx, hx'⟩
       exact ⟨d, hd, d', ⟨hd', hne⟩, hx, hx'⟩
@@ -208,7 +208,7 @@ private theorem exteriorDiskAt_raw_of_single [T2Space X] {P : PieceData X} {d : 
     have heq : {x : X | ∀ d' ∈ P.pos, d' ≠ d → x ∉ d'.disk} =
         ⋂ d' ∈ {d' ∈ (↑P.pos : Set (ChartDisk X)) | d' ≠ d}, (d'.disk)ᶜ := by
       ext x
-      simp only [mem_setOf_eq, mem_iInter, mem_compl_iff, Finset.mem_coe]
+      simp only [mem_ofPred_eq, mem_iInter, mem_compl_iff, Finset.mem_coe]
       constructor
       · rintro h d' ⟨hd', hne⟩
         exact h d' hd' hne
@@ -354,8 +354,8 @@ theorem exists_regular_piece [T2Space X] [ConnectedSpace X] (hnc : ¬ CompactSpa
     ∃ V : Set X, IsOpen V ∧ IsConnected V ∧ IsCompact (closure V) ∧ K ⊆ V ∧ x₀ ∈ V ∧
       (frontier V).Nonempty ∧ (∀ ξ ∈ frontier V, ExteriorDiskAt V ξ) ∧
       ∀ x ∉ V, ¬ IsCompact (connectedComponentIn Vᶜ x) := by
-  haveI : LocallyCompactSpace X := locallyCompactSpace
-  haveI : LocallyConnectedSpace X := locallyConnectedSpace
+  have : LocallyCompactSpace X := locallyCompactSpace
+  have : LocallyConnectedSpace X := locallyConnectedSpace
   -- L1: cover `K` with a compact connected connector `T`
   obtain ⟨pos, T, hTcpt, hTconn, hx₀T, hKT, hTsub⟩ := exists_pos_cover hK hx₀
   -- L2: round the exposed crossings away from `T`

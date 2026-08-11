@@ -85,7 +85,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The sheets form a topological basis. -/
 theorem isTopologicalBasis_basicSets :
     TopologicalSpace.IsTopologicalBasis (basicSets G x₀ U) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   refine ⟨?_, ?_, rfl⟩
   · rintro S₁ ⟨V₁, ψ₁, hV₁o, _, hV₁U, hψ₁, rfl⟩ S₂ ⟨V₂, ψ₂, hV₂o, _, hV₂U, hψ₂, rfl⟩
       q ⟨⟨hy₁, hg₁⟩, ⟨hy₂, hg₂⟩⟩
@@ -113,7 +113,7 @@ theorem isTopologicalBasis_basicSets :
 
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem continuous_proj : Continuous (proj (G := G) (x₀ := x₀) (U := U)) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   rw [continuous_def]
   intro O hO
   rw [(isTopologicalBasis_basicSets (G := G) (x₀ := x₀) (U := U)).isOpen_iff]
@@ -163,7 +163,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- Every étale point lies on a basic sheet. -/
 theorem exists_basic_sheet_mem (q : ModEtale G x₀ U) :
     ∃ V ψ, IsOpen V ∧ IsPreconnected V ∧ V ⊆ U ∧ IsModulusBranch G x₀ ψ V ∧ q ∈ sheet V ψ := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   obtain ⟨hqU, V, ψ, hVo, hqV, hVU, hψ, hgerm⟩ := q.2
   exact ⟨connectedComponentIn V q.1.1, ψ, hVo.connectedComponentIn,
     isPreconnected_connectedComponentIn, (connectedComponentIn_subset _ _).trans hVU,
@@ -253,10 +253,10 @@ existence). -/
 theorem isCoveringMapOn_proj [T2Space X] (hUo : IsOpen U) (hx₀ : x₀ ∈ U)
     (hG : IsGreenFunction U x₀ G) :
     IsCoveringMapOn (proj (G := G) (x₀ := x₀) (U := U)) U := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   obtain ⟨q₀, -⟩ := exists_mk hUo hG hx₀
-  haveI : Nonempty (ModEtale G x₀ U) := ⟨q₀⟩
-  haveI : Nonempty (X → ModEtale G x₀ U) := ⟨fun _ ↦ q₀⟩
+  have : Nonempty (ModEtale G x₀ U) := ⟨q₀⟩
+  have : Nonempty (X → ModEtale G x₀ U) := ⟨fun _ ↦ q₀⟩
   have key : ∀ x : U, ∃ t : Trivialization UC (proj (G := G) (x₀ := x₀) (U := U)),
       (x : X) ∈ t.baseSet := by
     intro x

@@ -7,8 +7,8 @@ autoImplicit = false
 
 [[require]]
 name = "mathlib"
-git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "905b95818eb32af7874a58b427f50c1711a5e96c"
+scope = "leanprover-community"
+rev = "db584cd6d46c92f209a44c0f1c829460d327499d"
 
 [[lean_lib]]
 name = "Challenge"

@@ -132,7 +132,7 @@ theorem exists_compact_isClopenIn {F : Set Y} (hF : IsClosed F) (hx : x ∈ F)
     intro y hy
     exact ⟨interior_subset (hCL hy), connectedComponentIn_subset F x hy⟩
   -- move to the compact subtype
-  haveI : CompactSpace F' := isCompact_iff_compactSpace.mp hF'cpt
+  have : CompactSpace F' := isCompact_iff_compactSpace.mp hF'cpt
   set W : Set F' := ((↑) : F' → Y) ⁻¹' (Ω ∩ interior L) with hWdef
   have hWo : IsOpen W := (hΩ.inter isOpen_interior).preimage continuous_subtype_val
   have hccW : connectedComponent (⟨x, hxF'⟩ : F') ⊆ W := by
@@ -559,7 +559,7 @@ frontier point — contradicting openness of `fill U`. -/
 theorem ExteriorDiskAt.fill [T2Space X] {U : Set X} (hU : IsOpen U) {ξ : X}
     (hξ : ξ ∈ frontier (Uniformization.fill U)) (hext : ExteriorDiskAt U ξ) :
     ExteriorDiskAt (Uniformization.fill U) ξ := by
-  haveI : LocallyCompactSpace X := locallyCompactSpace
+  have : LocallyCompactSpace X := locallyCompactSpace
   obtain ⟨e, he, hξe, c, r, hr, hcball, hdist, hmiss⟩ := hext
   refine ⟨e, he, hξe, c, r, hr, hcball, hdist, ?_⟩
   rintro x ⟨hxfill, hxe⟩ hxball

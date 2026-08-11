@@ -60,7 +60,7 @@ theorem crossing_data [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {
     ∃ (z v : X) (η : ℝ) (seg : Path v z), 0 < η ∧ η < μ ∧
       z ∈ connectedComponentIn (closure V)ᶜ x₀ ∧ v ∈ V ∧
       (∀ t, seg t ∈ G) ∧ (∀ t, f (seg t) = c + η * (1 - 2 * (t : ℝ))) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZcompl : Z ⊆ (closure V)ᶜ := connectedComponentIn_subset _ _
   have hξfrV : ξ ∈ frontier V := frontier_component_compl_closure_subset hξ
@@ -109,7 +109,7 @@ theorem crossing_data [T2Space X] {V : Set X} (hVo : IsOpen V) {f : X → ℝ} {
     have hbox_eq : box = ({z : ℂ | z.re < c + δbox} ∩ {z : ℂ | c - δbox < z.re}) ∩
         ({z : ℂ | z.im < q.im + εbox} ∩ {z : ℂ | q.im - εbox < z.im}) := by
       ext w
-      simp only [hboxdef, straightBox, mem_setOf_eq, mem_inter_iff, abs_lt]
+      simp only [hboxdef, straightBox, mem_ofPred_eq, mem_inter_iff, abs_lt]
       constructor
       · rintro ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
         exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
@@ -219,8 +219,8 @@ theorem isPreconnected_frontier_component_compl_closure [T2Space X] [SimplyConne
     {x : X} (hx : x ∈ (closure V)ᶜ) :
     IsPreconnected (frontier (connectedComponentIn (closure V)ᶜ x)) := by
   classical
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyPathConnectedSpace X := ChartedSpace.locallyPathConnectedSpace ℂ X
   have hZopen : IsOpen (connectedComponentIn (closure V)ᶜ x) :=
     isClosed_closure.isOpen_compl.connectedComponentIn
   have hZcompl : connectedComponentIn (closure V)ᶜ x ⊆ (closure V)ᶜ :=

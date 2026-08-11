@@ -25,12 +25,16 @@ private lemma val_natCast_succ {m : ℕ} [NeZero m] (i : Fin m) :
 /-- **Bridge obligation — boundary match.** -/
 theorem boundary_bridge {n : ℕ} (hn : 0 < n) (v : Fin n → ℤ × ℤ) :
     (latPoly v).boundary (R := ℝ) = (ourPoly hn v).boundary := by
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   have key : ∀ i : Fin n,
       affineSegment ℝ (toPlane (v i)) (toPlane (v (finRotate n i)))
         = (ourPoly hn v).edgeSeg (i.val : ZMod n) := by
     intro i
-    rw [affineSegment_eq_segment, Pick.LatticePolygon.edgeSeg]
+    -- `rw` can no longer apply `edgeSeg`'s equation theorem: the index is typed
+    -- `ZMod n` while the goal wants `ZMod (ourPoly hn v).n`. Delta reduction is
+    -- insensitive to that mismatch.
+    rw [affineSegment_eq_segment]
+    unfold Pick.LatticePolygon.edgeSeg
     simp only [ourPoly_vert]
     congr 1
     · show Pick.toReal (v i) = Pick.toReal _

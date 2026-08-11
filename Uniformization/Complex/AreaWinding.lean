@@ -88,7 +88,7 @@ def exteriorUnit : Set ℂ := {w : ℂ | 1 < ‖w‖}
 theorem isOpen_exteriorUnit : IsOpen exteriorUnit := by
   have : exteriorUnit = (closedBall (0 : ℂ) 1)ᶜ := by
     ext w
-    simp only [exteriorUnit, mem_setOf_eq, mem_compl_iff, mem_closedBall_zero_iff, not_le]
+    simp only [exteriorUnit, mem_ofPred_eq, mem_compl_iff, mem_closedBall_zero_iff, not_le]
   rw [this]; exact isClosed_closedBall.isOpen_compl
 
 /-- The exterior map is analytic on `{1 < ‖w‖}`. -/
@@ -98,11 +98,11 @@ theorem extMap_analyticOnNhd (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0
     intro w hw
     have hw0 : w ≠ 0 := by
       intro h0; rw [h0] at hw
-      simp only [exteriorUnit, mem_setOf_eq, norm_zero] at hw; linarith
+      simp only [exteriorUnit, mem_ofPred_eq, norm_zero] at hw; linarith
     exact analyticAt_inv hw0
   have hmaps : Set.MapsTo (fun w : ℂ => w⁻¹) exteriorUnit (ball 0 1) := by
     intro w hw
-    simp only [exteriorUnit, mem_setOf_eq] at hw
+    simp only [exteriorUnit, mem_ofPred_eq] at hw
     rw [mem_ball_zero_iff, norm_inv, inv_lt_one_iff₀]; right; exact hw
   exact analyticOnNhd_id.add (hh.comp hinvA hmaps)
 
@@ -124,7 +124,7 @@ theorem winding_eq_of_forall_ne (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (bal
   have hfA : ∀ z : ℂ, s ≤ ‖z‖ → ‖z‖ ≤ t → AnalyticAt ℂ f z := by
     intro z hz1 hz2
     have hzExt : z ∈ exteriorUnit := by
-      simp only [exteriorUnit, mem_setOf_eq]; linarith
+      simp only [exteriorUnit, mem_ofPred_eq]; linarith
     have hden : extMap h z - p ≠ 0 := sub_ne_zero.mpr (hne z hz1 hz2)
     exact (hG' z hzExt).div ((hG z hzExt).sub analyticAt_const) hden
   have hcont : ContinuousOn f (closedBall (0 : ℂ) t \ ball (0 : ℂ) s) := by
@@ -295,7 +295,7 @@ theorem extMap_injOn (h : ℂ → ℂ)
     Set.InjOn (extMap h) exteriorUnit := by
   have hmem : ∀ w : ℂ, w ∈ exteriorUnit → w⁻¹ ∈ ball 0 1 \ {0} := by
     intro w hw
-    simp only [exteriorUnit, mem_setOf_eq] at hw
+    simp only [exteriorUnit, mem_ofPred_eq] at hw
     have hw0 : w ≠ 0 := by rintro rfl; simp only [norm_zero] at hw; linarith
     refine ⟨?_, ?_⟩
     · rw [mem_ball_zero_iff, norm_inv, inv_lt_one_iff₀]; right; exact hw
@@ -321,7 +321,7 @@ theorem winding_jump (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
   simp only [winding]
   set G : ℂ → ℂ := extMap h with hGdef
   have hGA : AnalyticOnNhd ℂ G exteriorUnit := extMap_analyticOnNhd h hh
-  have hw₀ext : w₀ ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+  have hw₀ext : w₀ ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
   have hGw₀ : AnalyticAt ℂ G w₀ := hGA w₀ hw₀ext
   have hderiv0 : deriv G w₀ ≠ 0 :=
     deriv_ne_zero_of_injOn hGw₀ (isOpen_exteriorUnit.mem_nhds hw₀ext) (extMap_injOn h hinj)
@@ -368,7 +368,7 @@ theorem winding_jump (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (ball 0 1))
   have hu_an_w₀ : AnalyticAt ℂ u w₀ := hgan.congr hug.symm
   have hu_an : ∀ z : ℂ, s ≤ ‖z‖ → ‖z‖ ≤ t → AnalyticAt ℂ u z := by
     intro z hz1 hz2
-    have hzext : z ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have hzext : z ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
     by_cases hz : z = w₀
     · subst hz; exact hu_an_w₀
     · exact hu_an_ne z hzext hz
@@ -521,7 +521,7 @@ theorem winding_eq_one_at_infinity (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h (
   -- bracket analytic on ‖z‖ ≥ t₀
   have hbr_an : ∀ z : ℂ, t₀ ≤ ‖z‖ → AnalyticAt ℂ (fun w => deriv G w / (G w - p) - w⁻¹) z := by
     intro z hz
-    have hzext : z ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have hzext : z ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
     have hz0 : z ≠ 0 := by intro h0; rw [h0, norm_zero] at hz; linarith
     have hden : G z - p ≠ 0 := sub_ne_zero.mpr (hbounds z hz).1
     exact ((hGA' z hzext).div ((hGA z hzext).sub analyticAt_const) hden).sub (analyticAt_inv hz0)
@@ -630,7 +630,7 @@ theorem winding_eq_zero_of_preimage (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h 
     {p w₀ : ℂ} {t : ℝ} (ht : 1 < t)
     (hw₀ : extMap h w₀ = p) (hw₀t : t < ‖w₀‖) :
     winding h t p = 0 := by
-  have hw₀ext : w₀ ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+  have hw₀ext : w₀ ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
   set T : ℝ := max (‖w₀‖ + 1) t₁ with hTdef
   have hTw : ‖w₀‖ < T := lt_of_lt_of_le (by linarith) (le_max_left _ _)
   have hTt1 : t₁ ≤ T := le_max_right _ _
@@ -638,14 +638,14 @@ theorem winding_eq_zero_of_preimage (h : ℂ → ℂ) (hh : AnalyticOnNhd ℂ h 
   have htT : t < T := lt_trans hw₀t hTw
   have hno : ∀ w : ℂ, T ≤ ‖w‖ → extMap h w ≠ p := by
     intro w hw he
-    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
     have : w = w₀ := extMap_injOn h hinj hwext hw₀ext (he.trans hw₀.symm)
     rw [this] at hw; linarith
   have hwT1 : winding h T p = 1 :=
     winding_eq_one_of_no_preimage h hh ht₁ hgrow hnum hT1 hno
   have huniq : ∀ w : ℂ, t ≤ ‖w‖ → ‖w‖ ≤ T → extMap h w = p → w = w₀ := by
     intro w hw1 _ he
-    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_setOf_eq]; linarith
+    have hwext : w ∈ exteriorUnit := by simp only [exteriorUnit, mem_ofPred_eq]; linarith
     exact extMap_injOn h hinj hwext hw₀ext (he.trans hw₀.symm)
   have hjump : winding h T p - winding h t p = 1 :=
     winding_jump h hh hinj ht htT hw₀ hw₀t hTw huniq

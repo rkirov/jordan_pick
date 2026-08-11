@@ -202,7 +202,7 @@ lemma convex_pos_cross (a b : ℝ × ℝ) :
   have hset : {q : ℝ × ℝ | 0 < cross (b - a) (q - a)}
       = {q : ℝ × ℝ | cross (b - a) a < cross (b - a) q} := by
     ext q
-    simp only [Set.mem_setOf_eq, cross, Prod.fst_sub, Prod.snd_sub]
+    simp only [Set.mem_ofPred_eq, cross, Prod.fst_sub, Prod.snd_sub]
     constructor <;> intro h <;> nlinarith [h]
   rw [hset]
   exact convex_halfSpace_gt (isLinearMap_cross (b - a)) (cross (b - a) a)
@@ -213,7 +213,7 @@ lemma convex_neg_cross (a b : ℝ × ℝ) :
   have hset : {q : ℝ × ℝ | cross (b - a) (q - a) < 0}
       = {q : ℝ × ℝ | cross (b - a) q < cross (b - a) a} := by
     ext q
-    simp only [Set.mem_setOf_eq, cross, Prod.fst_sub, Prod.snd_sub]
+    simp only [Set.mem_ofPred_eq, cross, Prod.fst_sub, Prod.snd_sub]
     constructor <;> intro h <;> nlinarith [h]
   rw [hset]
   exact convex_halfSpace_lt (isLinearMap_cross (b - a)) (cross (b - a) a)
@@ -657,7 +657,7 @@ lemma isPathConnected_graphParamRegion {X : Type*} [TopologicalSpace X]
     refine JoinedIn.ofLine (f := fun t => (b, (1 - t) * h₀ + t * h₁)) ?_ (by simp) (by simp) ?_
     · fun_prop
     · rintro _ ⟨t, ht, rfl⟩
-      simp only [hR, Set.mem_setOf_eq]
+      simp only [hR, Set.mem_ofPred_eq]
       refine ⟨hb, ?_, ?_⟩
       · nlinarith [ht.1, ht.2, mul_nonneg (by linarith [ht.2] : (0:ℝ) ≤ 1 - t) hh₀0.le,
           mul_nonneg ht.1 hh₁0.le]
@@ -1209,7 +1209,7 @@ lemma convex_leftDirArc (i : ZMod P.n) : Convex ℝ (P.leftDirArc i) := by
   have hset : P.leftDirArc i
       = {u | 0 < cross (P.edgeDir i) u} ∩ {u | 0 < cross (P.edgeDir (i + 1)) u}
         ∩ {u | ‖u‖ < 1} := by
-    ext u; simp only [LatticePolygon.leftDirArc, Set.mem_inter_iff, Set.mem_setOf_eq]; tauto
+    ext u; simp only [LatticePolygon.leftDirArc, Set.mem_inter_iff, Set.mem_ofPred_eq]; tauto
   rw [hset]; exact (h1.inter h2).inter convex_unitBall
 
 lemma convex_rightDirArc (i : ZMod P.n) : Convex ℝ (P.rightDirArc i) := by
@@ -1220,7 +1220,7 @@ lemma convex_rightDirArc (i : ZMod P.n) : Convex ℝ (P.rightDirArc i) := by
   have hset : P.rightDirArc i
       = {u | cross (P.edgeDir i) u < 0} ∩ {u | cross (P.edgeDir (i + 1)) u < 0}
         ∩ {u | ‖u‖ < 1} := by
-    ext u; simp only [LatticePolygon.rightDirArc, Set.mem_inter_iff, Set.mem_setOf_eq]; tauto
+    ext u; simp only [LatticePolygon.rightDirArc, Set.mem_inter_iff, Set.mem_ofPred_eq]; tauto
   rw [hset]; exact (h1.inter h2).inter convex_unitBall
 
 /-- The left direction-arc is nonempty: scale the cone witness to norm `< 1`. -/
@@ -4083,7 +4083,7 @@ lemma shoelace_ne_zero_of_isSimple (hsimple : P.IsSimple) : P.shoelace ≠ 0 := 
   set S : Set (ℝ × ℝ) := {q : ℝ × ℝ | P.winding q = v} with hS
   have hSmeas : MeasurableSet S := measurable_winding P (measurableSet_singleton v)
   have hSsub : S ⊆ {q : ℝ × ℝ | P.winding q ≠ 0} := by
-    intro q hq; simp only [hS, Set.mem_setOf_eq] at hq ⊢; rw [hq]; exact hvne
+    intro q hq; simp only [hS, Set.mem_ofPred_eq] at hq ⊢; rw [hq]; exact hvne
   have hSfin : MeasureTheory.volume S ≠ ⊤ :=
     ne_top_of_le_ne_top (windingSupport_volume_ne_top P) (MeasureTheory.measure_mono hSsub)
   -- `winding =ᵐ v · indicator S`
@@ -4094,9 +4094,9 @@ lemma shoelace_ne_zero_of_isSimple (hsimple : P.IsSimple) : P.shoelace ≠ 0 := 
     filter_upwards [hbnull] with q hq
     rcases hmem q hq with h0 | hvq
     · have hnotS : q ∉ S := fun hc => hvne (by
-        rw [hS, Set.mem_setOf_eq, h0] at hc; exact hc.symm)
+        rw [hS, Set.mem_ofPred_eq, h0] at hc; exact hc.symm)
       rw [Set.indicator_of_notMem hnotS, mul_zero, h0]; norm_num
-    · have hinS : q ∈ S := by rw [hS, Set.mem_setOf_eq]; exact hvq
+    · have hinS : q ∈ S := by rw [hS, Set.mem_ofPred_eq]; exact hvq
       rw [Set.indicator_of_mem hinS, mul_one, hvq]
   -- the witness set has positive volume (it contains a neighbourhood of `w`)
   have hSnhds : S ∈ nhds w := by
@@ -4129,7 +4129,7 @@ lemma abs_shoelace_eq_filledMeasure (hsimple : P.IsSimple) :
   set S : Set (ℝ × ℝ) := {q : ℝ × ℝ | P.winding q = v} with hS
   have hSmeas : MeasurableSet S := measurable_winding P (measurableSet_singleton v)
   have hSsub : S ⊆ {q : ℝ × ℝ | P.winding q ≠ 0} := by
-    intro q hq; simp only [hS, Set.mem_setOf_eq] at hq ⊢; rw [hq]; exact hvne
+    intro q hq; simp only [hS, Set.mem_ofPred_eq] at hq ⊢; rw [hq]; exact hvne
   have hbnull : P.boundaryᶜ ∈ MeasureTheory.ae MeasureTheory.volume := by
     rw [MeasureTheory.mem_ae_iff, compl_compl]; exact volume_boundary_eq_zero P hsimple
   have heq : (fun q => (P.winding q : ℝ))
@@ -4137,9 +4137,9 @@ lemma abs_shoelace_eq_filledMeasure (hsimple : P.IsSimple) :
     filter_upwards [hbnull] with q hq
     rcases hmem q hq with h0 | hvq
     · have hnotS : q ∉ S := fun hc => hvne (by
-        rw [hS, Set.mem_setOf_eq, h0] at hc; exact hc.symm)
+        rw [hS, Set.mem_ofPred_eq, h0] at hc; exact hc.symm)
       rw [Set.indicator_of_notMem hnotS, mul_zero, h0]; norm_num
-    · have hinS : q ∈ S := by rw [hS, Set.mem_setOf_eq]; exact hvq
+    · have hinS : q ∈ S := by rw [hS, Set.mem_ofPred_eq]; exact hvq
       rw [Set.indicator_of_mem hinS, mul_one, hvq]
   have hint : (∫ q, (P.winding q : ℝ)) = (v : ℝ) * (MeasureTheory.volume S).toReal := by
     rw [MeasureTheory.integral_congr_ae heq, MeasureTheory.integral_const_mul,
@@ -4153,7 +4153,7 @@ lemma abs_shoelace_eq_filledMeasure (hsimple : P.IsSimple) :
   have hae : S =ᵐ[MeasureTheory.volume] {q : ℝ × ℝ | P.winding q ≠ 0} := by
     filter_upwards [hbnull] with q hq
     have hiff : (q ∈ S) ↔ (q ∈ {q : ℝ × ℝ | P.winding q ≠ 0}) := by
-      simp only [hS, Set.mem_setOf_eq]
+      simp only [hS, Set.mem_ofPred_eq]
       constructor
       · intro h; rw [h]; exact hvne
       · intro h; rcases hmem q hq with h0 | hv
@@ -4230,7 +4230,7 @@ theorem crossSection_nonneg (hsimple : P.IsSimple) (horient : P.PositivelyOrient
     rw [MeasureTheory.ae_iff]
     apply MeasureTheory.measure_mono_null _ (hfin.measure_zero MeasureTheory.volume)
     intro x hx
-    simp only [Set.mem_setOf_eq, not_le] at hx
+    simp only [Set.mem_ofPred_eq, not_le] at hx
     by_contra hxb
     rcases winding_zero_or_one P hsimple horient (x, y) hxb with h | h <;>
       rw [h] at hx <;> norm_num at hx
@@ -4375,7 +4375,7 @@ lemma interiorLattice_mem_offDiag (R : LatticePolygon) (_ : R.IsSimple)
   have hadd := winding_eq_deleteLast_add_earTri R h2 m hm (toReal q)
   have hd := hdL01 (toReal q) hdLb
   have he := hear01 (toReal q) hearb
-  simp only [LatticePolygon.interiorLattice, Set.mem_setOf_eq]
+  simp only [LatticePolygon.interiorLattice, Set.mem_ofPred_eq]
   constructor
   · intro hR
     have hR1 : R.winding (toReal q) = 1 := hR.1
@@ -4494,7 +4494,7 @@ lemma boundaryLattice_deleteLast_union_earTri (R : LatticePolygon) (h2 : 2 ≤ R
       = R.boundaryLattice ∪ diagLattice R m := by
   have hun := boundary_deleteLast_union_earTri R h2 m hm
   ext q
-  simp only [LatticePolygon.boundaryLattice, diagLattice, Set.mem_union, Set.mem_setOf_eq]
+  simp only [LatticePolygon.boundaryLattice, diagLattice, Set.mem_union, Set.mem_ofPred_eq]
   constructor
   · rintro (h | h)
     · have : toReal q ∈ R.boundary ∪ segment ℝ (toReal (R.vert (m : ZMod R.n))) (toReal (R.vert 0)) := by
@@ -4534,7 +4534,7 @@ lemma hP3_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (m : ℕ) (hm : R.n
     rw [Nat.cast_sub (by omega), Nat.cast_one]; ring
   rintro q ⟨hqb, hqd⟩
   -- q is on some edge k of R
-  simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_setOf_eq,
+  simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_ofPred_eq,
     Set.mem_iUnion] at hqb
   obtain ⟨k, hk⟩ := hqb
   have hqD : toReal q ∈ segment ℝ (toReal (R.vert (m : ZMod R.n))) (toReal (R.vert 0)) := hqd
@@ -4638,14 +4638,14 @@ lemma hP2_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (h2 : 2 ≤ R.n) (m
     have hz : ((m + 2 : ℕ) : ZMod R.n) = 0 := by rw [← hm]; exact ZMod.natCast_self R.n
     push_cast at hz; linear_combination hz
   rintro q ⟨hqc, hqe⟩
-  rw [diagLattice, Set.mem_setOf_eq]
+  rw [diagLattice, Set.mem_ofPred_eq]
   have hqe' : toReal q ∈ (earTri R m hm).boundary := hqe
   rw [earTri_boundary_eq R m hm] at hqe'
   rcases hqe' with (hleg0 | hleg1) | hD
   · -- toReal q on leg_m = edgeSeg m = [v_m, v_{m+1}]
     have hqcm : toReal q ∈ R.edgeSeg (m : ZMod R.n) := by
       rw [LatticePolygon.edgeSeg]; exact hleg0
-    simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_setOf_eq,
+    simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_ofPred_eq,
       Set.mem_iUnion] at hqc
     obtain ⟨j, hj⟩ := hqc
     rcases deleteLast_idx_dichotomy R h2 m hm j with hjlt | hjeq
@@ -4676,7 +4676,7 @@ lemma hP2_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (h2 : 2 ≤ R.n) (m
   · -- toReal q on leg_{m+1} = edgeSeg (m+1) = [v_{m+1}, v_0]
     have hqcm : toReal q ∈ R.edgeSeg ((m : ZMod R.n) + 1) := by
       rw [LatticePolygon.edgeSeg, hmp1mp1]; exact hleg1
-    simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_setOf_eq,
+    simp only [LatticePolygon.boundaryLattice, LatticePolygon.boundary, Set.mem_ofPred_eq,
       Set.mem_iUnion] at hqc
     obtain ⟨j, hj⟩ := hqc
     rcases deleteLast_idx_dichotomy R h2 m hm j with hjlt | hjeq
@@ -5035,7 +5035,7 @@ lemma lex_lowest_strict_neighbours_of_unique (P : LatticePolygon) (h2 : 2 ≤ P.
     (huniq : ∀ j, (toReal (P.vert j)).2 = (toReal (P.vert m)).2 → j = m) :
     (toReal (P.vert m)).2 < (toReal (P.vert (m - 1))).2 ∧
     (toReal (P.vert m)).2 < (toReal (P.vert (m + 1))).2 := by
-  haveI : NeZero P.n := ⟨by omega⟩
+  have : NeZero P.n := ⟨by omega⟩
   have hone : (1 : ZMod P.n) ≠ 0 := by
     intro hc
     have : (1 : ZMod P.n).val = (0 : ZMod P.n).val := by rw [hc]
@@ -5391,7 +5391,7 @@ lemma exists_convex_vertex_avoiding (P : LatticePolygon) (hS : P.IsSimple)
     (hO : P.PositivelyOriented) (h3 : 3 ≤ P.n) (e₁ e₂ : ZMod P.n) :
     ∃ i : ZMod P.n, 0 < cornerCross P i ∧ i ≠ e₁ ∧ i ≠ e₂ := by
   have h2 : 2 ≤ P.n := by omega
-  haveI : Fact (1 < P.n) := ⟨by omega⟩
+  have : Fact (1 < P.n) := ⟨by omega⟩
   obtain ⟨k₀, hk⟩ := exists_generic_shear P hS
   -- injectivity of the functional `k₀·x + y` (lowest/highest direction)
   have hinj_a : ∀ i j : ZMod P.n,
@@ -5777,8 +5777,8 @@ lemma open_ear_subset_compl_boundary (R : LatticePolygon) (hS : R.IsSimple)
     (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
     openEar R m ⊆ R.boundaryᶜ := by
   classical
-  haveI : NeZero R.n := ⟨by omega⟩
-  haveI : Fact (1 < R.n) := ⟨by omega⟩
+  have : NeZero R.n := ⟨by omega⟩
+  have : Fact (1 < R.n) := ⟨by omega⟩
   intro q hq hqb
   obtain ⟨hf1, hf2, hf3⟩ := hq
   set a := toReal (R.vert (m : ZMod R.n)) with ha
@@ -6553,7 +6553,7 @@ cross u ·}`, a closed half-space of the linear functional `cross u`). -/
 lemma convex_nonneg_cross (u w : ℝ × ℝ) :
     Convex ℝ {p : ℝ × ℝ | 0 ≤ cross u (p - w)} := by
   have hset : {p : ℝ × ℝ | 0 ≤ cross u (p - w)} = {p : ℝ × ℝ | cross u w ≤ cross u p} := by
-    ext p; simp only [Set.mem_setOf_eq, cross, Prod.fst_sub, Prod.snd_sub]
+    ext p; simp only [Set.mem_ofPred_eq, cross, Prod.fst_sub, Prod.snd_sub]
     constructor <;> intro h <;> nlinarith
   rw [hset]; exact convex_halfSpace_ge (isLinearMap_cross u) (cross u w)
 
@@ -6585,7 +6585,7 @@ lemma winding_zero_of_neg_halfplane (T : LatticePolygon) (w u q : ℝ × ℝ)
   have hray_off : ∀ t : ℝ, 0 ≤ t → (q + t • dir) ∉ T.boundary := by
     intro t ht hmem
     have hge := hbd hmem
-    rw [Set.mem_setOf_eq, hcross_t, hcu] at hge
+    rw [Set.mem_ofPred_eq, hcross_t, hcu] at hge
     nlinarith [mul_nonneg ht hunorm.le]
   set s : Set (ℝ × ℝ) := (fun t : ℝ => q + t • dir) '' Set.Ici 0 with hsdef
   have hcont : Continuous (fun t : ℝ => q + t • dir) := by fun_prop
@@ -6698,7 +6698,7 @@ lemma earTri_winding_one_subset (R : LatticePolygon) (hS : R.IsSimple)
       simp only [cross, Prod.fst_sub, Prod.snd_sub]; ring
     rw [key]; exact hear.1
   intro z hz
-  simp only [Set.mem_setOf_eq] at hz
+  simp only [Set.mem_ofPred_eq] at hz
   have hinTri : inTriangle a b c z := by
     by_contra hnot
     rw [ha, hb, hc] at hnot
@@ -6708,7 +6708,7 @@ lemma earTri_winding_one_subset (R : LatticePolygon) (hS : R.IsSimple)
       ∧ 0 < cross (a - c) (z - c)
   · left
     have hzopen : z ∈ openEar R m := by
-      simp only [openEar, Set.mem_setOf_eq, ← ha, ← hb, ← hc]; exact hopen
+      simp only [openEar, Set.mem_ofPred_eq, ← ha, ← hb, ← hc]; exact hopen
     exact winding_one_on_open_ear R hS hO m hm hm2 hear z hzopen
   · right
     rw [earTri_boundary_eq R m hm, ← ha, ← hb, ← hc]
@@ -6757,7 +6757,7 @@ lemma earTri_shoelace_le (R : LatticePolygon) (hS : R.IsSimple) (hO : R.Positive
       _ = MeasureTheory.volume {q : ℝ × ℝ | R.winding q = 1} := by rw [hbnull, add_zero]
   have hfin : MeasureTheory.volume {q : ℝ × ℝ | R.winding q = 1} ≠ ⊤ := by
     refine ne_top_of_le_ne_top (windingSupport_volume_ne_top R) (MeasureTheory.measure_mono ?_)
-    intro x hx; simp only [Set.mem_setOf_eq] at hx ⊢; rw [hx]; exact one_ne_zero
+    intro x hx; simp only [Set.mem_ofPred_eq] at hx ⊢; rw [hx]; exact one_ne_zero
   rw [hET, hR]
   exact ENNReal.toReal_mono hfin hvol
 
@@ -6952,7 +6952,7 @@ lemma clip_winding_zero_on_legs (R : LatticePolygon) (hS : R.IsSimple)
                 (p - toReal (R.vert ((m : ZMod R.n) + 1)))}
               ∩ {p | 0 ≤ cross (toReal (R.vert (m : ZMod R.n)) - toReal (R.vert 0))
                 (p - toReal (R.vert 0))}) := by
-        ext p; simp only [inTriangle, Set.mem_setOf_eq, Set.mem_inter_iff]
+        ext p; simp only [inTriangle, Set.mem_ofPred_eq, Set.mem_inter_iff]
       rw [hset]
       exact (convex_nonneg_cross _ _).inter
         ((convex_nonneg_cross _ _).inter (convex_nonneg_cross _ _))
@@ -7017,7 +7017,7 @@ lemma clip_interiorLattice_subset_R_complBoundary (R : LatticePolygon) (hS : R.I
     (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
     ∀ q ∈ (deleteLast R h2).interiorLattice, toReal q ∉ R.boundary := by
   intro q hq hRb
-  simp only [LatticePolygon.interiorLattice, Set.mem_setOf_eq] at hq
+  simp only [LatticePolygon.interiorLattice, Set.mem_ofPred_eq] at hq
   have hmem : toReal q ∈ (deleteLast R h2).boundary ∪ (earTri R m hm).boundary := by
     rw [boundary_deleteLast_union_earTri R h2 m hm]; exact Or.inl hRb
   rcases hmem with hcb | heb
@@ -7035,7 +7035,7 @@ lemma earTri_interiorLattice_subset_R_complBoundary (R : LatticePolygon) (hS : R
     (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
     ∀ q ∈ (earTri R m hm).interiorLattice, toReal q ∉ R.boundary := by
   intro q hq
-  simp only [LatticePolygon.interiorLattice, Set.mem_setOf_eq] at hq
+  simp only [LatticePolygon.interiorLattice, Set.mem_ofPred_eq] at hq
   obtain ⟨hwin, hbd⟩ := hq
   have hmp1mp1 : ((m : ZMod R.n) + 1) + 1 = (0 : ZMod R.n) := by
     have hz : ((m + 2 : ℕ) : ZMod R.n) = 0 := by rw [← hm]; exact ZMod.natCast_self R.n
@@ -7103,10 +7103,10 @@ lemma hP1_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (hO : R.PositivelyO
   apply Set.Subset.antisymm
   · -- ⊆
     intro q hq
-    simp only [LatticePolygon.interiorLattice, Set.mem_setOf_eq] at hq
+    simp only [LatticePolygon.interiorLattice, Set.mem_ofPred_eq] at hq
     by_cases hqd : toReal q ∈ segment ℝ (toReal (R.vert (m : ZMod R.n))) (toReal (R.vert 0))
     · refine Or.inr ⟨hqd, ?_⟩
-      simp only [LatticePolygon.boundaryLattice, Set.mem_setOf_eq]; exact hq.2
+      simp only [LatticePolygon.boundaryLattice, Set.mem_ofPred_eq]; exact hq.2
     · have hiff := interiorLattice_mem_offDiag R hS hO h2 m hm hdL01 hear01 q hq.2 hqd
       rcases hiff.mp hq with ⟨hc, _⟩ | ⟨_, he⟩
       · exact Or.inl (Or.inl hc)
@@ -7129,7 +7129,7 @@ lemma hP1_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (hO : R.PositivelyO
     · -- open diagonal
       obtain ⟨hqD, hqB⟩ := hqdiag
       have hqRb : toReal q ∉ R.boundary := by
-        simp only [LatticePolygon.boundaryLattice, Set.mem_setOf_eq] at hqB; exact hqB
+        simp only [LatticePolygon.boundaryLattice, Set.mem_ofPred_eq] at hqB; exact hqB
       have hqD' : toReal q ∈ segment ℝ (toReal (R.vert (m : ZMod R.n))) (toReal (R.vert 0)) := hqD
       exact ⟨diagOpen_winding_one R hS hO h2 m hm hm2 hear (toReal q) hqD' hqRb, hqRb⟩
 
@@ -8317,7 +8317,7 @@ lemma splitPoly_positivelyOriented_of_disjoint (P : LatticePolygon) (hS : P.IsSi
     filter_upwards [hdisj] with q hq
     have hs := hsum q
     have hiff : (q ∈ {q : ℝ × ℝ | P.winding q ≠ 0}) ↔ (q ∈ (AL ∪ AR : Set (ℝ × ℝ))) := by
-      simp only [hAL, hAR, Set.mem_setOf_eq, Set.mem_union]
+      simp only [hAL, hAR, Set.mem_ofPred_eq, Set.mem_union]
       constructor
       · intro hp
         by_contra hcon
@@ -8335,8 +8335,8 @@ lemma splitPoly_positivelyOriented_of_disjoint (P : LatticePolygon) (hS : P.IsSi
     have hbad := MeasureTheory.ae_iff.mp hdisj
     refine MeasureTheory.measure_mono_null ?_ hbad
     intro q hq
-    simp only [hAL, hAR, Set.mem_inter_iff, Set.mem_setOf_eq] at hq
-    simp only [Set.mem_setOf_eq, not_not]
+    simp only [hAL, hAR, Set.mem_inter_iff, Set.mem_ofPred_eq] at hq
+    simp only [Set.mem_ofPred_eq, not_not]
     exact hq
   -- filled-measure additivity
   have hPvol : MeasureTheory.volume {q : ℝ × ℝ | P.winding q ≠ 0}
@@ -9682,7 +9682,10 @@ lemma openCorner_winding_one (L : LatticePolygon) (hSL : L.IsSimple)
     have e : ((m : ZMod L.n) + 1) + c = i := by rw [hc]; linear_combination hmz
     rw [e]; exact hear
   have hearQ : isEarVertex (rotateP L c) ((m : ZMod (rotateP L c).n) + 1) := by
-    rw [isEarVertex_rotateP]; exact hearL
+    -- `rw` cannot fire here from Lean 4.33: the goal's index is typed
+    -- `ZMod (rotateP L c).n` while the lemma is stated over `ZMod L.n`. Applying the
+    -- iff directly elaborates at default transparency, where the two are defeq.
+    exact (isEarVertex_rotateP L c ((m : ZMod L.n) + 1)).mpr hearL
   -- membership of `q` in the rotated open ear (each goal is defeq to its `ZMod L.n` form)
   have hmem : q ∈ openEar (rotateP L c) m := by
     refine ⟨?_, ?_, ?_⟩
@@ -10040,7 +10043,7 @@ lemma corner_triangle_subset_half (hS : P.IsSimple) (hO : P.PositivelyOriented)
     (hhi : i.val + 1 < (splitPoly P a b).n) (hear : isEarVertex (splitPoly P a b) i) :
     isEarVertex P (a + ((i.val : ℕ) : ZMod P.n)) := by
   classical
-  haveI : NeZero P.n := ⟨by omega⟩
+  have : NeZero P.n := ⟨by omega⟩
   obtain ⟨hab, hab1, hba1, hdisjE⟩ := hdiag
   have hdiagD : IsDiagonal P a b := ⟨hab, hab1, hba1, hdisjE⟩
   have hdiag' : IsDiagonal P b a :=
@@ -10284,7 +10287,7 @@ lemma corner_triangle_subset_half_R (hS : P.IsSimple) (hO : P.PositivelyOriented
     (hhi : i.val + 1 < (splitPoly P b a).n) (hear : isEarVertex (splitPoly P b a) i) :
     isEarVertex P (b + ((i.val : ℕ) : ZMod P.n)) := by
   classical
-  haveI : NeZero P.n := ⟨by omega⟩
+  have : NeZero P.n := ⟨by omega⟩
   obtain ⟨hab, hab1, hba1, hdisjE⟩ := hdiag
   have hdiagD : IsDiagonal P a b := ⟨hab, hab1, hba1, hdisjE⟩
   have hdiag' : IsDiagonal P b a :=
@@ -10546,7 +10549,7 @@ liftable through `corner_triangle_subset_half`. -/
 private lemma interior_of_avoiding {m : ℕ} (i : ZMod m) (h1 : 1 ≤ m)
     (ha : i ≠ ((m - 1 : ℕ) : ZMod m)) (hb : i ≠ ((m - 1 : ℕ) : ZMod m) + 1) :
     0 < i.val ∧ i.val + 1 < m := by
-  haveI : NeZero m := ⟨by omega⟩
+  have : NeZero m := ⟨by omega⟩
   have heHsucc : (((m - 1 : ℕ) : ZMod m) + 1) = 0 := by
     have hcc : ((m - 1 : ℕ) : ZMod m) + 1 = ((m - 1 + 1 : ℕ) : ZMod m) := by push_cast; ring
     rw [hcc, show m - 1 + 1 = m from by omega, ZMod.natCast_self]
@@ -10573,8 +10576,8 @@ lemma ear_avoiding : ∀ (n : ℕ) (P : LatticePolygon), P.IsSimple → P.Positi
     rcases eq_or_lt_of_le h3 with h3eq | h4
     · exact triangle_ear_avoiding P (by omega) hO e
     · have h2 : 2 ≤ P.n := by omega
-      haveI : NeZero P.n := ⟨by omega⟩
-      haveI : Fact (1 < P.n) := ⟨by omega⟩
+      have : NeZero P.n := ⟨by omega⟩
+      have : Fact (1 < P.n) := ⟨by omega⟩
       obtain ⟨w, hwconv, hwe, hwe1⟩ := exists_convex_vertex_avoiding P hS hO (by omega) e (e + 1)
       rcases exists_ear_or_diagonal_at P hS w hwconv with hear | ⟨v, hdiag, _, hwT⟩
       · exact ⟨w, hear, hwe, hwe1⟩

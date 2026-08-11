@@ -202,7 +202,7 @@ theorem SurfaceHarmonicOn.eqOn_const_of_locallyConstant {u : X → ℝ} {s : Set
     have hGconj : IsConjugate u (fun _ ↦ (u a : ℂ)) W := by
       refine ⟨fun x hx ↦ analyticAt_const, fun x hx ↦ ?_⟩
       have := interior_subset hx.2
-      simp only [mem_setOf_eq] at this
+      simp only [mem_ofPred_eq] at this
       simp [this]
     -- rigidity: `F` is eventually constant at `a`, hence constant on `V`
     obtain ⟨t, ht⟩ := IsConjugate.eventuallyEq_add_const hVo hWo hFconj hGconj haV haW
@@ -321,7 +321,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- The sheets form a topological basis. -/
 theorem isTopologicalBasis_basicSets :
     TopologicalSpace.IsTopologicalBasis (basicSets u Y) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   refine ⟨?_, ?_, rfl⟩
   · -- intersections refine
     rintro S₁ ⟨V₁, F₁, hV₁o, _, hV₁Y, hF₁, rfl⟩ S₂ ⟨V₂, F₂, hV₂o, _, hV₂Y, hF₂, rfl⟩
@@ -351,7 +351,7 @@ theorem isTopologicalBasis_basicSets :
 
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem continuous_proj : Continuous (proj (u := u) (Y := Y)) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   rw [continuous_def]
   intro O hO
   rw [(isTopologicalBasis_basicSets (u := u) (Y := Y)).isOpen_iff]
@@ -394,7 +394,7 @@ theorem injOn_proj_sheet {V : Set X} {F : X → ℂ} :
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- Hausdorffness of the étale space (identity theorem). -/
 theorem t2Space [T2Space X] : T2Space (ConjEtale u Y) := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   constructor
   intro q₁ q₂ hne
   by_cases hbase : proj q₁ = proj q₂
@@ -449,7 +449,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 /-- Every étale point lies on a basic sheet. -/
 private theorem exists_basic_sheet_mem (q : ConjEtale u Y) :
     ∃ V F, IsOpen V ∧ IsPreconnected V ∧ V ⊆ Y ∧ IsConjugate u F V ∧ q ∈ sheet V F := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   obtain ⟨hqY, V, F, hVo, hqV, hVY, hF, hgerm⟩ := q.2
   exact ⟨connectedComponentIn V q.1.1, F, hVo.connectedComponentIn,
     isPreconnected_connectedComponentIn, (connectedComponentIn_subset _ _).trans hVY,
@@ -481,7 +481,7 @@ private theorem continuous_sheetSec {V : Set X} {F : X → ℂ} (hVo : IsOpen V)
   have heq : sheetSec hVo hVY hF ⁻¹' sheet W G
       = Subtype.val ⁻¹' (W ∩ {x : X | F =ᶠ[𝓝 x] G}) := by
     ext z
-    simp only [sheetSec, mem_preimage, sheet, mem_setOf_eq, mem_inter_iff]
+    simp only [sheetSec, mem_preimage, sheet, mem_ofPred_eq, mem_inter_iff]
     exact and_congr Iff.rfl Filter.Germ.coe_eq
   rw [heq]
   exact (hWo.inter isOpen_eventuallyEq_nhds).preimage continuous_subtype_val
@@ -503,7 +503,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 local compactness, local connectedness, local second countability. -/
 theorem locallyCompactSpace [T2Space X] :
     LocallyCompactSpace (ConjEtale u Y) := by
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
   constructor
   intro q N hN
   obtain ⟨S, hSb, hqS, hSN⟩ :=
@@ -523,7 +523,7 @@ theorem locallyCompactSpace [T2Space X] :
 omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem locallyConnectedSpace [T2Space X] :
     LocallyConnectedSpace (ConjEtale u Y) := by
-  haveI hX : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have hX : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   rw [locallyConnectedSpace_iff_connected_subsets]
   intro q U hU
   obtain ⟨S, hSb, hqS, hSN⟩ :=
@@ -533,7 +533,7 @@ theorem locallyConnectedSpace [T2Space X] :
     locallyConnectedSpace_iff_connected_subsets.mp hX q.1.1 W (hWo.mem_nhds hqS.1)
   refine ⟨sheetSec hWo hWY hG '' (Subtype.val ⁻¹' V'),
     sheetSec_image_mem_nhds hWo hWc hWY hG hqS hV'n, ?_, ?_⟩
-  · haveI := Subtype.preconnectedSpace hV'c
+  · have := Subtype.preconnectedSpace hV'c
     have hcont : Continuous ((sheetSec hWo hWY hG) ∘ Set.inclusion hV'W) :=
       (continuous_sheetSec hWo hWY hG).comp (continuous_inclusion hV'W)
     have hrange : range ((sheetSec hWo hWY hG) ∘ Set.inclusion hV'W)
@@ -552,7 +552,7 @@ private theorem secondCountable_sheet {W : Set X} {F : X → ℂ} (hWo : IsOpen 
     (hWc : IsPreconnected W) (hWY : W ⊆ Y) (hF : IsConjugate u F W)
     (hWsc : SecondCountableTopology W) :
     SecondCountableTopology (sheet (u := u) (Y := Y) W F) := by
-  haveI := hWsc
+  have := hWsc
   have hSb : sheet W F ∈ basicSets u Y := ⟨W, F, hWo, hWc, hWY, hF, rfl⟩
   let ρ : {p : ConjEtale u Y // p ∈ sheet W F} → {z : X // z ∈ W} :=
     fun p ↦ ⟨proj p.1, p.2.1⟩
@@ -582,7 +582,7 @@ omit [IsManifold (modelWithCornersSelf ℂ ℂ) 1 X] in
 theorem locally_secondCountable [T2Space X]
     (q : ConjEtale u Y) :
     ∃ U : Set (ConjEtale u Y), q ∈ U ∧ IsOpen U ∧ SecondCountableTopology U := by
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   -- a basic sheet through `q` refined into a second-countable chart piece
   obtain ⟨V, F, hVo, hVc, hVY, hF, hqV⟩ := exists_basic_sheet_mem q
   obtain ⟨U₀, hqU₀, hU₀o, hU₀sc⟩ := Rado.locally_secondCountable (X := X) q.1.1
@@ -596,7 +596,7 @@ theorem locally_secondCountable [T2Space X]
   have hSb : sheet W F ∈ basicSets u Y := ⟨W, F, hWo, hWc, hWY, hGW, rfl⟩
   -- second countability of `↥W` (hereditary from `↥U₀`)
   have hWsc : SecondCountableTopology W := by
-    haveI := hU₀sc
+    have := hU₀sc
     exact (Topology.IsEmbedding.inclusion fun z hz ↦ (hWsub hz).2).secondCountableTopology
   exact ⟨sheet W F, ⟨hqW, hqV.2⟩, isOpen_of_mem_basicSets hSb,
     secondCountable_sheet hWo hWc hWY hGW hWsc⟩
@@ -682,7 +682,7 @@ triviality of `proj` over small preconnected chart neighbourhoods). -/
 theorem surjOn_proj_connectedComponent [T2Space X] (hu : SurfaceHarmonicOn u Y)
     (hY : IsOpen Y) (hYc : IsPreconnected Y) (q₀ : ConjEtale u Y) :
     SurjOn (proj (u := u) (Y := Y)) (connectedComponent q₀) Y := by
-  haveI : LocallyConnectedSpace (ConjEtale u Y) := locallyConnectedSpace
+  have : LocallyConnectedSpace (ConjEtale u Y) := locallyConnectedSpace
   set S := proj (u := u) (Y := Y) '' connectedComponent q₀ with hS_def
   have hSopen : IsOpen S := isOpenMap_proj _ isOpen_connectedComponent
   -- the image is relatively closed in `Y`: any closure point in `Y` lies on a
@@ -704,7 +704,7 @@ theorem surjOn_proj_connectedComponent [T2Space X] (hu : SurfaceHarmonicOn u Y)
       exact Filter.Germ.coe_eq.mpr hs
     -- the sheet is preconnected (image of the continuous section)
     have hsheet_conn : IsPreconnected (sheet (u := u) (Y := Y) V (fun z ↦ F z + s * I)) := by
-      haveI := Subtype.preconnectedSpace hVc
+      have := Subtype.preconnectedSpace hVc
       have hrange : range (sheetSec hVo hVY hFs) = sheet V (fun z ↦ F z + s * I) := by
         rw [← image_univ]
         have h1 : (univ : Set V) = Subtype.val ⁻¹' V := by

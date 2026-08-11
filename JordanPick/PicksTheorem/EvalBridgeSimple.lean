@@ -18,7 +18,7 @@ open MeasureTheory
 theorem ourPoly_isSimple {n : ℕ} (hn : 0 < n) (v : Fin n → ℤ × ℤ)
     (hsimple : IsSimple (latPoly v)) :
     (ourPoly hn v).IsSimple := by
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   -- index algebra: `val` of a cast-successor (re-derived from `boundary_bridge`),
   -- stated at the polygon's own modulus to match the `IsSimple` binders
   have val_succ : ∀ i : Fin n,

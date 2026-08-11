@@ -295,8 +295,8 @@ theorem exists_harmonic_level_piece [T2Space X] [ConnectedSpace X]
       IsOpen A ∧ frontier V ⊆ A ∧ SurfaceHarmonicOn f A ∧
       (∀ ξ ∈ frontier V, f ξ = c) := by
   classical
-  haveI : LocallyCompactSpace X := locallyCompactSpace
-  haveI : LocallyConnectedSpace X := locallyConnectedSpace
+  have : LocallyCompactSpace X := locallyCompactSpace
+  have : LocallyConnectedSpace X := locallyConnectedSpace
   -- inner regular piece `V₁ ⊇ K`
   obtain ⟨V₁, hV₁o, hV₁conn, hV₁cl, hKV₁, hx₀V₁, -, -, -⟩ := exists_regular_piece hnc hK hx₀
   set S : Set X := closure V₁ with hS_def
@@ -401,7 +401,7 @@ theorem exists_harmonic_level_piece [T2Space X] [ConnectedSpace X]
       · exact hU
       · exact absurd hξclU₀
           (hfrUnotcl ξ (by rw [frontier, hUo.interior_eq]; exact ⟨hξclU, hU⟩))
-    haveI hnb : (𝓝[U₀] ξ).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hξclU₀
+    have hnb : (𝓝[U₀] ξ).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hξclU₀
     have htend : Filter.Tendsto H (𝓝[U₀] ξ) (𝓝 (H ξ)) := (hHcontU ξ hξU).mono hU₀U
     have hge : c ≤ H ξ := by
       refine ge_of_tendsto htend ?_

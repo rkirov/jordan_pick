@@ -2030,7 +2030,7 @@ lemma winding_rotate (P : LatticePolygon) (c : ZMod P.n) (q : ℝ × ℝ) :
 lemma interiorRegion_rotate (P : LatticePolygon) (c : ZMod P.n) :
     (⟨P.n, P.pos, fun i => P.vert (i + c)⟩ : LatticePolygon).interiorRegion = P.interiorRegion := by
   ext q
-  simp only [LatticePolygon.interiorRegion, Set.mem_setOf_eq]
+  simp only [LatticePolygon.interiorRegion, Set.mem_ofPred_eq]
   rw [winding_rotate]
 
 /-- Rotated edge `i` is the original edge `i + c`. -/
@@ -2049,13 +2049,13 @@ lemma boundary_rotate (P : LatticePolygon) (c : ZMod P.n) :
 lemma interiorLattice_rotate (P : LatticePolygon) (c : ZMod P.n) :
     (⟨P.n, P.pos, fun i => P.vert (i + c)⟩ : LatticePolygon).interiorLattice = P.interiorLattice := by
   ext q
-  simp only [LatticePolygon.interiorLattice, Set.mem_setOf_eq, winding_rotate, boundary_rotate]
+  simp only [LatticePolygon.interiorLattice, Set.mem_ofPred_eq, winding_rotate, boundary_rotate]
 
 /-- The boundary lattice set is rotation-invariant. -/
 lemma boundaryLattice_rotate (P : LatticePolygon) (c : ZMod P.n) :
     (⟨P.n, P.pos, fun i => P.vert (i + c)⟩ : LatticePolygon).boundaryLattice = P.boundaryLattice := by
   ext q
-  simp only [LatticePolygon.boundaryLattice, Set.mem_setOf_eq, boundary_rotate]
+  simp only [LatticePolygon.boundaryLattice, Set.mem_ofPred_eq, boundary_rotate]
 
 /-- `I` is rotation-invariant. -/
 lemma I_rotate (P : LatticePolygon) (c : ZMod P.n) :
@@ -2088,7 +2088,13 @@ def deleteLast (P : LatticePolygon) (h : 2 ≤ P.n) : LatticePolygon where
 @[simp] lemma deleteLast_n (P : LatticePolygon) (h : 2 ≤ P.n) :
     (deleteLast P h).n = P.n - 1 := rfl
 
-@[simp] lemma deleteLast_vert (P : LatticePolygon) (h : 2 ≤ P.n) (j : ZMod (P.n - 1)) :
+-- Indexed by `ZMod (deleteLast P h).n` rather than the defeq `ZMod (P.n - 1)`: from
+-- Lean 4.33 `rw`/`simp` match at reducible transparency, and `deleteLast` is a
+-- semireducible `def`, so a pattern stated over `P.n - 1` no longer fires against a
+-- goal whose index is typed by the projection. Application sites that supply a
+-- `ZMod (P.n - 1)` still elaborate, since the two remain definitionally equal.
+@[simp] lemma deleteLast_vert (P : LatticePolygon) (h : 2 ≤ P.n)
+    (j : ZMod (deleteLast P h).n) :
     (deleteLast P h).vert j = P.vert (j.val : ZMod P.n) := rfl
 
 /-- **Winding additivity through ear-clipping.** Deleting the last vertex splits the polygon's

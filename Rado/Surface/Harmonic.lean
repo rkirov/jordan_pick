@@ -165,7 +165,7 @@ the harmonic replacement) naturally produce only *small* circles. The bridge is
 classical: small circles give the maximum principle, the maximum principle
 gives comparison with the Poisson extension on any closed disk, and comparison
 gives the inequality on the full circle
-(`HarmonicContOnCl.circleAverage_eq` closes the loop at the boundary radius).
+(`InnerProductSpace.HarmonicContOnCl.circleAverage_eq` closes the loop at the boundary radius).
 -/
 
 /-- Continuity plus the sub-mean-value inequality on all sufficiently small
@@ -297,7 +297,7 @@ theorem SubMeanLocalOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : I
     have hgb : g b = g z := by
       have h1 : ContinuousWithinAt g (connectedComponentIn U z) b :=
         (hgc.continuousWithinAt hbU).mono (hCU.trans subset_closure)
-      haveI hne : (𝓝[connectedComponentIn U z] b).NeBot :=
+      have hne : (𝓝[connectedComponentIn U z] b).NeBot :=
         mem_closure_iff_nhdsWithin_neBot.mp hbC
       have h2 : Filter.Tendsto g (𝓝[connectedComponentIn U z] b) (𝓝 (g z)) :=
         Filter.Tendsto.congr'
@@ -378,7 +378,7 @@ theorem SubMeanLocalOn.subMeanOn {g : ℂ → ℝ} {s : Set ℂ}
   simp only [sub_nonpos] at h0
   -- mean value at the boundary radius
   have hPcirc : Real.circleAverage (poissonExtension g c R) c R = poissonExtension g c R c := by
-    apply HarmonicContOnCl.circleAverage_eq
+    apply InnerProductSpace.HarmonicContOnCl.circleAverage_eq
     rw [abs_of_pos hR]
     exact HarmonicContOnCl.mk_ball hPh hPc
   have hcongr : Real.circleAverage (poissonExtension g c R) c R = Real.circleAverage g c R := by

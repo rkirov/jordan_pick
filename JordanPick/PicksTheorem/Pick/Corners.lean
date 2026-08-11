@@ -1187,7 +1187,7 @@ noncomputable def shearLin (k : ℝ) : (ℝ × ℝ) ≃ₗ[ℝ] (ℝ × ℝ) whe
 
 /-- The sheared lattice polygon: each lattice vertex `(x,y)` becomes `(x, y + k·x)`,
 which is again a lattice point (`k : ℤ`). -/
-def shearP (P : LatticePolygon) (k : ℤ) : LatticePolygon where
+@[reducible] def shearP (P : LatticePolygon) (k : ℤ) : LatticePolygon where
   n := P.n
   pos := P.pos
   vert i := ((P.vert i).1, (P.vert i).2 + k * (P.vert i).1)
@@ -1200,7 +1200,7 @@ def shearP (P : LatticePolygon) (k : ℤ) : LatticePolygon where
 /-- The real coordinates of a sheared vertex are the shear-map image of the originals. -/
 lemma shearP_toReal (P : LatticePolygon) (k : ℤ) (i : ZMod P.n) :
     toReal ((shearP P k).vert i) = shearLin (k : ℝ) (toReal (P.vert i)) := by
-  simp only [shearP_vert, toReal, shearLin_apply]
+  simp only [toReal, shearLin_apply]
   push_cast
   ring_nf
 
@@ -1236,7 +1236,10 @@ lemma shearP_positivelyOriented (P : LatticePolygon) (k : ℤ)
 lemma shearP_edgeSeg (P : LatticePolygon) (k : ℤ) (i : ZMod P.n) :
     (shearP P k).edgeSeg i
       = (shearLin (k:ℝ)) '' (P.edgeSeg (i : ZMod P.n)) := by
-  simp only [LatticePolygon.edgeSeg, shearP_toReal]
+  -- `shearP` is reducible, so `simp` normalises the vertex to its raw pair form and
+  -- `shearP_toReal` no longer matches as a simp lemma; `rw` unifies up to reducible.
+  simp only [LatticePolygon.edgeSeg]
+  rw [shearP_toReal, shearP_toReal]
   have := image_segment ℝ (shearLin (k:ℝ)).toLinearMap.toAffineMap
     (toReal (P.vert i)) (toReal (P.vert (i + 1)))
   simp only [LinearMap.coe_toAffineMap, LinearEquiv.coe_coe] at this ⊢
@@ -1355,7 +1358,7 @@ lemma linLinMap_injective (c d : ℝ) (h : c ^ 2 + d ^ 2 ≠ 0) :
 
 /-- The general lattice linear image: each vertex `(x,y)` becomes
 `(d·x − c·y, c·x + d·y)`, again a lattice point (`c, d : ℤ`). -/
-def linP (P : LatticePolygon) (c d : ℤ) : LatticePolygon where
+@[reducible] def linP (P : LatticePolygon) (c d : ℤ) : LatticePolygon where
   n := P.n
   pos := P.pos
   vert i := (d * (P.vert i).1 - c * (P.vert i).2, c * (P.vert i).1 + d * (P.vert i).2)
@@ -1369,7 +1372,7 @@ def linP (P : LatticePolygon) (c d : ℤ) : LatticePolygon where
 /-- The real coordinates of a transformed vertex are the `linLinMap` image. -/
 lemma linP_toReal (P : LatticePolygon) (c d : ℤ) (i : ZMod P.n) :
     toReal ((linP P c d).vert i) = linLinMap (c : ℝ) (d : ℝ) (toReal (P.vert i)) := by
-  simp only [linP_vert, toReal, linLinMap_apply]
+  simp only [toReal, linLinMap_apply]
   push_cast; constructor
 
 /-- The height (second real coordinate) of a transformed vertex is the functional
@@ -1409,7 +1412,10 @@ lemma linP_positivelyOriented (P : LatticePolygon) (c d : ℤ)
 /-- Transformed edges are the `linLinMap` image of the original edges. -/
 lemma linP_edgeSeg (P : LatticePolygon) (c d : ℤ) (i : ZMod P.n) :
     (linP P c d).edgeSeg i = (linLinMap (c : ℝ) (d : ℝ)) '' (P.edgeSeg i) := by
-  simp only [LatticePolygon.edgeSeg, linP_toReal]
+  -- As in `shearP_edgeSeg`: rewrite rather than simp, so the reducible `linP` still
+  -- unifies with `linP_toReal`'s left-hand side.
+  simp only [LatticePolygon.edgeSeg]
+  rw [linP_toReal, linP_toReal]
   have := image_segment ℝ (linLinMap (c : ℝ) (d : ℝ)).toAffineMap
     (toReal (P.vert i)) (toReal (P.vert (i + 1)))
   simp only [LinearMap.coe_toAffineMap] at this ⊢
@@ -1470,7 +1476,11 @@ the empty-triangle test only depend on the three real vertices `vᵢ₋₁, vᵢ
 the other vertices, which the rotation merely reindexes bijectively.) -/
 lemma isEarVertex_rotateP (P : LatticePolygon) (c i : ZMod P.n) :
     isEarVertex (rotateP P c) i ↔ isEarVertex P (i + c) := by
-  rw [isEarVertex, isEarVertex, rotateP_cornerCross]
+  -- `rw` can no longer apply the equation theorem here: the apex index `i` is typed
+  -- `ZMod P.n` while `isEarVertex (rotateP P c)` wants `ZMod (rotateP P c).n`. Those are
+  -- defeq but not reducibly so, and delta reduction sidesteps the matching entirely.
+  unfold isEarVertex
+  rw [rotateP_cornerCross]
   simp only [rotateP_vert]
   refine and_congr_right (fun _ => ?_)
   -- Retype the rotated side's binder `ZMod (rotateP P c).n` to `ZMod P.n` (defeq),

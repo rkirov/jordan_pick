@@ -91,7 +91,7 @@ private theorem meanEqOn_of_harmonicOnNhd {u : ℂ → ℝ} {s : Set ℂ}
   have h : HarmonicOnNhd u (closedBall a |r|) := by
     rw [abs_of_pos hr]
     exact hu.mono hsub
-  exact HarmonicOnNhd.circleAverage_eq h
+  exact InnerProductSpace.HarmonicOnNhd.circleAverage_eq h
 
 /-- `MeanEqOn` is antitone in the set. -/
 private theorem meanEqOn_mono {h : ℂ → ℝ} {s t : Set ℂ} (hh : MeanEqOn h s) (hts : t ⊆ s) :

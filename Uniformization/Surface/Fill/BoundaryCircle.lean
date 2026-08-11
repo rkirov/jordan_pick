@@ -55,7 +55,7 @@ def straightBox (q : ℂ) (c δ ε : ℝ) : Set ℂ :=
     z ∈ straightBox q c δ ε ↔ |z.re - c| < δ ∧ |z.im - q.im| < ε := Iff.rfl
 
 theorem isOpen_straightBox (q : ℂ) (c δ ε : ℝ) : IsOpen (straightBox q c δ ε) := by
-  rw [straightBox, Set.setOf_and]
+  rw [straightBox, Set.ofPred_and]
   exact (isOpen_lt ((Complex.continuous_re.sub continuous_const).abs) continuous_const).inter
     (isOpen_lt ((Complex.continuous_im.sub continuous_const).abs) continuous_const)
 

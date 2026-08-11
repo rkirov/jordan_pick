@@ -73,7 +73,7 @@ theorem exists_halfdisk_chart {V : Set X} {f : X → ℝ} {c : ℝ} {A' : Set X}
   have hψpre : (ψ p).re = c := by
     rw [hψeq p hpψ]
     have hO := hOsub hOmem
-    simp only [mem_setOf_eq] at hO
+    simp only [mem_ofPred_eq] at hO
     rw [hO, hesymm, hfp]
   -- the good neighbourhood in `X`, pulled back to a ball in the chart
   set N : Set X := ψ.source ∩ A' ∩ (e.source ∩ e ⁻¹' O) with hNdef
@@ -202,7 +202,7 @@ theorem halfdisk_end_eq {V : Set X} {c : ℝ} {p x₀ : X}
     (∀ z ∈ ball (ψ p) r,
       (ψ.symm z ∈ frontier (connectedComponentIn (closure V)ᶜ x₀) ↔ z.re = c)) := by
   classical
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
   set Z : Set X := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZo : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   have hsub := halfdisk_image_subset_end hr hpψ hbtgt hclos hpZ
@@ -317,7 +317,7 @@ theorem exists_local_collar_of_halfdisk [T2Space X] {V : Set X} {c : ℝ} {p x�
       ψ.symm.injOn.mono (by rw [ψ.symm_source]; exact hKrtgt)
     have hMeq : Mm ∩ Mp = MR := by
       ext u
-      simp only [hMm, hMp, hMR, mem_inter_iff, mem_setOf_eq]
+      simp only [hMm, hMp, hMR, mem_inter_iff, mem_ofPred_eq]
       constructor
       · rintro ⟨⟨hK, hle⟩, -, hge⟩; exact ⟨hK, le_antisymm hle hge⟩
       · rintro ⟨hK, heq⟩; exact ⟨⟨hK, le_of_eq heq⟩, hK, ge_of_eq heq⟩
@@ -395,7 +395,7 @@ theorem exists_boundary_entry_segment {V : Set X} {f : X → ℝ} {c : ℝ} {A' 
     · -- strict inequality: the only segment point with real part `c` is `ψ p`
       rw [segment_eq_image'] at huseg
       obtain ⟨θ, hθ, rfl⟩ := huseg
-      simp only [sub_sub_cancel_left, mem_setOf_eq, Complex.add_re, hψpre,
+      simp only [sub_sub_cancel_left, mem_ofPred_eq, Complex.add_re, hψpre,
         Complex.smul_re, Complex.neg_re, Complex.ofReal_re, smul_eq_mul]
       have hθpos : 0 < θ := by
         rcases hθ.1.lt_or_eq with h | h

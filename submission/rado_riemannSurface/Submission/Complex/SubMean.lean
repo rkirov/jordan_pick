@@ -196,7 +196,7 @@ theorem SubMeanOn.le_of_frontier_le {g : ℂ → ℝ} {U : Set ℂ} (hU : IsOpen
     have hgb : g b = g z := by
       have h1 : ContinuousWithinAt g (connectedComponentIn U z) b :=
         (hgc.continuousWithinAt hbU).mono (hCU.trans subset_closure)
-      haveI hne : (𝓝[connectedComponentIn U z] b).NeBot :=
+      have hne : (𝓝[connectedComponentIn U z] b).NeBot :=
         mem_closure_iff_nhdsWithin_neBot.mp hbC
       have h2 : Filter.Tendsto g (𝓝[connectedComponentIn U z] b) (𝓝 (g z)) :=
         Filter.Tendsto.congr'

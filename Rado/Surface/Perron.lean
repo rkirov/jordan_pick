@@ -146,12 +146,12 @@ theorem surfaceReplace_surfaceSubharmonicOn [T2Space X] (hs : IsOpen s)
     refine ContinuousOn.if ?_ ?_ ?_
     · intro a ha
       have h2 := ha.2
-      simp only [Set.setOf_mem_eq] at h2
+      simp only [Set.ofPred_mem_eq] at h2
       rw [frontier_closedBall c hd.r_pos.ne'] at h2
       exact poissonExtension_eqOn_sphere hd.r_pos hgs h2
     · refine (poissonExtension_continuousOn hd.r_pos hgs).mono ?_
       refine inter_subset_right.trans ?_
-      simp only [Set.setOf_mem_eq]
+      simp only [Set.ofPred_mem_eq]
       rw [isClosed_closedBall.closure_eq]
     · exact hrepg.mono inter_subset_left
   -- continuity of the replacement on `s`
@@ -329,7 +329,7 @@ private theorem harnack_le {h : ℂ → ℝ} {z₀ w : ℂ} {R : ℝ} (hR : 0 < 
   have hrep : Real.circleAverage (poissonKernel z₀ w • h) z₀ R = h w :=
     hh.circleAverage_poissonKernel_smul hw
   have hmv : Real.circleAverage h z₀ R = h z₀ := by
-    apply HarmonicOnNhd.circleAverage_eq
+    apply InnerProductSpace.HarmonicOnNhd.circleAverage_eq
     rwa [abs_of_pos hR]
   have hint1 : CircleIntegrable (poissonKernel z₀ w • h) z₀ R :=
     (hker.smul hcont).circleIntegrable hR.le
@@ -593,7 +593,7 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
   have hPSbdd : ∀ y ∈ s, BddAbove ((fun g ↦ g y) '' 𝓕) := fun y hy ↦
     ⟨1, by rintro v ⟨g', hg', rfl⟩; exact (h𝓕.bounds g' hg' y hy).2⟩
   -- a dense sequence in the disk
-  haveI hnB : Nonempty (ball c r) := ⟨⟨c, mem_ball_self hr⟩⟩
+  have hnB : Nonempty (ball c r) := ⟨⟨c, mem_ball_self hr⟩⟩
   set zs : ℕ → ℂ := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j : ℂ) with hzs_def
   have hzs_mem : ∀ j, zs j ∈ ball c r := fun j ↦ (TopologicalSpace.denseSeq (ball c r) j).2
   have hzs_dense : ∀ w ∈ ball c r, w ∈ closure (range zs) := by
@@ -700,7 +700,7 @@ theorem IsPerronFamily.surfaceHarmonicOn_perronSup {𝓕 : Set (X → ℝ)} {s :
           (𝓝[range zs] w)
           (𝓝 (⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w))) :=
         ((hW₂harm w hw).1.continuousAt).continuousWithinAt
-      haveI : (𝓝[range zs] w).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hzs_dense w hw)
+      have : (𝓝[range zs] w).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hzs_dense w hw)
       have hcongr :
           (fun w' ↦ ⨆ n, perronSeq e c r (fun n' y ↦ Max.max (g y) (cseq n' y)) n (e.symm w'))
           =ᶠ[𝓝[range zs] w] fun w' ↦ ⨆ n, perronSeq e c r cseq n (e.symm w') := by

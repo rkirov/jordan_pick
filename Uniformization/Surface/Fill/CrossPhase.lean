@@ -226,7 +226,7 @@ theorem exists_component_collar_substrate_pos [T2Space X] {V : Set X} (hVo : IsO
       IsCompact (closure N) ∧ closure N ⊆ M ∧
       closure N ∩ frontier V = connectedComponentIn (frontier V) x₀ ∧
       (∀ x ∈ frontier N, f x ≠ c) := by
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
   set C := connectedComponentIn (frontier V) x₀ with hCeq
   obtain ⟨M, hMopen, hfrM, hfcont, hphantom, hpos⟩ :=
     exists_phantom_free_pos_nbhd hVo hVcl hdich hfc hchart

@@ -32,7 +32,7 @@ repository:
   role: "substantive-development"
   # The substantive Lean development lives in this repository: JordanPick/ and Rado/
   # are the libraries, and submission/<entry>/ are thin Challenge/Solution workspaces
-  # that re-expose their results to Comparator against the same Mathlib pin.
+  # that re-expose their results to Comparator against the same toolchain and Mathlib pin.
 
 classification:
   # Classifies the mathematics, not the use of Lean or of AI. Two arXiv codes are
@@ -251,7 +251,7 @@ status:
     second countable). The supporting repository additionally proves the polygonal Jordan curve
     theorem, the 2-dimensional Brouwer fixed point theorem, the Poincaré-Volterra lemma, the
     Dirichlet problem on a disk, and Perron's principle on a Riemann surface. None of these is
-    present in Mathlib at the pinned revision 905b9581 — checked by searching that checkout, and
+    present in Mathlib at the pinned revision db584cd6 — checked by searching that checkout, and
     the reason each was posed as a lean-eval problem. No novelty is claimed for any of the
     theorems themselves, all of which are classical, nor for formalizing them in general: Pick's
     theorem has been formalized in HOL Light, Isabelle/HOL, and partially in Lean, and the Jordan
@@ -259,8 +259,13 @@ status:
     not aware of a prior formalization of Radó's theorem in any system, and of no prior
     sorry-free Lean proof of Pick's theorem or the Jordan curve theorem; that is the limit of
     what our search established. All three submitted statements are proved in their exact
-    lean-eval harness form against the harness's pinned toolchain (Lean v4.32.2, Mathlib
-    905b9581). The repository snapshot is licensed Apache-2.0 (root LICENSE).
+    lean-eval problem form against Lean v4.33.0 and Mathlib db584cd6 (Mathlib's v4.33.0
+    release tag). The three statements originate as lean-eval problems and were first proved
+    against that harness's own pin (Lean v4.32.2, Mathlib 905b9581); the development has since
+    been ported forward and this repository no longer tracks the harness's pin. The statements
+    themselves are unchanged — they are expressed in Mathlib vocabulary and are reproduced
+    verbatim in the Challenge modules. The repository snapshot is licensed Apache-2.0 (root
+    LICENSE).
   sorry_count: 0                        # Scope: the three submitted results and the JordanPick/
                                         # and Rado/ libraries they are built from (39 files,
                                         # ~33.5k lines). The in-progress Uniformization/
@@ -326,8 +331,10 @@ status:
       comparator_config: "submission/rado_riemannSurface/config.json"
       literature_dependencies: []
       note: >
-        The lean-eval `rado_riemannSurface` statement, proved verbatim; passed the lean-eval
-        comparator on 2026-07-10. Bridged to Rado.secondCountableTopology_of_riemannSurface in
+        The lean-eval `rado_riemannSurface` statement, proved verbatim. An earlier revision of
+        this development passed the lean-eval comparator on 2026-07-10; that run was against the
+        then-current pin (Lean v4.32.2, Mathlib 905b9581), not the commit submitted here.
+        Bridged to Rado.secondCountableTopology_of_riemannSurface in
         Rado/Surface/Assembly.lean. Identical in text to the library theorem
         `rado_riemannSurface` in Rado/Main.lean.
 
@@ -343,7 +350,7 @@ status:
         The library form of Pick's theorem, stated for a positively-oriented simple
         LatticePolygon with area the Lebesgue measure of the winding interior. The submitted
         `pick` needs no orientation hypothesis; the bridge supplies it.
-    - declaration: "Pick.LatticePolygon.compl_boundary_atMost_two"
+    - declaration: "Pick.compl_boundary_atMost_two"
       file: "JordanPick/PicksTheorem/Pick.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -495,10 +502,14 @@ review:
   notes: >
     Verification here is by Lean's kernel, not by a human or by peer review. Specifically:
     `#print axioms` on every main result reports exactly [propext, Classical.choice, Quot.sound]
-    with no sorryAx; the full `lake build` is green with zero warnings; and a repository-wide
-    sweep confirms no `sorry` outside Uniformization/. The rado_riemannSurface submission also
-    passed the lean-eval comparator on 2026-07-10, which independently re-checks the axiom
-    surface against the permitted set. What none of this establishes is that a mathematician has
+    with no sorryAx; `lake build` of the submitted libraries (JordanPick/ and Rado/) is green and
+    warning-free; and a repository-wide sweep confirms no `sorry` outside Uniformization/. That
+    unfinished directory is not warning-free — Mathlib v4.33 added style and unused-variable
+    linters that fire there — but it is not submitted and nothing above depends on it. Every commit additionally runs the
+    comparator over all three workspaces in CI with the independent NanoDa kernel forced on, so
+    each Solution is replayed by two kernels rather than one. An earlier revision of the Radó
+    development also passed the lean-eval comparator on 2026-07-10, under that harness's pin
+    (Lean v4.32.2, Mathlib 905b9581) rather than this commit's. What none of this establishes is that a mathematician has
     read the proofs: no expert review has taken place, and the informal accounts in this file and
     in README.md were written by the same process that produced the Lean. Expert review is
     welcome. Junyan Xu, who submitted the rado_riemannSurface eval problem, has expressed
@@ -560,7 +571,8 @@ alignment:
       note: >
         The harness statement verbatim: a connected T2 `ChartedSpace C` satisfying
         `IsManifold (modelWithCornersSelf C C) 1` has `SecondCountableTopology`, stated in pure
-        Mathlib terms. Passed the lean-eval comparator on 2026-07-10. Bridged to
+        Mathlib terms. An earlier revision passed the lean-eval comparator on 2026-07-10, under
+        the then-current Lean v4.32.2 / Mathlib 905b9581 pin rather than this commit's. Bridged to
         Rado.secondCountableTopology_of_riemannSurface (Rado/Surface/Assembly.lean); the proof
         route is Perron on a two-disk configuration -> an étale space of exact
         harmonic-conjugate germs -> Poincaré-Volterra -> descent (route A', Rado/PLAN.md).
@@ -573,7 +585,7 @@ alignment:
         area = I + B/2 - 1 for a positively-oriented simple LatticePolygon, with area the
         Lebesgue measure of the winding interior.
     - source: "Polygonal Jordan curve theorem"
-      lean: "Pick.LatticePolygon.compl_boundary_atMost_two"
+      lean: "Pick.compl_boundary_atMost_two"
       module: "JordanPick/PicksTheorem/Pick.lean"
       status: "proved"
       note: >
@@ -616,7 +628,7 @@ alignment:
         mistaken for a completed result.
 
 acknowledgements: >
-  Built on Mathlib (Lean 4, pin 905b95818eb32af7874a58b427f50c1711a5e96c) and released under
+  Built on Mathlib (Lean 4, pin db584cd6d46c92f209a44c0f1c829460d327499d) and released under
   Apache-2.0. The count side of Pick's theorem follows the discrete-angle-weight device of
   Michael Eisermann (arXiv:2603.23095); the continuous Jordan curve theorem follows Maehara's
   Brouwer-based proof; the ear-clipping reduction rests on Meisters' two-ears theorem; and the

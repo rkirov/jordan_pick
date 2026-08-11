@@ -849,7 +849,7 @@ private theorem exists_unbounded_subcomponent {W : Type*} [TopologicalSpace W]
       ¬ B (connectedComponentIn (Kex (n + 1))ᶜ b) := by
   classical
   set C := connectedComponentIn (Kex n)ᶜ a with hCdef
-  haveI : Nonempty W := ⟨a⟩
+  have : Nonempty W := ⟨a⟩
   have hFopen : IsOpen ((Kex (n + 1))ᶜ) := (Kex.isCompact (n + 1)).isClosed.isOpen_compl
   by_contra hcon
   push Not at hcon
@@ -1781,18 +1781,18 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     {z₀ : X} (hz₀ : z₀ ∈ connectedComponentIn (closure V)ᶜ x₀) :
     Nonempty (SimpleRayData (connectedComponentIn (closure V)ᶜ x₀) z₀) := by
   classical
-  haveI : LocallyCompactSpace X := Rado.locallyCompactSpace
-  haveI : LocallyConnectedSpace X := Rado.locallyConnectedSpace
-  haveI : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
+  have : LocallyCompactSpace X := Rado.locallyCompactSpace
+  have : LocallyConnectedSpace X := Rado.locallyConnectedSpace
+  have : SecondCountableTopology X := Rado.secondCountableTopology_of_riemannSurface
   set Z := connectedComponentIn (closure V)ᶜ x₀ with hZdef
   have hZopen : IsOpen Z := isClosed_closure.isOpen_compl.connectedComponentIn
   have hZconn : IsConnected Z := ⟨⟨z₀, hz₀⟩, isPreconnected_connectedComponentIn⟩
   -- subspace instances on `↥Z`
-  haveI hWlc : LocallyCompactSpace ↥Z := hZopen.locallyCompactSpace
-  haveI hWsc : SecondCountableTopology ↥Z := inferInstance
-  haveI hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
-  haveI hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
-  haveI hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
+  have hWlc : LocallyCompactSpace ↥Z := hZopen.locallyCompactSpace
+  have hWsc : SecondCountableTopology ↥Z := inferInstance
+  have hWsigma : SigmaCompactSpace ↥Z := sigmaCompactSpace_of_locallyCompact_secondCountable
+  have hWconn : ConnectedSpace ↥Z := Subtype.connectedSpace hZconn
+  have hWlconn : LocallyConnectedSpace ↥Z := hZopen.locallyConnectedSpace
   have hWncs : ¬ CompactSpace ↥Z := fun hc => hZnc (isCompact_iff_compactSpace.mpr hc)
   -- compact exhaustion of `↥Z` with `Kex 0 = ∅`
   set Kex : CompactExhaustion ↥Z := (default : CompactExhaustion ↥Z).shiftr with hKexdef
@@ -1958,7 +1958,7 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
     intro n h hdisj
     have hstep : Frozen n (j n + 1) := by
       intro t ht
-      rw [List.take_succ, List.mem_append] at ht
+      rw [List.take_add_one, List.mem_append] at ht
       rcases ht with ht' | ht'
       · exact hj_spec n t ht'
       · have hte : t = (Acc n).L[j n] := by
@@ -2060,7 +2060,7 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
   have hjunbdd : ∀ k, ∃ n, k ≤ j n := by
     intro k
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨N, hN⟩ := hjconst k hcon
     set M := max N Nz with hMdef
     have hMN : N ≤ M := le_max_left _ _
@@ -2087,7 +2087,7 @@ theorem nonempty_simpleRayData [T2Space X] [ConnectedSpace X] {V : Set X} {x₀ 
       have hpin₀ := hpinned N m₀ (hMN.trans hm₀M) (hjM m₀ hm₀M) hlen₀
       exact hM' m ((le_max_right _ _).trans hm)
         (Set.mem_singleton_iff.mpr (hendeq m m₀ (hpin.trans hpin₀.symm)))
-    · push_neg at hfull
+    · push Not at hfull
       obtain ⟨M₀, hM₀⟩ := hfull
       set M₁ := max M M₀ with hM₁def
       have hM₁ : M ≤ M₁ := le_max_left _ _

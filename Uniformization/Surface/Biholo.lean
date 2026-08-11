@@ -118,12 +118,12 @@ theorem exists_biholo_ball [T2Space X]
     rw [Metric.mem_ball, dist_zero_right, RCLike.norm_two] at h2
     norm_num at h2
   -- Step 5: `IsSimplyConnected (φ₀ '' V)` via the homeomorphism `↥V ≃ₜ ↥(φ₀ '' V)`.
-  have hcont_g : Continuous (V.restrict φ₀) := hφ₀holo.continuousOn.restrict
-  have hg_open : IsOpenMap (V.restrict φ₀) := by
+  have hcont_g : Continuous (V.domRestrict φ₀) := hφ₀holo.continuousOn.domRestrict
+  have hg_open : IsOpenMap (V.domRestrict φ₀) := by
     intro W hW
     have hsubW : Subtype.val '' W ⊆ V := by rintro _ ⟨a, -, rfl⟩; exact a.2
     have hopenSub : IsOpen (Subtype.val '' W) := hVo.isOpenMap_subtype_val _ hW
-    have heq : V.restrict φ₀ '' W = φ₀ '' (Subtype.val '' W) := Set.image_comp φ₀ Subtype.val W
+    have heq : V.domRestrict φ₀ '' W = φ₀ '' (Subtype.val '' W) := Set.image_comp φ₀ Subtype.val W
     rw [heq]; exact hopenW hopenSub hsubW
   let p : ↥V → ↥(φ₀ '' V) := fun x ↦ ⟨φ₀ x.1, mem_image_of_mem φ₀ x.2⟩
   have hp_cont : Continuous p := hcont_g.subtype_mk (fun x ↦ mem_image_of_mem φ₀ x.2)

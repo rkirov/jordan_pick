@@ -250,21 +250,21 @@ theorem isPathConnected_ball_diff_two_disks :
     mem_ball.mpr (dist_lt_of_sq_lt (by norm_num) (by norm_num))
   -- memberships of the witness points in the pieces
   have hm5_2I : (2 * I : ℂ) ∈ ball (0 : ℂ) 8 ∩ ({z : ℂ | -3 < z.re} ∩ {z : ℂ | z.re < 3}) :=
-    ⟨hb2I, by norm_num [mem_setOf_eq], by norm_num [mem_setOf_eq]⟩
+    ⟨hb2I, by norm_num [mem_ofPred_eq], by norm_num [mem_ofPred_eq]⟩
   have hm5_m2I : (-(2 * I) : ℂ) ∈ ball (0 : ℂ) 8 ∩ ({z : ℂ | -3 < z.re} ∩ {z : ℂ | z.re < 3}) :=
-    ⟨hbm2I, by norm_num [mem_setOf_eq], by norm_num [mem_setOf_eq]⟩
+    ⟨hbm2I, by norm_num [mem_ofPred_eq], by norm_num [mem_ofPred_eq]⟩
   have hm1_2I : (2 * I : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | 1 < z.im} :=
-    ⟨hb2I, by norm_num [mem_setOf_eq]⟩
+    ⟨hb2I, by norm_num [mem_ofPred_eq]⟩
   have hm1_42I : (4 + 2 * I : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | 1 < z.im} :=
-    ⟨hb42I, by norm_num [mem_setOf_eq]⟩
+    ⟨hb42I, by norm_num [mem_ofPred_eq]⟩
   have hm1_m42I : (-4 + 2 * I : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | 1 < z.im} :=
-    ⟨hbm42I, by norm_num [mem_setOf_eq]⟩
+    ⟨hbm42I, by norm_num [mem_ofPred_eq]⟩
   have hm2_m2I : (-(2 * I) : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | z.im < -1} :=
-    ⟨hbm2I, by norm_num [mem_setOf_eq]⟩
+    ⟨hbm2I, by norm_num [mem_ofPred_eq]⟩
   have hm3_m6 : (-6 : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | z.re < -5} :=
-    ⟨hbm6, by norm_num [mem_setOf_eq]⟩
+    ⟨hbm6, by norm_num [mem_ofPred_eq]⟩
   have hm4_6 : (6 : ℂ) ∈ ball (0 : ℂ) 8 ∩ {z : ℂ | 5 < z.re} :=
-    ⟨hb6, by norm_num [mem_setOf_eq]⟩
+    ⟨hb6, by norm_num [mem_ofPred_eq]⟩
   have hmAp_42I : (4 + 2 * I : ℂ) ∈ {z : ℂ | 1 < dist z (4 : ℂ) ∧ dist z (4 : ℂ) < 3} :=
     ⟨lt_dist_of_sq_lt (by norm_num) (by norm_num),
       dist_lt_of_sq_lt (by norm_num) (by norm_num)⟩

@@ -160,7 +160,7 @@ theorem crossing (hbr : BrouwerFPT) {a b c d : ℝ} (_hab : a ≤ b) (_hcd : c �
     exact ⟨mem_Icc.2 (abs_le.1 hb0), mem_Icc.2 (abs_le.1 hb1)⟩
   -- Package as a self-map of `Q` and apply Brouwer.
   let f : C(Q, Q) := ⟨fun p => ⟨F p.1, hmaps p.2⟩, by
-    apply Continuous.subtype_mk; exact hFcont.restrict⟩
+    apply Continuous.subtype_mk; exact hFcont.domRestrict⟩
   obtain ⟨x, hx⟩ := hbr Q hconv hcomp hne0 f
   set p₀ : Plane := (x : Plane) with hp0def
   have hp0Q : p₀ ∈ Q := x.2
@@ -244,7 +244,7 @@ theorem isConnected_compl_closedBall {R : ℝ} (hR : 0 ≤ R) :
   have hset : {x : Plane | R < ‖x‖}
       = (fun p : Plane × ℝ => p.2 • p.1) '' ((sphere (0 : Plane) 1) ×ˢ (Ioi R)) := by
     ext x
-    simp only [mem_setOf_eq, mem_image, mem_prod, mem_Ioi, Prod.exists]
+    simp only [mem_ofPred_eq, mem_image, mem_prod, mem_Ioi, Prod.exists]
     constructor
     · intro hx
       have hxpos : 0 < ‖x‖ := lt_of_le_of_lt hR hx
@@ -401,14 +401,14 @@ theorem arc_not_separates (hbr : BrouwerFPT) {A : Set Plane}
     (φ : A ≃ₜ unitInterval) : IsConnected Aᶜ := by
   classical
   -- `A` is compact, hence closed, bounded, and `Aᶜ` is open.
-  haveI : CompactSpace ↥unitInterval := inferInstance
-  haveI hcsA : CompactSpace ↥A := φ.symm.compactSpace
+  have : CompactSpace ↥unitInterval := inferInstance
+  have hcsA : CompactSpace ↥A := φ.symm.compactSpace
   have hAcpt : IsCompact A := isCompact_iff_compactSpace.mpr hcsA
   have hAcl : IsClosed A := hAcpt.isClosed
   have hAbd : IsBounded A := hAcpt.isBounded
   have hAopen : IsOpen Aᶜ := hAcl.isOpen_compl
   -- Tietze retraction `ρ : ℝ² → ℝ²`, `range ρ ⊆ A`, `ρ = id` on `A`.
-  haveI : TietzeExtension ↥A := TietzeExtension.of_homeo φ
+  have : TietzeExtension ↥A := TietzeExtension.of_homeo φ
   obtain ⟨g, hg⟩ := ContinuousMap.exists_restrict_eq hAcl (ContinuousMap.id ↥A)
   set ρ : Plane → Plane := fun x => (g x : Plane) with hρdef
   have hρcont : Continuous ρ := continuous_subtype_val.comp g.continuous
@@ -639,9 +639,9 @@ theorem component_boundary_eq (hbr : BrouwerFPT)
     JordanCurve.Arcs.exists_proper_arc hCclosed hCne
   set A : Set Plane := r '' A₀ with hAdef
   -- Compactness of the sphere subtype ⇒ of `A₀`, giving `A ≃ₜ unitInterval`.
-  haveI hcsSphere : CompactSpace (sphere (0 : Plane) 1) :=
+  have hcsSphere : CompactSpace (sphere (0 : Plane) 1) :=
     JordanCurve.Arcs.circleHomeoSphere.compactSpace
-  haveI hcsA0 : CompactSpace ↥A₀ := isCompact_iff_compactSpace.mp hA0closed.isCompact
+  have hcsA0 : CompactSpace ↥A₀ := isCompact_iff_compactSpace.mp hA0closed.isCompact
   have eImg : (↥A₀) ≃ₜ (↥A) :=
     Continuous.homeoOfEquivCompactToT2 (f := Equiv.Set.image r A₀ hinj)
       (continuous_induced_rng.2 (hcont.comp continuous_subtype_val))
@@ -851,7 +851,7 @@ theorem normalized_subset_rectangle
   have eb1 : (!₂[(1:ℝ), 0] : Plane) 1 = 0 := by simp
   rw [ea0, ea1] at hza2
   rw [eb0, eb1] at hzb2
-  simp only [mem_setOf_eq, mem_Icc]
+  simp only [mem_ofPred_eq, mem_Icc]
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   · nlinarith [sq_nonneg (z 1)]
   · nlinarith [sq_nonneg (z 1)]
@@ -895,7 +895,7 @@ theorem segment_meets_curve (hbr : BrouwerFPT)
   -- the curve is path-connected (continuous image of the path-connected circle)
   have hsp : IsPathConnected (sphere (0:Plane) 1) :=
     isPathConnected_sphere one_lt_rank_plane 0 (by norm_num)
-  haveI : PathConnectedSpace ↥(sphere (0:Plane) 1) :=
+  have : PathConnectedSpace ↥(sphere (0:Plane) 1) :=
     isPathConnected_iff_pathConnectedSpace.mp hsp
   have h1 : IsPathConnected (univ : Set ↥(sphere (0:Plane) 1)) :=
     pathConnectedSpace_iff_univ.mp ‹_›
@@ -965,7 +965,7 @@ theorem exists_ymax_on_axis (hbr : BrouwerFPT)
 hence a (closed) embedding, so `↥A ≃ₜ ↥(range …) = ↥((↑) '' A)`. -/
 private lemma planar_arc_homeo {K : Set Plane} {A : Set ↥K}
     (e : A ≃ₜ unitInterval) : Nonempty (((↑) '' A : Set Plane) ≃ₜ unitInterval) := by
-  haveI : CompactSpace ↥A := e.symm.compactSpace
+  have : CompactSpace ↥A := e.symm.compactSpace
   let k : ↥A → Plane := fun a => ((a : ↥K) : Plane)
   have hkc : Continuous k := continuous_subtype_val.comp continuous_subtype_val
   have hki : Injective k := Subtype.coe_injective.comp Subtype.coe_injective
@@ -1051,7 +1051,7 @@ continuous path on `[-1,1]` whose image is the union of the pieces. -/
 /-- An arc `J ⊆ Plane` homeomorphic to `unitInterval` is path-connected. -/
 theorem arc_isPathConnected {J : Set Plane} (e : ↥J ≃ₜ unitInterval) :
     IsPathConnected J := by
-  haveI : PathConnectedSpace unitInterval :=
+  have : PathConnectedSpace unitInterval :=
     isPathConnected_iff_pathConnectedSpace.mp
       ((convex_Icc (0:ℝ) 1).isPathConnected (Set.nonempty_Icc.mpr (by norm_num)))
   have h1 : IsPathConnected (univ : Set unitInterval) := isPathConnected_univ
@@ -1447,7 +1447,7 @@ theorem exists_first_exit {α : ℝ → Plane} {O C : Set Plane}
   -- `S` is closed: it is `Icc 0 1 ∩ α⁻¹(Oᶜ)`
   have hScl : IsClosed S := by
     have hEq : S = Icc (0:ℝ) 1 ∩ α ⁻¹' Oᶜ := by
-      ext t; simp only [hSdef, mem_setOf_eq, mem_inter_iff, mem_preimage, mem_compl_iff]
+      ext t; simp only [hSdef, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_compl_iff]
     rw [hEq]; exact hcont.preimage_isClosed_of_isClosed isClosed_Icc hO.isClosed_compl
   have hSne : S.Nonempty :=
     ⟨1, ⟨by norm_num, fun h => h1 (hOC h)⟩⟩
@@ -1490,7 +1490,7 @@ theorem isPathConnected_vertSeg (c : ℝ) {T : Set ℝ} (hT : IsPathConnected T)
   have himg := hT.image hfcont
   have hEq : (fun y : ℝ => (!₂[c, y] : Plane)) '' T = {p : Plane | p 0 = c ∧ p 1 ∈ T} := by
     ext p
-    simp only [mem_image, mem_setOf_eq]
+    simp only [mem_image, mem_ofPred_eq]
     constructor
     · rintro ⟨y, hy, rfl⟩; exact ⟨by simp, by simpa using hy⟩
     · rintro ⟨h0, h1⟩
@@ -1507,7 +1507,7 @@ theorem isPathConnected_horizSeg (c : ℝ) {T : Set ℝ} (hT : IsPathConnected T
   have himg := hT.image hfcont
   have hEq : (fun x : ℝ => (!₂[x, c] : Plane)) '' T = {p : Plane | p 1 = c ∧ p 0 ∈ T} := by
     ext p
-    simp only [mem_image, mem_setOf_eq]
+    simp only [mem_image, mem_ofPred_eq]
     constructor
     · rintro ⟨y, hy, rfl⟩; exact ⟨by simp, by simpa using hy⟩
     · rintro ⟨h0, h1⟩
@@ -1694,7 +1694,7 @@ private lemma isOpen_rectO :
     IsOpen {w : Plane | w 0 ∈ Ioo (-1:ℝ) 1 ∧ w 1 ∈ Ioo (-2:ℝ) 2} := by
   have hEq : {w : Plane | w 0 ∈ Ioo (-1:ℝ) 1 ∧ w 1 ∈ Ioo (-2:ℝ) 2}
       = (fun w : Plane => w 0) ⁻¹' Ioo (-1:ℝ) 1 ∩ (fun w : Plane => w 1) ⁻¹' Ioo (-2:ℝ) 2 := by
-    ext w; simp only [mem_setOf_eq, mem_inter_iff, mem_preimage]
+    ext w; simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
   rw [hEq]
   exact (isOpen_Ioo.preimage (by fun_prop)).inter (isOpen_Ioo.preimage (by fun_prop))
 
@@ -1703,7 +1703,7 @@ private lemma isClosed_rectE :
     IsClosed {w : Plane | w 0 ∈ Icc (-1:ℝ) 1 ∧ w 1 ∈ Icc (-2:ℝ) 2} := by
   have hEq : {w : Plane | w 0 ∈ Icc (-1:ℝ) 1 ∧ w 1 ∈ Icc (-2:ℝ) 2}
       = (fun w : Plane => w 0) ⁻¹' Icc (-1:ℝ) 1 ∩ (fun w : Plane => w 1) ⁻¹' Icc (-2:ℝ) 2 := by
-    ext w; simp only [mem_setOf_eq, mem_inter_iff, mem_preimage]
+    ext w; simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
   rw [hEq]
   exact (isClosed_Icc.preimage (by fun_prop)).inter (isClosed_Icc.preimage (by fun_prop))
 
@@ -2132,17 +2132,17 @@ private lemma isPreconnected_rect_compl :
     (convex_Ioi _).is_linear_preimage (EuclideanSpace.proj (1:Fin 2)).isLinear
   -- membership witnesses at the four "corners"
   have mAD_A : (!₂[(-2:ℝ), 3] : Plane) ∈ {v : Plane | v 0 ∈ Iio (-1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Iio]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Iio]; norm_num
   have mAD_D : (!₂[(-2:ℝ), 3] : Plane) ∈ {v : Plane | v 1 ∈ Ioi (2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Ioi]; norm_num
   have mB_D : (!₂[(2:ℝ), 3] : Plane) ∈ {v : Plane | v 1 ∈ Ioi (2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Ioi]; norm_num
   have mB_B : (!₂[(2:ℝ), 3] : Plane) ∈ {v : Plane | v 0 ∈ Ioi (1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Ioi]; norm_num
   have mC_B : (!₂[(2:ℝ), -3] : Plane) ∈ {v : Plane | v 0 ∈ Ioi (1:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Ioi]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Ioi]; norm_num
   have mC_C : (!₂[(2:ℝ), -3] : Plane) ∈ {v : Plane | v 1 ∈ Iio (-2:ℝ)} := by
-    simp only [Set.mem_setOf_eq, mem_Iio]; norm_num
+    simp only [Set.mem_ofPred_eq, mem_Iio]; norm_num
   have hAD : IsPreconnected ({v : Plane | v 0 ∈ Iio (-1:ℝ)} ∪ {v : Plane | v 1 ∈ Ioi (2:ℝ)}) :=
     cA.isPreconnected.union _ mAD_A mAD_D cD.isPreconnected
   have hADB : IsPreconnected (({v : Plane | v 0 ∈ Iio (-1:ℝ)} ∪ {v : Plane | v 1 ∈ Ioi (2:ℝ)})
@@ -2155,7 +2155,7 @@ private lemma isPreconnected_rect_compl :
       = ((({v : Plane | v 0 ∈ Iio (-1:ℝ)} ∪ {v : Plane | v 1 ∈ Ioi (2:ℝ)})
       ∪ {v : Plane | v 0 ∈ Ioi (1:ℝ)}) ∪ {v : Plane | v 1 ∈ Iio (-2:ℝ)}) := by
     ext v
-    simp only [mem_setOf_eq, mem_union, mem_Icc, mem_Iio, mem_Ioi, not_and_or, not_le]
+    simp only [mem_ofPred_eq, mem_union, mem_Icc, mem_Iio, mem_Ioi, not_and_or, not_le]
     tauto
   rw [hEq]; exact hADBC
 
@@ -2375,7 +2375,7 @@ theorem step_B_normalized (hbr : BrouwerFPT)
     have hWE : W ⊆ E := by
       intro v hvW
       by_contra hvE
-      rw [hEdef, Set.mem_setOf_eq] at hvE
+      rw [hEdef, Set.mem_ofPred_eq] at hvE
       have hvEc : v ∈ {u : Plane | ¬(u 0 ∈ Icc (-1:ℝ) 1 ∧ u 1 ∈ Icc (-2:ℝ) 2)} := hvE
       have hEcc : {u : Plane | ¬(u 0 ∈ Icc (-1:ℝ) 1 ∧ u 1 ∈ Icc (-2:ℝ) 2)} ⊆ (range r)ᶜ :=
         fun u hu hur => hu (hErect hur)

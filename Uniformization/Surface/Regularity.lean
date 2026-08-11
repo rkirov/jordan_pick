@@ -335,7 +335,7 @@ private theorem dirichlet_upper [T2Space X] {W : Set X} (hWo : IsOpen W)
           have hwN : e.symm w ∈ N := hδball hdw
           have hφlt : φ (e.symm w) < φ ξ + ε / 2 := hNsub ⟨hwN, hsymmFr⟩
           linarith
-        · push_neg at hnear
+        · push Not at hnear
           have hφ1 : φ (e.symm w) ≤ 1 := (hφ01 (e.symm w) hsymmFr).2
           have hbar1 : (1 : ℝ) ≤ Cbar w := by
             have hSle : S ≤ ‖w - c'‖ := by
@@ -447,7 +447,7 @@ private theorem dirichlet_lower [T2Space X] {W : Set X} (hWo : IsOpen W)
   have hnorm_cl : ∀ x ∈ closure W, x ∈ e.source → r ≤ ‖e x - c‖ := by
     intro x hx hxe
     have hcl : x ∈ closure (e.source ∩ W) := e.open_source.inter_closure ⟨hxe, hx⟩
-    haveI : (𝓝[e.source ∩ W] x).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hcl
+    have : (𝓝[e.source ∩ W] x).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hcl
     have hcont : ContinuousWithinAt (fun y ↦ ‖e y - c‖) (e.source ∩ W) x :=
       (((e.continuousAt hxe).sub continuousAt_const).norm).continuousWithinAt
     refine ge_of_tendsto hcont ?_
@@ -648,7 +648,7 @@ private theorem dirichlet_lower [T2Space X] {W : Set X} (hWo : IsOpen W)
         rw [e.left_inv hζe] at hζN
         have : φ ξ - ε / 2 < φ ζ := hNsub ⟨hζN, hζ⟩
         exact le_trans (hHle ζ hζcl hζe) (by linarith)
-      · push_neg at hnear
+      · push Not at hnear
         have hSle : S ≤ ‖e ζ - c'‖ := by
           have h1 : S ^ 2 ≤ ‖e ζ - c'‖ ^ 2 := by
             rw [hS_def, Real.sq_sqrt (by positivity)]
