@@ -31,12 +31,12 @@ jobs:
       # most exposed to Mathlib churn (Filter/𝓝, deriv/fderiv, analyticity,
       # manifolds) and the vendored RMT port.
       #
-      # This stays green: the three open sorries in Uniformization/ emit
+      # This stays green: the two open sorries in Uniformization/ emit
       # warnings, not errors, and lean-action does not pass `--wfail`.
       - name: Build Uniformization
         run: lake build Uniformization
 
-      # Guards the claim the README makes. The three open sorries all live in
+      # Guards the claim the README makes. The two open sorries all live in
       # Uniformization/ and are reachable only through `uniformization_key` /
       # `uniformization`, which are deliberately NOT audited here — they do
       # depend on sorryAx today.

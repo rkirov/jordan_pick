@@ -17,16 +17,6 @@ open LatticePolygon
 @[simp] lemma toReal_fst (p : Pt) : (toReal p).1 = (p.1 : ℝ) := rfl
 @[simp] lemma toReal_snd (p : Pt) : (toReal p).2 = (p.2 : ℝ) := rfl
 
-/-- How `cross (b−a) (q−a)` shifts under a unit horizontal step of `q`: it
-changes by `−(b.2−a.2)`. This governs when `edgeWind` flips as the test point
-moves horizontally — the basis of the integer winding's ray-casting. -/
-lemma cross_hshift (a b q : ℝ × ℝ) :
-    cross (b - a) (q + (1, 0) - a) = cross (b - a) (q - a) - (b.2 - a.2) := by
-  unfold cross
-  simp only [Prod.fst_sub, Prod.snd_sub, Prod.fst_add, Prod.snd_add]
-  ring
-
-
 /-- An edge contributes nothing to the winding around `q` if `q` is (weakly)
 above both its endpoints: the upward ray cannot meet it. -/
 lemma edgeWind_eq_zero_of_above (a b q : ℝ × ℝ) (ha : a.2 ≤ q.2) (hb : b.2 ≤ q.2) :
@@ -86,16 +76,6 @@ lemma winding_hshift (P : LatticePolygon) (q : ℝ × ℝ) :
               - edgeWind (toReal (P.vert i)) (toReal (P.vert (i + 1))) q) := by
   unfold LatticePolygon.winding
   rw [← Finset.sum_sub_distrib]
-
-/-- Local constancy fragment: the winding is unchanged by a horizontal step when
-no edge spans `q`'s height (every edge contributes `0` to the step). -/
-lemma winding_hshift_eq_of_no_span (P : LatticePolygon) (q : ℝ × ℝ)
-    (h : ∀ i, (q.2 < (toReal (P.vert i)).2 ∧ q.2 < (toReal (P.vert (i + 1))).2)
-         ∨ ((toReal (P.vert i)).2 ≤ q.2 ∧ (toReal (P.vert (i + 1))).2 ≤ q.2)) :
-    P.winding (q + (1, 0)) = P.winding q := by
-  have hz := winding_hshift P q
-  rw [Finset.sum_eq_zero fun i _ => edgeWind_hshift_eq_zero_of_out _ _ q (h i)] at hz
-  exact sub_eq_zero.mp hz
 
 /-- An edge contributes nothing to the winding around `q` if `q` is strictly to
 the right of both endpoints: the rightward ray starts past the whole edge.
@@ -226,22 +206,6 @@ lemma cross_neg_of_left (a b q : ℝ × ℝ) (h1 : b.2 ≤ q.2) (h2 : q.2 < a.2)
   nlinarith [mul_nonneg (show (0:ℝ) ≤ q.2 - b.2 by linarith) (show (0:ℝ) ≤ a.1 - q.1 by linarith),
     mul_pos (show (0:ℝ) < a.2 - q.2 by linarith) (show (0:ℝ) < b.1 - q.1 by linarith)]
 
-/-- A point right of an upward edge (within its `y`-range) has `cross < 0`. -/
-lemma cross_neg_of_right (a b q : ℝ × ℝ) (h1 : a.2 ≤ q.2) (h2 : q.2 < b.2)
-    (ha : a.1 < q.1) (hb : b.1 < q.1) : cross (b - a) (q - a) < 0 := by
-  unfold cross
-  simp only [Prod.fst_sub, Prod.snd_sub]
-  nlinarith [mul_pos (show (0:ℝ) < b.2 - q.2 by linarith) (show (0:ℝ) < q.1 - a.1 by linarith),
-    mul_nonneg (show (0:ℝ) ≤ q.2 - a.2 by linarith) (show (0:ℝ) ≤ q.1 - b.1 by linarith)]
-
-/-- A point right of a downward edge (within its `y`-range) has `cross > 0`. -/
-lemma cross_pos_of_right (a b q : ℝ × ℝ) (h1 : b.2 ≤ q.2) (h2 : q.2 < a.2)
-    (ha : a.1 < q.1) (hb : b.1 < q.1) : 0 < cross (b - a) (q - a) := by
-  unfold cross
-  simp only [Prod.fst_sub, Prod.snd_sub]
-  nlinarith [mul_nonneg (show (0:ℝ) ≤ q.2 - b.2 by linarith) (show (0:ℝ) ≤ q.1 - a.1 by linarith),
-    mul_pos (show (0:ℝ) < a.2 - q.2 by linarith) (show (0:ℝ) < q.1 - b.1 by linarith)]
-
 /-- `edgeWind = 1` exactly characterizes the upward-crossing condition. -/
 lemma edgeWind_eq_one_iff (a b q : ℝ × ℝ) :
     edgeWind a b q = 1 ↔ a.2 ≤ q.2 ∧ q.2 < b.2 ∧ 0 < cross (b - a) (q - a) := by
@@ -250,7 +214,7 @@ lemma edgeWind_eq_one_iff (a b q : ℝ × ℝ) :
     unfold edgeWind at h
     by_cases h1 : a.2 ≤ q.2 ∧ q.2 < b.2 ∧ 0 < cross (b - a) (q - a)
     · exact h1
-    · rw [if_neg h1] at h; split_ifs at h <;> simp_all
+    · rw [if_neg h1] at h; split_ifs at h; simp_all
   · intro h; unfold edgeWind; rw [if_pos h]
 
 /-- `edgeWind = −1` exactly characterizes the downward-crossing condition. -/
@@ -345,40 +309,6 @@ lemma edgeWind_hshift_cross_up (a b q : ℝ × ℝ) (h1 : a.2 ≤ q.2) (h2 : q.2
       linarith [h'.2.2]
   rw [h0]; ring
 
-/-- The jump value when a horizontal step crosses a **down-edge** (`q` left of it,
-`q+(1,0)` on/right of it): the contribution rises from `−1` to `0`, so the
-per-edge change is `+1`. -/
-lemma edgeWind_hshift_cross_down (a b q : ℝ × ℝ) (h1 : b.2 ≤ q.2) (h2 : q.2 < a.2)
-    (hl : cross (b - a) (q - a) < 0) (hr : 0 ≤ cross (b - a) (q + (1, 0) - a)) :
-    edgeWind a b (q + (1, 0)) - edgeWind a b q = 1 := by
-  have hq2 : (q + (1, 0)).2 = q.2 := by simp [Prod.snd_add]
-  rw [(edgeWind_eq_neg_one_iff a b q).mpr ⟨h1, h2, hl⟩]
-  have h0 : edgeWind a b (q + (1, 0)) = 0 := by
-    rcases edgeWind_mem a b (q + (1, 0)) with h | h | h
-    · have h' := (edgeWind_eq_neg_one_iff a b (q + (1, 0))).mp h; linarith [h'.2.2]
-    · exact h
-    · have h' := edgeWind_eq_one_imp a b (q + (1, 0)) h; rw [hq2] at h'; linarith [h'.2]
-  rw [h0]; ring
-
-/-- The winding's per-edge change under a horizontal step is at most `1` in
-absolute value: an edge cannot flip `+1 ↔ −1` in one step, since those require
-incompatible `y`-ranges (and `q.2` is unchanged). -/
-lemma edgeWind_hshift_abs_le (a b q : ℝ × ℝ) :
-    |edgeWind a b (q + (1, 0)) - edgeWind a b q| ≤ 1 := by
-  have h2 : (q + (1, 0)).2 = q.2 := by simp [Prod.snd_add]
-  rcases edgeWind_mem a b q with hq | hq | hq <;>
-    rcases edgeWind_mem a b (q + (1, 0)) with hq' | hq' | hq' <;> rw [hq, hq'] <;>
-    first
-    | decide
-    | (exfalso
-       have h3 := edgeWind_eq_one_imp a b q hq
-       have h4 := edgeWind_eq_neg_one_imp a b (q + (1, 0)) hq'
-       rw [h2] at h4; linarith [h3.1, h3.2, h4.1, h4.2])
-    | (exfalso
-       have h3 := edgeWind_eq_neg_one_imp a b q hq
-       have h4 := edgeWind_eq_one_imp a b (q + (1, 0)) hq'
-       rw [h2] at h4; linarith [h3.1, h3.2, h4.1, h4.2])
-
 /-- `cross` depends only on the differences, so it is invariant under a common
 translation of all three points. -/
 lemma cross_shift (a b q c : ℝ × ℝ) :
@@ -386,12 +316,6 @@ lemma cross_shift (a b q c : ℝ × ℝ) :
   have h1 : b + c - (a + c) = b - a := by abel
   have h2 : q + c - (a + c) = q - a := by abel
   rw [h1, h2]
-
-/-- The per-edge winding contribution is translation invariant. -/
-lemma edgeWind_add_right (a b q c : ℝ × ℝ) :
-    edgeWind (a + c) (b + c) (q + c) = edgeWind a b q := by
-  unfold edgeWind
-  simp only [Prod.snd_add, add_le_add_iff_right, add_lt_add_iff_right, cross_shift]
 
 /-- The winding number vanishes for points weakly above every vertex. -/
 lemma winding_eq_zero_of_above (P : LatticePolygon) (q : ℝ × ℝ)
@@ -434,16 +358,16 @@ theorem winding_support_finite (P : LatticePolygon) :
   refine Set.Finite.subset (Set.finite_Icc ((xm, ym) : Pt) (xM, yM)) ?_
   intro q hq
   have hr : ∃ i, q.1 ≤ (P.vert i).1 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_right P (toReal q) (fun i => by simpa using hc i))
   have hl : ∃ i, (P.vert i).1 ≤ q.1 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_left P (toReal q) (fun i => by simpa using hc i))
   have ha : ∃ i, q.2 < (P.vert i).2 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_above P (toReal q) (fun i => by simpa using hc i))
   have hb : ∃ i, (P.vert i).2 ≤ q.2 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact hq (winding_eq_zero_of_below P (toReal q) (fun i => by simpa using hc i))
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
@@ -548,13 +472,13 @@ theorem interiorRegion_bounded (P : LatticePolygon) :
   have hq1 : P.winding q = 1 := hq
   have hw : P.winding q ≠ 0 := by rw [hq1]; exact one_ne_zero
   have ha : ∃ i, q.2 < ((P.vert i).2 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_above P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_above P q hc)
   have hb : ∃ i, ((P.vert i).2 : ℝ) ≤ q.2 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_below P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_below P q hc)
   have hr : ∃ i, q.1 ≤ ((P.vert i).1 : ℝ) := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_right P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_right P q hc)
   have hl : ∃ i, ((P.vert i).1 : ℝ) ≤ q.1 := by
-    by_contra hc; push_neg at hc; exact hw (winding_eq_zero_of_left P q hc)
+    by_contra hc; push Not at hc; exact hw (winding_eq_zero_of_left P q hc)
   obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
   obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
   simp only [Set.mem_Icc, Prod.le_def]
@@ -563,12 +487,6 @@ theorem interiorRegion_bounded (P : LatticePolygon) :
   · exact le_trans (by exact_mod_cast hym ib) hib
   · exact le_trans hir (by exact_mod_cast hxM ir)
   · exact le_trans (le_of_lt hia) (by exact_mod_cast hyM ia)
-
-/-- The interior region has finite volume (it is bounded), so `area` is a genuine
-finite real, not `∞`. -/
-theorem interiorRegion_volume_ne_top (P : LatticePolygon) :
-    MeasureTheory.volume P.interiorRegion ≠ ⊤ :=
-  (interiorRegion_bounded P).measure_lt_top.ne
 
 /-- Interior and boundary lattice points are disjoint (one is off the boundary,
 the other on it). So `I + B` counts each enclosed-or-boundary point once. -/
@@ -582,13 +500,6 @@ theorem vert_mem_boundaryLattice (P : LatticePolygon) (i : ZMod P.n) :
     P.vert i ∈ P.boundaryLattice := by
   rw [LatticePolygon.boundaryLattice, Set.mem_setOf_eq, LatticePolygon.boundary, Set.mem_iUnion]
   exact ⟨i, by rw [LatticePolygon.edgeSeg]; exact left_mem_segment ℝ _ _⟩
-
-/-- The boundary always contains at least the vertices, so `1 ≤ B`. -/
-theorem one_le_B (P : LatticePolygon) : 1 ≤ P.B := by
-  have hne : P.boundaryLattice.Nonempty := ⟨P.vert 0, vert_mem_boundaryLattice P 0⟩
-  have h := (Set.ncard_pos (boundaryLattice_finite P)).mpr hne
-  show 1 ≤ P.boundaryLattice.ncard
-  omega
 
 /-- **Per-edge local constancy (off the two endpoint heights).** If `q₀` lies on
 neither horizontal line through the endpoints and is not on the edge's *line*
@@ -712,19 +623,5 @@ lemma pairWind_eventually_eq_left (a v b q₀ : ℝ × ℝ) (hv : v.2 = q₀.2)
       rw [e1, e2]; ring
     · rw [edgeWind_eq_zero_of_below a v q (by linarith) (by rw [hv]; linarith),
         edgeWind_eq_zero_of_below v b q (by rw [hv]; linarith) (by linarith)]; ring
-
-/-- **Per-vertex cancellation at a shared-height vertex (right side).** As
-`pairWind_eventually_eq_left`, but `q₀` lies strictly to the *right* of both edges
-(`a.1, v.1, b.1 < q₀.1`). Then the rightward ray from any nearby `q` misses both
-incident edges entirely, so both terms are identically `0` near `q₀`. -/
-lemma pairWind_eventually_eq_right (a v b q₀ : ℝ × ℝ)
-    (har : a.1 < q₀.1) (hvr : v.1 < q₀.1) (hbr : b.1 < q₀.1) :
-    ∀ᶠ q in nhds q₀, edgeWind a v q + edgeWind v b q = edgeWind a v q₀ + edgeWind v b q₀ := by
-  have hcl : Continuous (fun p : ℝ × ℝ => p.1) := continuous_fst
-  filter_upwards [(hcl.tendsto q₀).eventually_const_lt har,
-      (hcl.tendsto q₀).eventually_const_lt hvr,
-      (hcl.tendsto q₀).eventually_const_lt hbr] with q hqa hqv hqb
-  rw [edgeWind_eq_zero_of_right a v q hqa hqv, edgeWind_eq_zero_of_right v b q hqv hqb,
-    edgeWind_eq_zero_of_right a v q₀ har hvr, edgeWind_eq_zero_of_right v b q₀ hvr hbr]
 
 end Pick

@@ -70,7 +70,7 @@ orientation hypothesis: `LeanEval.Geometry.PicksTheorem.pick` in
 `JordanPick/PicksTheorem/EvalBridgeMain.lean`.
 
 The lattice-count side (`latWeight` / `latWeightSum`) follows the discrete
-angle-weight device of Eisermann & Zumkeller, with the per-edge identity proved
+angle-weight device of Eisermann, with the per-edge identity proved
 independently here by a column decomposition; the geometric core (the polygonal
 Jordan curve theorem and the ear-clipping reduction) is original.
 

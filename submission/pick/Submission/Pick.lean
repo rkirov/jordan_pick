@@ -46,7 +46,7 @@ Let `p* ∈ boundary` realise `dist q p* = infDist q boundary`, and let `q ∉ b
 For `t ∈ [0,1)`, the convex combination `x = (1-t)•q + t•p*` is off the boundary:
 every boundary point `b` is at least as far from `q` as `p*`, so
 `dist x b ≥ dist q b − dist q x ≥ dist q p* − dist q x = dist x p* > 0`. -/
-lemma segment_toward_nearest_off_boundary {q p : ℝ × ℝ} (hp : p ∈ P.boundary)
+lemma segment_toward_nearest_off_boundary {q p : ℝ × ℝ} (_ : p ∈ P.boundary)
     (hnear : dist q p = Metric.infDist q P.boundary) (hqb : q ∉ P.boundary)
     {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     ((1 - t) • q + t • p : ℝ × ℝ) ∉ P.boundary := by
@@ -146,7 +146,7 @@ lemma reach_tube {ε : ℝ} (hε : 0 < ε) (q : ℝ × ℝ) (hqb : q ∉ P.bound
     refine ⟨q, ⟨hDpos, hsmall⟩, JoinedIn.refl ?_⟩
     exact Tube_subset_compl_boundary P ⟨hDpos, hsmall⟩
   · -- D ≥ ε; travel to t = 1 - ε/(2D)
-    push_neg at hsmall
+    push Not at hsmall
     set t : ℝ := 1 - ε / (2 * D) with ht
     have hDε : ε ≤ D := hsmall
     have ht0 : 0 ≤ t := by
@@ -188,10 +188,6 @@ lemma reach_tube {ε : ℝ} (hε : 0 < ε) (q : ℝ × ℝ) (hqb : q ∉ P.bound
       module
     rw [hrw]
     exact segment_toward_nearest_off_boundary P hp hnear hqb hst0 hst1
-
-/-- A point of `boundaryᶜ` joined to an anchor `a` lies in the path component of `a`. -/
-lemma mem_pathComponentIn_of_joinedIn {a q : ℝ × ℝ}
-    (h : JoinedIn P.boundaryᶜ a q) : q ∈ pathComponentIn P.boundaryᶜ a := h
 
 /-- **`q ↦ cross v q` is `ℝ`-linear.** -/
 lemma isLinearMap_cross (v : ℝ × ℝ) : IsLinearMap ℝ (fun q : ℝ × ℝ => cross v q) where
@@ -304,14 +300,6 @@ lemma isPathConnected_rect (i : ZMod P.n) (nrm : ℝ × ℝ) {ε : ℝ} (hε : 0
     exact ⟨(1 / 2, ε / 2), ⟨by norm_num, by norm_num⟩, by simp; linarith, by simp; linarith⟩
   · exact continuous_rectMap P i nrm
 
-lemma isPathConnected_leftRect (i : ZMod P.n) {ε : ℝ} (hε : 0 < ε) :
-    IsPathConnected (P.leftRect i ε) :=
-  isPathConnected_rect P i (P.leftNormal i) hε
-
-lemma isPathConnected_rightRect (i : ZMod P.n) {ε : ℝ} (hε : 0 < ε) :
-    IsPathConnected (P.rightRect i ε) :=
-  isPathConnected_rect P i (P.rightNormal i) hε
-
 /-- **Edges are nondegenerate**: `edgeDir i ≠ 0` for a simple polygon. -/
 lemma edgeDir_ne_zero (hsimple : P.IsSimple) (i : ZMod P.n) : P.edgeDir i ≠ 0 := by
   rw [LatticePolygon.edgeDir, sub_ne_zero]
@@ -322,7 +310,7 @@ lemma normSq_edgeDir_pos (hsimple : P.IsSimple) (i : ZMod P.n) :
     0 < (P.edgeDir i).1 ^ 2 + (P.edgeDir i).2 ^ 2 := by
   have h : (P.edgeDir i).1 ≠ 0 ∨ (P.edgeDir i).2 ≠ 0 := by
     by_contra hc
-    push_neg at hc
+    push Not at hc
     exact edgeDir_ne_zero P hsimple i (Prod.ext hc.1 hc.2)
   rcases h with h | h
   · have : (P.edgeDir i).1 ^ 2 > 0 := by positivity
@@ -403,9 +391,9 @@ lemma eNorm_mul_add_inner_pos {d₁ d₂ : ℝ × ℝ} (hd₁ : d₁ ≠ 0) (hd�
   set N₂ : ℝ := d₂.1 ^ 2 + d₂.2 ^ 2 with hN₂
   set ip : ℝ := d₁.1 * d₂.1 + d₁.2 * d₂.2 with hip
   have hor₁ : d₁.1 ≠ 0 ∨ d₁.2 ≠ 0 := by
-    by_contra hc; push_neg at hc; exact hd₁ (Prod.ext hc.1 hc.2)
+    by_contra hc; push Not at hc; exact hd₁ (Prod.ext hc.1 hc.2)
   have hor₂ : d₂.1 ≠ 0 ∨ d₂.2 ≠ 0 := by
-    by_contra hc; push_neg at hc; exact hd₂ (Prod.ext hc.1 hc.2)
+    by_contra hc; push Not at hc; exact hd₂ (Prod.ext hc.1 hc.2)
   have hN₁pos : 0 < N₁ := by
     rcases hor₁ with h | h
     · have : d₁.1 ^ 2 > 0 := by positivity
@@ -425,7 +413,7 @@ lemma eNorm_mul_add_inner_pos {d₁ d₂ : ℝ × ℝ} (hd₁ : d₁ ≠ 0) (hd�
   have he₁pos : 0 < e₁ := Real.sqrt_pos.mpr hN₁pos
   have he₂pos : 0 < e₂ := Real.sqrt_pos.mpr hN₂pos
   by_contra hle
-  push_neg at hle
+  push Not at hle
   -- hle : e₁ * e₂ + ip ≤ 0, so ip ≤ -e₁e₂ ≤ 0 and ip² ≥ e₁²e₂² = N₁N₂
   have hip_nonpos : ip ≤ - (e₁ * e₂) := by linarith
   have hee_nonneg : 0 ≤ e₁ * e₂ := by positivity
@@ -497,7 +485,7 @@ lemma exists_dir_left_of_both (hsimple : P.IsSimple) (i : ZMod P.n) :
       nlinarith [he₁sq]
     rw [this]
     have he₁pos : 0 < e₁ := Real.sqrt_pos.mpr (by
-      rcases (by by_contra hc; push_neg at hc; exact hd₁ (Prod.ext hc.1 hc.2) :
+      rcases (by by_contra hc; push Not at hc; exact hd₁ (Prod.ext hc.1 hc.2) :
         d₁.1 ≠ 0 ∨ d₁.2 ≠ 0) with h | h
       · nlinarith [sq_nonneg d₁.2, sq_pos_of_ne_zero h]
       · nlinarith [sq_nonneg d₁.1, sq_pos_of_ne_zero h])
@@ -508,7 +496,7 @@ lemma exists_dir_left_of_both (hsimple : P.IsSimple) (i : ZMod P.n) :
       nlinarith [he₂sq]
     rw [this]
     have he₂pos : 0 < e₂ := Real.sqrt_pos.mpr (by
-      rcases (by by_contra hc; push_neg at hc; exact hd₂ (Prod.ext hc.1 hc.2) :
+      rcases (by by_contra hc; push Not at hc; exact hd₂ (Prod.ext hc.1 hc.2) :
         d₂.1 ≠ 0 ∨ d₂.2 ≠ 0) with h | h
       · nlinarith [sq_nonneg d₂.2, sq_pos_of_ne_zero h]
       · nlinarith [sq_nonneg d₂.1, sq_pos_of_ne_zero h])
@@ -572,14 +560,6 @@ def LatticePolygon.leftTube (ε : ℝ) : Set (ℝ × ℝ) := ⋃ i, P.leftStrip 
 
 /-- **The right half `R`** of the offset tube: the union of all right strips. -/
 def LatticePolygon.rightTube (ε : ℝ) : Set (ℝ × ℝ) := ⋃ i, P.rightStrip i ε
-
-/-- Each left strip is convex (restatement of `convex_left_strip`). -/
-lemma convex_leftStrip (i : ZMod P.n) (ε : ℝ) : Convex ℝ (P.leftStrip i ε) :=
-  convex_left_strip P i ε
-
-/-- Each right strip is convex. -/
-lemma convex_rightStrip (i : ZMod P.n) (ε : ℝ) : Convex ℝ (P.rightStrip i ε) :=
-  convex_right_strip P i ε
 
 /-- **Path-connected union along a `reflTransGen` chain of meeting pieces.**
 The path-connected analogue of `IsConnected.iUnion_of_reflTransGen` (Mathlib only has
@@ -773,7 +753,7 @@ lemma edgeClearance_pos (hsimple : P.IsSimple) :
 lemma leftNormal_unit (hsimple : P.IsSimple) (i : ZMod P.n) : ‖P.leftNormal i‖ = 1 := by
   rw [LatticePolygon.leftNormal, norm_smul, Real.norm_eq_abs, abs_inv, abs_norm]
   have : ‖((-(P.edgeDir i).2, (P.edgeDir i).1) : ℝ × ℝ)‖ = ‖P.edgeDir i‖ := by
-    rw [Prod.norm_def, Prod.norm_def]; simp [abs_neg, max_comm]
+    rw [Prod.norm_def, Prod.norm_def]; simp [max_comm]
   rw [this]
   exact inv_mul_cancel₀ (by rw [norm_ne_zero_iff]; exact edgeDir_ne_zero P hsimple i)
 
@@ -781,7 +761,7 @@ lemma leftNormal_unit (hsimple : P.IsSimple) (i : ZMod P.n) : ‖P.leftNormal i�
 lemma rightNormal_unit (hsimple : P.IsSimple) (i : ZMod P.n) : ‖P.rightNormal i‖ = 1 := by
   rw [LatticePolygon.rightNormal, norm_smul, Real.norm_eq_abs, abs_inv, abs_norm]
   have : ‖(((P.edgeDir i).2, -(P.edgeDir i).1) : ℝ × ℝ)‖ = ‖P.edgeDir i‖ := by
-    rw [Prod.norm_def, Prod.norm_def]; simp [abs_neg, max_comm]
+    rw [Prod.norm_def, Prod.norm_def]; simp [max_comm]
   rw [this]
   exact inv_mul_cancel₀ (by rw [norm_ne_zero_iff]; exact edgeDir_ne_zero P hsimple i)
 
@@ -804,44 +784,6 @@ lemma dist_rectMap_foot (i : ZMod P.n) (nrm : ℝ × ℝ) (s t : ℝ) :
         - ((1 - s) • toReal (P.vert i) + s • toReal (P.vert (i + 1))) = t • nrm from by abel,
     norm_smul, Real.norm_eq_abs]
 
-/-- **`leftRect i ε` avoids every non-adjacent edge** (for `ε ≤ edge clearance `r`).
-A point `q ∈ leftRect i ε` has a foot `p ∈ edgeSeg i` with `dist q p < ε ≤ r`; for any
-`x' ∈ edgeSeg j` with `j` non-adjacent to `i`, `dist q x' ≥ dist p x' - dist q p ≥ r - ε
-> 0`, so `q ∉ edgeSeg j`. -/
-lemma leftRect_avoids_nonadjacent (hsimple : P.IsSimple) {r : ℝ}
-    (hr : ∀ i j : ZMod P.n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      ∀ x ∈ P.edgeSeg i, ∀ x' ∈ P.edgeSeg j, r ≤ dist x x')
-    (i j : ZMod P.n) (hij : i ≠ j) (hij1 : i + 1 ≠ j) (hji1 : j + 1 ≠ i)
-    {ε : ℝ} (hε : ε ≤ r) {q : ℝ × ℝ} (hq : q ∈ P.leftRect i ε) :
-    q ∉ P.edgeSeg j := by
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htε⟩, rfl⟩ := hq
-  intro hqj
-  -- distance to foot is t < ε
-  have hfoot : P.foot i s ∈ P.edgeSeg i := foot_mem_edgeSeg P i hs
-  have hdist : dist (P.foot i s) (P.rectMap i (P.leftNormal i) (s, t)) = t := by
-    rw [dist_comm, dist_rectMap_foot, leftNormal_unit P hsimple, mul_one, abs_of_pos ht0]
-  have hclear : r ≤ dist (P.foot i s) (P.rectMap i (P.leftNormal i) (s, t)) :=
-    hr i j hij hij1 hji1 (P.foot i s) hfoot _ hqj
-  rw [hdist] at hclear
-  linarith
-
-/-- **`rightRect i ε` avoids every non-adjacent edge** (for `ε ≤ edge clearance `r`). -/
-lemma rightRect_avoids_nonadjacent (hsimple : P.IsSimple) {r : ℝ}
-    (hr : ∀ i j : ZMod P.n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      ∀ x ∈ P.edgeSeg i, ∀ x' ∈ P.edgeSeg j, r ≤ dist x x')
-    (i j : ZMod P.n) (hij : i ≠ j) (hij1 : i + 1 ≠ j) (hji1 : j + 1 ≠ i)
-    {ε : ℝ} (hε : ε ≤ r) {q : ℝ × ℝ} (hq : q ∈ P.rightRect i ε) :
-    q ∉ P.edgeSeg j := by
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htε⟩, rfl⟩ := hq
-  intro hqj
-  have hfoot : P.foot i s ∈ P.edgeSeg i := foot_mem_edgeSeg P i hs
-  have hdist : dist (P.foot i s) (P.rectMap i (P.rightNormal i) (s, t)) = t := by
-    rw [dist_comm, dist_rectMap_foot, rightNormal_unit P hsimple, mul_one, abs_of_pos ht0]
-  have hclear : r ≤ dist (P.foot i s) (P.rectMap i (P.rightNormal i) (s, t)) :=
-    hr i j hij hij1 hji1 (P.foot i s) hfoot _ hqj
-  rw [hdist] at hclear
-  linarith
-
 /-- **A point strictly off edge `i`'s directed line is not on edge `i`.** Every point of
 `edgeSeg i` lies on that line (`cross (edgeDir i) (· - vert i) = 0`). -/
 lemma notMem_edgeSeg_of_cross_ne (i : ZMod P.n) {q : ℝ × ℝ}
@@ -852,47 +794,6 @@ lemma notMem_edgeSeg_of_cross_ne (i : ZMod P.n) {q : ℝ × ℝ}
   simp only [LatticePolygon.edgeDir, cross, Prod.fst_add, Prod.snd_add, Prod.smul_fst,
     Prod.smul_snd, Prod.fst_sub, Prod.snd_sub, smul_eq_mul]
   ring
-
-/-- **`leftRect i ε` is off edge `i` itself** (strictly to the left of its line). -/
-lemma leftRect_notMem_edgeSeg (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ} {q : ℝ × ℝ}
-    (hq : q ∈ P.leftRect i ε) : q ∉ P.edgeSeg i :=
-  notMem_edgeSeg_of_cross_ne P i (ne_of_gt (leftRect_cross_pos P hsimple i hq))
-
-/-- **`rightRect i ε` is off edge `i` itself** (strictly to the right of its line). -/
-lemma rightRect_notMem_edgeSeg (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ} {q : ℝ × ℝ}
-    (hq : q ∈ P.rightRect i ε) : q ∉ P.edgeSeg i :=
-  notMem_edgeSeg_of_cross_ne P i (ne_of_lt (rightRect_cross_neg P hsimple i hq))
-
-/-- **Off-boundary points of `leftRect i ε` lie in `Tube ε`.** Any `q ∈ leftRect i ε`
-has its foot `p ∈ edgeSeg i ⊆ boundary` within distance `t < ε`, so
-`infDist q boundary ≤ t < ε`; if moreover `q ∉ boundary` then `infDist q boundary > 0`,
-placing `q` in the punctured tube. -/
-lemma leftRect_offBoundary_mem_Tube (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ}
-    {q : ℝ × ℝ} (hq : q ∈ P.leftRect i ε) (hqb : q ∉ P.boundary) : q ∈ P.Tube ε := by
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htε⟩, rfl⟩ := hq
-  rw [mem_Tube_iff]
-  refine ⟨?_, ?_⟩
-  · rw [← (boundary_isClosed P).notMem_iff_infDist_pos (boundary_nonempty P)]; exact hqb
-  · have hfoot : P.foot i s ∈ P.boundary := Set.mem_iUnion.2 ⟨i, foot_mem_edgeSeg P i hs⟩
-    have hle : Metric.infDist (P.rectMap i (P.leftNormal i) (s, t)) P.boundary
-        ≤ dist (P.rectMap i (P.leftNormal i) (s, t)) (P.foot i s) :=
-      Metric.infDist_le_dist_of_mem hfoot
-    rw [dist_rectMap_foot, leftNormal_unit P hsimple, mul_one, abs_of_pos ht0] at hle
-    linarith
-
-/-- **Off-boundary points of `rightRect i ε` lie in `Tube ε`.** -/
-lemma rightRect_offBoundary_mem_Tube (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ}
-    {q : ℝ × ℝ} (hq : q ∈ P.rightRect i ε) (hqb : q ∉ P.boundary) : q ∈ P.Tube ε := by
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htε⟩, rfl⟩ := hq
-  rw [mem_Tube_iff]
-  refine ⟨?_, ?_⟩
-  · rw [← (boundary_isClosed P).notMem_iff_infDist_pos (boundary_nonempty P)]; exact hqb
-  · have hfoot : P.foot i s ∈ P.boundary := Set.mem_iUnion.2 ⟨i, foot_mem_edgeSeg P i hs⟩
-    have hle : Metric.infDist (P.rectMap i (P.rightNormal i) (s, t)) P.boundary
-        ≤ dist (P.rectMap i (P.rightNormal i) (s, t)) (P.foot i s) :=
-      Metric.infDist_le_dist_of_mem hfoot
-    rw [dist_rectMap_foot, rightNormal_unit P hsimple, mul_one, abs_of_pos ht0] at hle
-    linarith
 
 /-! ### Corner-truncated offset regions (the genuinely off-boundary tube cover)
 
@@ -1110,41 +1011,6 @@ lemma rightRegion_notMem_boundary (hsimple : P.IsSimple) (i : ZMod P.n) {ε : �
     have hcap := capHeight_le_edge P i ε s hj
     linarith
 
-/-- **`leftRegion i ε ⊆ Tube ε`** (for `ε > 0`): each region point is off-boundary with
-`infDist q boundary ≤ t < capHeight ≤ ε`. -/
-lemma leftRegion_subset_Tube (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ} :
-    P.leftRegion i ε ⊆ P.Tube ε := by
-  intro q hq
-  have hoff : q ∉ P.boundary := leftRegion_notMem_boundary P hsimple i hq
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htcap⟩, rfl⟩ := hq
-  rw [mem_Tube_iff]
-  refine ⟨?_, ?_⟩
-  · rw [← (boundary_isClosed P).notMem_iff_infDist_pos (boundary_nonempty P)]; exact hoff
-  · have hfoot : P.foot i s ∈ P.boundary := Set.mem_iUnion.2 ⟨i, foot_mem_edgeSeg P i hs⟩
-    have hle : Metric.infDist (P.rectMap i (P.leftNormal i) (s, t)) P.boundary
-        ≤ dist (P.rectMap i (P.leftNormal i) (s, t)) (P.foot i s) :=
-      Metric.infDist_le_dist_of_mem hfoot
-    rw [dist_rectMap_foot, leftNormal_unit P hsimple, mul_one, abs_of_pos ht0] at hle
-    have hcap := capHeight_le_self P i ε s
-    linarith
-
-/-- **`rightRegion i ε ⊆ Tube ε`** (for `ε > 0`). -/
-lemma rightRegion_subset_Tube (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ} :
-    P.rightRegion i ε ⊆ P.Tube ε := by
-  intro q hq
-  have hoff : q ∉ P.boundary := rightRegion_notMem_boundary P hsimple i hq
-  obtain ⟨⟨s, t⟩, ⟨hs, ht0, htcap⟩, rfl⟩ := hq
-  rw [mem_Tube_iff]
-  refine ⟨?_, ?_⟩
-  · rw [← (boundary_isClosed P).notMem_iff_infDist_pos (boundary_nonempty P)]; exact hoff
-  · have hfoot : P.foot i s ∈ P.boundary := Set.mem_iUnion.2 ⟨i, foot_mem_edgeSeg P i hs⟩
-    have hle : Metric.infDist (P.rectMap i (P.rightNormal i) (s, t)) P.boundary
-        ≤ dist (P.rectMap i (P.rightNormal i) (s, t)) (P.foot i s) :=
-      Metric.infDist_le_dist_of_mem hfoot
-    rw [dist_rectMap_foot, rightNormal_unit P hsimple, mul_one, abs_of_pos ht0] at hle
-    have hcap := capHeight_le_self P i ε s
-    linarith
-
 /-- `leftRegion i ε ⊆ boundaryᶜ`. -/
 lemma leftRegion_subset_compl_boundary (hsimple : P.IsSimple) (i : ZMod P.n) {ε : ℝ} :
     P.leftRegion i ε ⊆ P.boundaryᶜ :=
@@ -1205,10 +1071,10 @@ lemma rectMap_left_coords (hsimple : P.IsSimple) (i : ZMod P.n) (q : ℝ × ℝ)
         + cross d (q - v) / N * d.1 = (q - v).2 := by
       rw [cross]; field_simp [hN]; ring
     apply Prod.ext
-    · simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+    · simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul,
         Prod.fst_sub, Prod.snd_sub, hv] at key1 ⊢
       linarith [key1]
-    · simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+    · simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul,
         Prod.fst_sub, Prod.snd_sub, hv] at key2 ⊢
       linarith [key2]
   · field_simp
@@ -1230,7 +1096,7 @@ lemma exists_mem_leftRect_of_cross_pos (hsimple : P.IsSimple) (i : ZMod P.n) {q 
   have hNpos : 0 < (P.edgeDir i).1 ^ 2 + (P.edgeDir i).2 ^ 2 := normSq_edgeDir_pos P hsimple i
   have hdnpos : 0 < ‖P.edgeDir i‖ := by rw [norm_pos_iff]; exact edgeDir_ne_zero P hsimple i
   have htpos : 0 < t := by
-    by_contra h; push_neg at h
+    by_contra h; push Not at h
     have : t * ((P.edgeDir i).1 ^ 2 + (P.edgeDir i).2 ^ 2) / ‖P.edgeDir i‖ ≤ 0 := by
       apply div_nonpos_of_nonpos_of_nonneg _ hdnpos.le
       exact mul_nonpos_of_nonpos_of_nonneg h hNpos.le
@@ -1249,13 +1115,13 @@ lemma exists_mem_leftRect_of_cross_pos (hsimple : P.IsSimple) (i : ZMod P.n) {q 
     have hd1 : (q - toReal (P.vert i)).1
         = s' * (P.edgeDir i).1 + (t * ‖P.edgeDir i‖⁻¹) * (-(P.edgeDir i).2) := by
       have := congrArg Prod.fst hqeq
-      simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul,
         Prod.fst_sub, LatticePolygon.edgeDir] at this ⊢
       linear_combination this
     have hd2 : (q - toReal (P.vert i)).2
         = s' * (P.edgeDir i).2 + (t * ‖P.edgeDir i‖⁻¹) * (P.edgeDir i).1 := by
       have := congrArg Prod.snd hqeq
-      simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+      simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul,
         Prod.snd_sub, LatticePolygon.edgeDir] at this ⊢
       linear_combination this
     rw [hd1, hd2]
@@ -1287,7 +1153,7 @@ lemma exists_mem_rightRect_of_cross_neg (hsimple : P.IsSimple) (i : ZMod P.n) {q
   have hdnpos : 0 < ‖P.edgeDir i‖ := by rw [norm_pos_iff]; exact edgeDir_ne_zero P hsimple i
   -- tL < 0 since tL·(N/‖d‖) = cross < 0
   have htneg : tL < 0 := by
-    by_contra h; push_neg at h
+    by_contra h; push Not at h
     have : 0 ≤ tL * ((P.edgeDir i).1 ^ 2 + (P.edgeDir i).2 ^ 2) / ‖P.edgeDir i‖ := by positivity
     rw [ht] at this; linarith
   -- s' = s (same coordinate formula, recovered as in the left lemma)
@@ -1297,13 +1163,13 @@ lemma exists_mem_rightRect_of_cross_neg (hsimple : P.IsSimple) (i : ZMod P.n) {q
     have hd1 : (q - toReal (P.vert i)).1
         = s' * (P.edgeDir i).1 + (tL * ‖P.edgeDir i‖⁻¹) * (-(P.edgeDir i).2) := by
       have := congrArg Prod.fst hq
-      simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul,
         Prod.fst_sub, LatticePolygon.edgeDir] at this ⊢
       linear_combination this
     have hd2 : (q - toReal (P.vert i)).2
         = s' * (P.edgeDir i).2 + (tL * ‖P.edgeDir i‖⁻¹) * (P.edgeDir i).1 := by
       have := congrArg Prod.snd hq
-      simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+      simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul,
         Prod.snd_sub, LatticePolygon.edgeDir] at this ⊢
       linear_combination this
     rw [hd1, hd2]; field_simp; ring
@@ -1404,94 +1270,6 @@ def LatticePolygon.leftCap (i : ZMod P.n) (capR : ℝ) : Set (ℝ × ℝ) :=
 def LatticePolygon.rightCap (i : ZMod P.n) (capR : ℝ) : Set (ℝ × ℝ) :=
   P.capMap i '' {ut : (ℝ × ℝ) × ℝ | ut.1 ∈ P.rightDirArc i ∧ 0 < ut.2 ∧ ut.2 < capR}
 
-/-- **The left cap is path-connected** (graph region over the convex nonempty base `leftDirArc`
-with constant positive height `capR`). -/
-lemma isPathConnected_leftCap (hsimple : P.IsSimple) (i : ZMod P.n) {capR : ℝ} (hR : 0 < capR) :
-    IsPathConnected (P.leftCap i capR) := by
-  apply isPathConnected_graphRegion
-    ((convex_leftDirArc P i).isPathConnected (leftDirArc_nonempty P hsimple i))
-    continuous_const (fun _ _ => hR) (continuous_capMap P i)
-
-/-- **The right cap is path-connected.** -/
-lemma isPathConnected_rightCap (hsimple : P.IsSimple) (i : ZMod P.n) {capR : ℝ} (hR : 0 < capR) :
-    IsPathConnected (P.rightCap i capR) := by
-  apply isPathConnected_graphRegion
-    ((convex_rightDirArc P i).isPathConnected (rightDirArc_nonempty P hsimple i))
-    continuous_const (fun _ _ => hR) (continuous_capMap P i)
-
-/-- **Every point of `leftCap i capR` is off the boundary** (for `capR ≤ featureSize`).
-Off the two incident edges `i`, `i+1` by the strictly-positive cross-sign; off every
-non-incident edge `j` because the cap point is within `capR ≤ featureSize` of the shared
-vertex `vert(i+1)`, which is `≥ featureSize` from edge `j`. -/
-lemma leftCap_subset_compl_boundary (hsimple : P.IsSimple) (i : ZMod P.n) {capR : ℝ}
-    (hRfs : capR ≤ P.featureSize) : P.leftCap i capR ⊆ P.boundaryᶜ := by
-  intro q hq
-  obtain ⟨⟨u, t⟩, ⟨⟨hu1, hu2, hu3⟩, ht0, htR⟩, rfl⟩ := hq
-  rw [Set.mem_compl_iff, LatticePolygon.boundary, Set.mem_iUnion]
-  rintro ⟨j, hmemj⟩
-  simp only [LatticePolygon.capMap] at hmemj ⊢
-  by_cases hji : j = i
-  · subst hji
-    apply notMem_edgeSeg_of_cross_ne P j _ hmemj
-    have hexp : toReal (P.vert (j + 1)) + t • u - toReal (P.vert j) = P.edgeDir j + t • u := by
-      rw [LatticePolygon.edgeDir]; abel
-    rw [hexp]
-    have : cross (P.edgeDir j) (P.edgeDir j + t • u) = t * cross (P.edgeDir j) u := by
-      simp only [cross, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-    rw [this]; positivity
-  · by_cases hji1 : j = i + 1
-    · subst hji1
-      apply notMem_edgeSeg_of_cross_ne P (i + 1) _ hmemj
-      have hexp : toReal (P.vert (i + 1)) + t • u - toReal (P.vert (i + 1)) = t • u := by abel
-      rw [hexp]
-      have : cross (P.edgeDir (i + 1)) (t • u) = t * cross (P.edgeDir (i + 1)) u := by
-        simp only [cross, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-      rw [this]; positivity
-    · have hfs : P.featureSize ≤ Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j) :=
-        featureSize_le P (i + 1) j hji1 (by rw [add_sub_cancel_right]; exact hji)
-      have hle : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
-          ≤ dist (toReal (P.vert (i + 1))) (toReal (P.vert (i + 1)) + t • u) :=
-        Metric.infDist_le_dist_of_mem hmemj
-      rw [dist_eq_norm, show toReal (P.vert (i + 1)) - (toReal (P.vert (i + 1)) + t • u)
-          = -(t • u) from by abel, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_pos ht0] at hle
-      have : t * ‖u‖ < capR := by nlinarith [norm_nonneg u]
-      linarith
-
-/-- **Every point of `rightCap i capR` is off the boundary** (for `capR ≤ featureSize`). -/
-lemma rightCap_subset_compl_boundary (hsimple : P.IsSimple) (i : ZMod P.n) {capR : ℝ}
-    (hRfs : capR ≤ P.featureSize) : P.rightCap i capR ⊆ P.boundaryᶜ := by
-  intro q hq
-  obtain ⟨⟨u, t⟩, ⟨⟨hu1, hu2, hu3⟩, ht0, htR⟩, rfl⟩ := hq
-  rw [Set.mem_compl_iff, LatticePolygon.boundary, Set.mem_iUnion]
-  rintro ⟨j, hmemj⟩
-  simp only [LatticePolygon.capMap] at hmemj ⊢
-  by_cases hji : j = i
-  · subst hji
-    apply notMem_edgeSeg_of_cross_ne P j _ hmemj
-    have hexp : toReal (P.vert (j + 1)) + t • u - toReal (P.vert j) = P.edgeDir j + t • u := by
-      rw [LatticePolygon.edgeDir]; abel
-    rw [hexp]
-    have heq : cross (P.edgeDir j) (P.edgeDir j + t • u) = t * cross (P.edgeDir j) u := by
-      simp only [cross, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-    rw [heq]; exact ne_of_lt (mul_neg_of_pos_of_neg ht0 hu1)
-  · by_cases hji1 : j = i + 1
-    · subst hji1
-      apply notMem_edgeSeg_of_cross_ne P (i + 1) _ hmemj
-      have hexp : toReal (P.vert (i + 1)) + t • u - toReal (P.vert (i + 1)) = t • u := by abel
-      rw [hexp]
-      have heq : cross (P.edgeDir (i + 1)) (t • u) = t * cross (P.edgeDir (i + 1)) u := by
-        simp only [cross, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-      rw [heq]; exact ne_of_lt (mul_neg_of_pos_of_neg ht0 hu2)
-    · have hfs : P.featureSize ≤ Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j) :=
-        featureSize_le P (i + 1) j hji1 (by rw [add_sub_cancel_right]; exact hji)
-      have hle : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
-          ≤ dist (toReal (P.vert (i + 1))) (toReal (P.vert (i + 1)) + t • u) :=
-        Metric.infDist_le_dist_of_mem hmemj
-      rw [dist_eq_norm, show toReal (P.vert (i + 1)) - (toReal (P.vert (i + 1)) + t • u)
-          = -(t • u) from by abel, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_pos ht0] at hle
-      have : t * ‖u‖ < capR := by nlinarith [norm_nonneg u]
-      linarith
-
 /-! ### The norm bridge: sup-norm (`dist`) vs Euclidean (`eDist`)
 
 `ℝ × ℝ` carries the **sup-norm** `‖v‖ = max |v.1| |v.2|`, which is what `dist`, `infDist`,
@@ -1539,33 +1317,17 @@ lemma eDist_sub_le_sqrt2_dist (v w : ℝ × ℝ) : eDist (v - w) ≤ Real.sqrt 2
 /-- **The Euclidean length of the left normal** is `‖edgeDir i‖_E / ‖edgeDir i‖_sup`, where
 `‖edgeDir i‖_E = √(d.1²+d.2²) = eDist (edgeDir i)`. In particular it is positive but, unlike
 the sup-norm, generally `≠ 1`. -/
-lemma eDist_leftNormal (hsimple : P.IsSimple) (i : ZMod P.n) :
+lemma eDist_leftNormal (_ : P.IsSimple) (i : ZMod P.n) :
     eDist (P.leftNormal i) = ‖P.edgeDir i‖⁻¹ * eDist (P.edgeDir i) := by
   rw [LatticePolygon.leftNormal, eDist_smul, abs_of_nonneg (by positivity)]
   congr 1
   rw [eDist, eDist]; congr 1; ring
 
-lemma eDist_leftNormal_pos (hsimple : P.IsSimple) (i : ZMod P.n) :
-    0 < eDist (P.leftNormal i) := by
-  rw [eDist_leftNormal P hsimple i]
-  have h1 : 0 < ‖P.edgeDir i‖⁻¹ := by rw [inv_pos, norm_pos_iff]; exact edgeDir_ne_zero P hsimple i
-  have h2 : 0 < eDist (P.edgeDir i) := by
-    rw [eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
-  positivity
-
-lemma eDist_rightNormal (hsimple : P.IsSimple) (i : ZMod P.n) :
+lemma eDist_rightNormal (_ : P.IsSimple) (i : ZMod P.n) :
     eDist (P.rightNormal i) = ‖P.edgeDir i‖⁻¹ * eDist (P.edgeDir i) := by
   rw [LatticePolygon.rightNormal, eDist_smul, abs_of_nonneg (by positivity)]
   congr 1
   rw [eDist, eDist]; congr 1; ring
-
-lemma eDist_rightNormal_pos (hsimple : P.IsSimple) (i : ZMod P.n) :
-    0 < eDist (P.rightNormal i) := by
-  rw [eDist_rightNormal P hsimple i]
-  have h1 : 0 < ‖P.edgeDir i‖⁻¹ := by rw [inv_pos, norm_pos_iff]; exact edgeDir_ne_zero P hsimple i
-  have h2 : 0 < eDist (P.edgeDir i) := by
-    rw [eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
-  positivity
 
 /-! ### Clean cone characterisation of cap membership
 
@@ -1573,50 +1335,6 @@ A point `q` lies in `leftCap i capR` exactly when its offset `w = q − vert(i+1
 open left cone of both incident edges and has sup-norm `< capR`. (The scale `t` and unit
 direction `u = w/t` are recovered by normalising.) This is the convenient membership form for
 the cover, where we only know cross-signs and a metric ball around the corner. -/
-
-/-- **Cap-membership from cone + ball.** If `w = q − vert(i+1)` is strictly left of both
-incident edges and `‖w‖ < capR`, then `q ∈ leftCap i capR`. -/
-lemma mem_leftCap_of_cone (i : ZMod P.n) {capR : ℝ} {q : ℝ × ℝ}
-    (hcr1 : 0 < cross (P.edgeDir i) (q - toReal (P.vert (i + 1))))
-    (hcr2 : 0 < cross (P.edgeDir (i + 1)) (q - toReal (P.vert (i + 1))))
-    (hlt : ‖q - toReal (P.vert (i + 1))‖ < capR) : q ∈ P.leftCap i capR := by
-  set v := toReal (P.vert (i + 1)) with hv
-  set w := q - v with hw
-  have hwne : w ≠ 0 := by intro h; rw [h] at hcr1; simp [cross] at hcr1
-  set t : ℝ := ‖w‖ + (capR - ‖w‖) / 2 with ht
-  have htpos : 0 < t := by
-    have hc : 0 < capR - ‖w‖ := by linarith [norm_nonneg w]
-    rw [ht]; positivity
-  have htlt : t < capR := by rw [ht]; linarith
-  have hwt : ‖w‖ < t := by rw [ht]; linarith [norm_pos_iff.mpr hwne]
-  refine ⟨(t⁻¹ • w, t), ⟨⟨?_, ?_, ?_⟩, htpos, htlt⟩, ?_⟩
-  · rw [(isLinearMap_cross (P.edgeDir i)).map_smul]; positivity
-  · rw [(isLinearMap_cross (P.edgeDir (i + 1))).map_smul]; positivity
-  · rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos htpos, inv_mul_lt_one₀ htpos]; exact hwt
-  · simp only [LatticePolygon.capMap]
-    rw [smul_smul, mul_inv_cancel₀ (ne_of_gt htpos), one_smul, hw]; abel
-
-/-- **Right cap-membership from cone + ball.** -/
-lemma mem_rightCap_of_cone (i : ZMod P.n) {capR : ℝ} {q : ℝ × ℝ}
-    (hcr1 : cross (P.edgeDir i) (q - toReal (P.vert (i + 1))) < 0)
-    (hcr2 : cross (P.edgeDir (i + 1)) (q - toReal (P.vert (i + 1))) < 0)
-    (hlt : ‖q - toReal (P.vert (i + 1))‖ < capR) : q ∈ P.rightCap i capR := by
-  set v := toReal (P.vert (i + 1)) with hv
-  set w := q - v with hw
-  have hwne : w ≠ 0 := by intro h; rw [h] at hcr1; simp [cross] at hcr1
-  set t : ℝ := ‖w‖ + (capR - ‖w‖) / 2 with ht
-  have htpos : 0 < t := by
-    have hc : 0 < capR - ‖w‖ := by linarith [norm_nonneg w]
-    rw [ht]; positivity
-  have htlt : t < capR := by rw [ht]; linarith
-  have hwt : ‖w‖ < t := by rw [ht]; linarith [norm_pos_iff.mpr hwne]
-  refine ⟨(t⁻¹ • w, t), ⟨⟨?_, ?_, ?_⟩, htpos, htlt⟩, ?_⟩
-  · rw [(isLinearMap_cross (P.edgeDir i)).map_smul]; exact mul_neg_of_pos_of_neg (by positivity) hcr1
-  · rw [(isLinearMap_cross (P.edgeDir (i + 1))).map_smul]
-    exact mul_neg_of_pos_of_neg (by positivity) hcr2
-  · rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos htpos, inv_mul_lt_one₀ htpos]; exact hwt
-  · simp only [LatticePolygon.capMap]
-    rw [smul_smul, mul_inv_cancel₀ (ne_of_gt htpos), one_smul, hw]; abel
 
 /-! ### The perpendicular-foot inequality (Euclidean)
 
@@ -1906,33 +1624,6 @@ lemma sectorCap_subset_compl_boundary' (i : ZMod P.n) {lo hi capR : ℝ}
       linarith
 
 
-/-- **Sector-cap membership from angle + Euclidean ball.** A near-vertex point `q ≠ v` whose
-offset angle `argOf (q − v)` lands in the sector interval `(lo, hi)`, and whose Euclidean
-distance to `v = vert(i+1)` is `< capR`, lies in `sectorCap i lo hi capR`. (The scale
-`r = eDist (q−v)` and unit direction `dirOf (argOf (q−v))` recover `q` via `dirOf_argOf`.)
-This is the bridge from a metric/angle description of a near-vertex point to cap membership. -/
-lemma mem_sectorCap_of_angle (i : ZMod P.n) {lo hi capR : ℝ} {q : ℝ × ℝ}
-    (hne : q ≠ toReal (P.vert (i + 1)))
-    (hang : argOf (q - toReal (P.vert (i + 1))) ∈ Set.Ioo lo hi)
-    (hball : eDist (q - toReal (P.vert (i + 1))) < capR) :
-    q ∈ P.sectorCap i lo hi capR := by
-  set v := toReal (P.vert (i + 1)) with hv
-  set w := q - v with hw
-  have hwne : w ≠ 0 := sub_ne_zero.mpr hne
-  have hepos : 0 < eDist w := by
-    rcases lt_or_eq_of_le (eDist_nonneg w) with h | h
-    · exact h
-    · exact absurd (by
-        have : w.1 ^ 2 + w.2 ^ 2 = 0 := by
-          have := h.symm; rw [eDist, Real.sqrt_eq_zero (by positivity)] at this; exact this
-        have h1 : w.1 = 0 := by nlinarith [sq_nonneg w.1, sq_nonneg w.2]
-        have h2 : w.2 = 0 := by nlinarith [sq_nonneg w.1, sq_nonneg w.2]
-        exact Prod.ext h1 h2) hwne
-  have hdir : dirOf (argOf w) = (eDist w)⁻¹ • w := dirOf_argOf hwne
-  refine ⟨(argOf w, eDist w), ⟨hang, hepos, hball⟩, ?_⟩
-  simp only [LatticePolygon.sectorMap]
-  rw [hdir, smul_smul, mul_inv_cancel₀ (ne_of_gt hepos), one_smul, hw]; abel
-
 /-! ### Angle bookkeeping mod 2π: the two-ray sector split at a vertex
 
 The angular wedge `(0, 2π)` of directions around the vertex `v = vert(i+1)` is bounded
@@ -1948,18 +1639,6 @@ theorem dirOf_eq_of_angle_eq {θ φ : ℝ} (h : (↑θ : Real.Angle) = ↑φ) : 
   unfold dirOf
   rw [show Real.cos θ = Real.cos φ from by rw [← Real.Angle.cos_coe, ← Real.Angle.cos_coe, h],
     show Real.sin θ = Real.sin φ from by rw [← Real.Angle.sin_coe, ← Real.Angle.sin_coe, h]]
-
-/-- **`dirOf` is invariant under reduction mod 2π.** `dirOf (toIcoMod 2π lo x) = dirOf x`. -/
-theorem dirOf_toIcoMod (lo x : ℝ) :
-    dirOf (toIcoMod (by positivity : (0:ℝ) < 2 * Real.pi) lo x) = dirOf x := by
-  have hp : (0:ℝ) < 2 * Real.pi := by positivity
-  apply dirOf_eq_of_angle_eq
-  rw [Real.Angle.angle_eq_iff_two_pi_dvd_sub]
-  obtain ⟨hmem, z, hz⟩ := (toIcoMod_eq_iff hp (a := lo) (b := x) (c := toIcoMod hp lo x)).mp rfl
-  refine ⟨-z, ?_⟩
-  rw [zsmul_eq_mul] at hz
-  push_cast
-  linarith [hz]
 
 /-- **Positively-parallel directions have equal angle mod 2π.** If `dirOf θ = s • d` for a
 nonzero `d` and some `s ≥ 0`, then `(↑θ : Real.Angle) = ↑(argOf d)`. (Taking Euclidean norm
@@ -2093,7 +1772,7 @@ Euclidean-length multiple of the unit incoming-reversed ray direction. -/
 lemma edgeDir_eq_neg_smul_dirOf_alpha (hsimple : P.IsSimple) (i : ZMod P.n) :
     P.edgeDir i = (-(eDist (P.edgeDir i))) • dirOf (P.alpha i) := by
   have hne : (-(P.edgeDir i)) ≠ 0 := by simp only [ne_eq, neg_eq_zero]; exact edgeDir_ne_zero P hsimple i
-  have heD : eDist (-(P.edgeDir i)) = eDist (P.edgeDir i) := by simp [eDist, neg_sq]
+  have heD : eDist (-(P.edgeDir i)) = eDist (P.edgeDir i) := by simp [eDist]
   rw [LatticePolygon.alpha, dirOf_argOf hne, heD, smul_smul, neg_mul,
     mul_inv_cancel₀ (ne_of_gt (by rw [eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i))), neg_smul, one_smul, neg_neg]
 
@@ -2125,42 +1804,6 @@ lemma inner_dirOf_dirOf (α θ : ℝ) :
 lemma inner_smul_left (c : ℝ) (u v : ℝ × ℝ) :
     (c • u).1 * v.1 + (c • u).2 * v.2 = c * (u.1 * v.1 + u.2 * v.2) := by
   simp [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring
-
-/-- **Cross-sign of `dirOf θ` with the edge direction**, for `θ` in the near-vertex left wedge
-`(α i + 3π/2, α i + 2π)`: strictly positive (`dirOf θ` is to the left of edge `i`). -/
-lemma cross_edgeDir_dirOf_pos (hsimple : P.IsSimple) (i : ZMod P.n) {θ : ℝ}
-    (hlo : P.alpha i + 3 * Real.pi / 2 < θ) (hhi : θ < P.alpha i + 2 * Real.pi) :
-    0 < cross (P.edgeDir i) (dirOf θ) := by
-  have hcr : cross (P.edgeDir i) (dirOf θ)
-      = (-(eDist (P.edgeDir i))) * Real.sin (θ - P.alpha i) := by
-    conv_lhs => rw [edgeDir_eq_neg_smul_dirOf_alpha P hsimple i]
-    rw [cross_smul_left, cross_dirOf_dirOf]
-  rw [hcr]
-  have hsin : Real.sin (θ - P.alpha i) < 0 := by
-    have h1 : Real.pi < θ - P.alpha i := by linarith [Real.pi_pos]
-    have h2 : θ - P.alpha i < 2 * Real.pi := by linarith
-    have := Real.sin_neg_of_neg_of_neg_pi_lt (x := θ - P.alpha i - 2 * Real.pi)
-      (by linarith) (by linarith [Real.pi_pos])
-    rwa [Real.sin_sub_two_pi] at this
-  have hED : 0 < eDist (P.edgeDir i) := by rw [eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
-  nlinarith [hsin, hED]
-
-/-- **Inner-product sign of `dirOf θ` with the edge direction**, for `θ` in the near-vertex left
-wedge `(α i + 3π/2, α i + 2π)`: strictly negative (`dirOf θ` points "behind" the edge `i`). -/
-lemma inner_edgeDir_dirOf_neg (hsimple : P.IsSimple) (i : ZMod P.n) {θ : ℝ}
-    (hlo : P.alpha i + 3 * Real.pi / 2 < θ) (hhi : θ < P.alpha i + 2 * Real.pi) :
-    (P.edgeDir i).1 * (dirOf θ).1 + (P.edgeDir i).2 * (dirOf θ).2 < 0 := by
-  have hin : (P.edgeDir i).1 * (dirOf θ).1 + (P.edgeDir i).2 * (dirOf θ).2
-      = (-(eDist (P.edgeDir i))) * Real.cos (θ - P.alpha i) := by
-    conv_lhs => rw [edgeDir_eq_neg_smul_dirOf_alpha P hsimple i]
-    rw [inner_smul_left, inner_dirOf_dirOf]
-  rw [hin]
-  have hcos : 0 < Real.cos (θ - P.alpha i) := by
-    have := Real.cos_pos_of_mem_Ioo (x := θ - P.alpha i - 2 * Real.pi)
-      ⟨by linarith [Real.pi_pos], by linarith⟩
-    rwa [Real.cos_sub_two_pi] at this
-  have hED : 0 < eDist (P.edgeDir i) := by rw [eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
-  nlinarith [hcos, hED]
 
 /-- **Two distinct angles within one 2π-period have distinct directions (mod 2π).** -/
 theorem angle_ne_of_lt_period {lo θ φ : ℝ} (hθlo : lo ≤ θ) (hθhi : θ < lo + 2 * Real.pi)
@@ -2407,7 +2050,7 @@ lemma edgeDir_succ_nonneg_smul_of_cross_zero (hsimple : P.IsSimple) (i : ZMod P.
       linear_combination -(P.edgeDir i).1 * hc
   refine ⟨_, ?_, hpar⟩
   by_contra hneg
-  push_neg at hneg
+  push Not at hneg
   exact edgeDir_not_antiparallel P hsimple i ⟨-_, by linarith, by rw [neg_neg]; exact hpar⟩
 
 /-- **Vertex is the nearest point of the collinear-forward successor edge.** If
@@ -2866,9 +2509,9 @@ lemma one_le_eDist_edgeDir (hsimple : P.IsSimple) (i : ZMod P.n) :
   set b : ℤ := (P.vert (i+1)).2 - (P.vert i).2 with hb
   have hd : P.edgeDir i = ((a:ℝ), (b:ℝ)) := by
     simp only [LatticePolygon.edgeDir, toReal, ha, hb]
-    push_cast; constructor <;> ring
+    push_cast; constructor
   have hab : a ≠ 0 ∨ b ≠ 0 := by
-    by_contra hc; rw [not_or] at hc; push_neg at hc
+    by_contra hc; rw [not_or] at hc; push Not at hc
     apply h; rw [hd, hc.1, hc.2]; simp
   rw [hd, eDist, show (1:ℝ) = Real.sqrt 1 from (Real.sqrt_one).symm]
   apply Real.sqrt_le_sqrt
@@ -2940,7 +2583,7 @@ theorem mem_leftRegion_of_nearFoot (hsimple : P.IsSimple) (i : ZMod P.n) {s : �
   have htpos : 0 < t := by
     have hh : t * ((P.edgeDir i).1 ^ 2 + (P.edgeDir i).2 ^ 2) / ‖P.edgeDir i‖ > 0 := by
       rw [hcr]; exact hcross
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact absurd (div_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg hc hNpos.le)
       hdnpos.le) (by linarith)
   have hE : (1:ℝ) ≤ eDist (P.edgeDir i) := one_le_eDist_edgeDir P hsimple i
@@ -3141,10 +2784,10 @@ theorem cross_ne_zero_of_interior_nearest (hsimple : P.IsSimple) (i : ZMod P.n) 
   have h1 : |s'' - s| ≤ |s'' - 1| := by nlinarith [hle1, hdnpos, abs_nonneg (s''-s), abs_nonneg (s''-1)]
   have hs''mem : s'' ∈ Set.Icc (0:ℝ) 1 := by
     refine ⟨?_, ?_⟩
-    · by_contra hc; push_neg at hc
+    · by_contra hc; push Not at hc
       rw [sub_zero, abs_of_neg hc, abs_of_neg (by linarith [hs.1] : s'' - s < 0)] at h0
       linarith [hs.1]
-    · by_contra hc; push_neg at hc
+    · by_contra hc; push Not at hc
       rw [abs_of_pos (by linarith : s'' - 1 > 0), abs_of_pos (by linarith [hs.2] : s'' - s > 0)] at h1
       linarith [hs.2]
   apply hqb
@@ -3157,7 +2800,7 @@ theorem cross_ne_zero_of_interior_nearest (hsimple : P.IsSimple) (i : ZMod P.n) 
 point lies in one of the four cover pieces: a left region, a right region, a left cap (`capA`),
 or a right cap (`capB`). -/
 theorem tube_cover_mem (hsimple : P.IsSimple) {εt εreg capR r Cmax : ℝ}
-    (hr : 0 < r)
+    (_ : 0 < r)
     (hrclear : ∀ i j : ZMod P.n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
       ∀ x ∈ P.edgeSeg i, ∀ x' ∈ P.edgeSeg j, r ≤ dist x x')
     (h3r : 3 * εt < r)
@@ -3289,7 +2932,7 @@ theorem tube_cover_mem (hsimple : P.IsSimple) {εt εreg capR r Cmax : ℝ}
     · exact Or.inr (Or.inl h)
     · exact Or.inr (Or.inr (Or.inr h))
   -- REGION branch: both adjacent infDists > 3εt > 3δ
-  push_neg at hsucc hpred
+  push Not at hsucc hpred
   have hadj : ∀ j, j ≠ i → 3 * δ < Metric.infDist (P.foot i s) (P.edgeSeg j) := by
     intro j hji
     by_cases hj1 : j = i + 1
@@ -3463,7 +3106,61 @@ theorem exists_tube_cover (hsimple : P.IsSimple) :
   · exact Or.inr (Or.inl (by obtain ⟨i, hi⟩ := h; exact Set.mem_iUnion.mpr ⟨i, hi⟩))
   · exact Or.inr (Or.inr (by obtain ⟨i, hi⟩ := h; exact Set.mem_iUnion.mpr ⟨i, hi⟩))
 
-set_option maxHeartbeats 1000000 in
+/-- `√2 < 2`, used by the corner-meet lemmas' `εreg` clearance bounds. -/
+private lemma sqrt_two_lt_two : Real.sqrt 2 < 2 := by
+  rw [show (2:ℝ) = Real.sqrt 4 from by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
+  exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+
+/-- **Small-angle datum for the corner-meet constructions.** A positive angle `η` below a
+given `gap`, with `cos η ≥ 1/2`, `sin η ∈ (0, η]`, and the clearance `3·M·sin η < K·cos η`.
+Factored out of the four corner-meet lemmas (their `η := min … / 2` setup blocks). -/
+private lemma exists_corner_angle (M K gap : ℝ) (hM : 0 < M) (hK : 0 < K) (hgap : 0 < gap) :
+    ∃ η : ℝ, 0 < η ∧ η < gap ∧ (1 : ℝ) / 2 ≤ Real.cos η ∧ 0 < Real.cos η ∧
+      Real.sin η ≤ η ∧ 0 < Real.sin η ∧ 3 * M * Real.sin η < K * Real.cos η := by
+  have hpi := Real.pi_pos
+  have hKM : (0 : ℝ) < K / (6 * M) := by positivity
+  set η := min (min (Real.pi / 3) (K / (6 * M))) gap / 2 with hηdef
+  have hm1 : (0 : ℝ) < min (Real.pi / 3) (K / (6 * M)) := lt_min (by positivity) hKM
+  have hle1 : min (min (Real.pi / 3) (K / (6 * M))) gap ≤ Real.pi / 3 :=
+    le_trans (min_le_left _ _) (min_le_left _ _)
+  have hle2 : min (min (Real.pi / 3) (K / (6 * M))) gap ≤ K / (6 * M) :=
+    le_trans (min_le_left _ _) (min_le_right _ _)
+  have hle3 : min (min (Real.pi / 3) (K / (6 * M))) gap ≤ gap := min_le_right _ _
+  have hm2 : (0 : ℝ) < min (min (Real.pi / 3) (K / (6 * M))) gap := lt_min hm1 hgap
+  have hηpos : 0 < η := by rw [hηdef]; linarith
+  have hηgap : η < gap := by rw [hηdef]; linarith
+  have hηpi3 : η < Real.pi / 3 := by rw [hηdef]; linarith
+  have hηK : η < K / (6 * M) := by rw [hηdef]; linarith
+  have hcos : (1 : ℝ) / 2 ≤ Real.cos η := by
+    have := Real.cos_le_cos_of_nonneg_of_le_pi hηpos.le (by linarith) hηpi3.le
+    linarith [this, Real.cos_pi_div_three]
+  have hcospos : 0 < Real.cos η := by linarith
+  have hsinle : Real.sin η ≤ η := Real.sin_le hηpos.le
+  have hsinpos : 0 < Real.sin η := Real.sin_pos_of_pos_of_lt_pi hηpos (by linarith)
+  refine ⟨η, hηpos, hηgap, hcos, hcospos, hsinle, hsinpos, ?_⟩
+  -- `3M·sin η ≤ 3M·η < K/2 ≤ K·cos η`
+  have h1 : 3 * M * Real.sin η ≤ 3 * M * η :=
+    mul_le_mul_of_nonneg_left hsinle (by positivity)
+  have h2 : η * (6 * M) < K := (lt_div_iff₀ (by positivity)).mp hηK
+  have h3 : K * (1 / 2) ≤ K * Real.cos η := mul_le_mul_of_nonneg_left hcos hK.le
+  linarith
+
+/-- **Small-radius datum for the corner-meet constructions.** A positive radius `ρ` below
+`capR` and `eD`, with `2ρ < εreg` and `4ρ < fs`. Factored out of the four corner-meet
+lemmas (their `ρ := min … / 2` setup blocks). -/
+private lemma exists_corner_radius (capR eD εreg fs : ℝ)
+    (hcapR : 0 < capR) (heD : 0 < eD) (hεreg : 0 < εreg) (hfs : 0 < fs) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ρ < capR ∧ ρ < eD ∧ 2 * ρ < εreg ∧ 4 * ρ < fs := by
+  set m := min capR (min eD (min (εreg / 2) (fs / 4))) with hmdef
+  have hmpos : 0 < m := lt_min hcapR (lt_min heD (lt_min (by linarith) (by linarith)))
+  have h1 : m ≤ capR := min_le_left _ _
+  have h2 : m ≤ eD := le_trans (min_le_right _ _) (min_le_left _ _)
+  have h3 : m ≤ εreg / 2 :=
+    le_trans (min_le_right _ _) (le_trans (min_le_right _ _) (min_le_left _ _))
+  have h4 : m ≤ fs / 4 :=
+    le_trans (min_le_right _ _) (le_trans (min_le_right _ _) (min_le_right _ _))
+  exact ⟨m / 2, by linarith, by linarith, by linarith, by linarith, by linarith⟩
+
 /-- **Corner meet (left/capB).** The truncated left region beside edge `i` overlaps the
 sector cap `B` at vertex `i+1`. Witness: a point `q = vert(i+1) + ρ·dirOf θ` with
 `θ = α i + 2π − η` for a tiny `η` (so the offset direction is just inside the `capB` wedge
@@ -3473,7 +3170,7 @@ clearance hypothesis reduces (binding edge `i+1`) to the trig inequality
 `3·‖edgeDir i‖·sin η < K·cos η` and (every other edge) to feature size minus the small
 foot-to-vertex distance. -/
 lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : ℝ}
-    (hεreg : 0 < εreg) (hcapR : 0 < capR) (hcapRfs : capR ≤ P.featureSize) :
+    (hεreg : 0 < εreg) (hcapR : 0 < capR) (_hcapRfs : capR ≤ P.featureSize) :
     (P.leftRegion i εreg ∩ P.capB i capR).Nonempty := by
   set eD := eDist (P.edgeDir i) with heDdef
   have heDpos : 0 < eD := by rw [heDdef, eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
@@ -3484,76 +3181,14 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
   have hNeD : N = eD ^ 2 := by rw [heDdef, eDist, Real.sq_sqrt (by positivity), hNdef]
   have hMle : Msup ≤ eD := by rw [hMsupdef, heDdef]; exact norm_le_eDist _
   obtain ⟨K, hKpos, hKbnd⟩ := infDist_succ_ge P hsimple i
-  have hpi := Real.pi_pos
   have hbeta : P.beta i < P.alpha i + 2 * Real.pi := beta_lt_alpha_add_2pi P hsimple i
-  -- the small angle η
-  set η := min (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i) / 2 with hηdef
-  have hηpos : 0 < η := by
-    rw [hηdef]
-    have hgap0 : 0 < P.alpha i + 2 * Real.pi - P.beta i := by linarith
-    have h1 : 0 < min (Real.pi / 3) (K / (6 * Msup)) := lt_min (by positivity) (by positivity)
-    have h2 : 0 < min (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i) :=
-      lt_min h1 hgap0
-    linarith
-  have hηpi3 : η < Real.pi / 3 := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have h2 := min_le_left (Real.pi / 3) (K / (6 * Msup))
-    nlinarith [le_trans h1 h2, Real.pi_pos]
-  have hηK : η < K / (6 * Msup) := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have h2 := min_le_right (Real.pi / 3) (K / (6 * Msup))
-    have : (0:ℝ) < K / (6 * Msup) := by positivity
-    nlinarith [le_trans h1 h2, this]
-  have hηgap : η < P.alpha i + 2 * Real.pi - P.beta i := by
-    rw [hηdef]
-    have h1 := min_le_right (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have : (0:ℝ) < P.alpha i + 2 * Real.pi - P.beta i := by linarith
-    nlinarith [h1, this]
-  have hηpi2 : η < Real.pi / 2 := by nlinarith [hηpi3, Real.pi_pos]
-  -- trig consequences
-  have hcos : (1:ℝ) / 2 ≤ Real.cos η := by
-    have := Real.cos_le_cos_of_nonneg_of_le_pi (le_of_lt hηpos) (by nlinarith [Real.pi_pos]) (le_of_lt hηpi3)
-    linarith [this, Real.cos_pi_div_three]
-  have hcospos : 0 < Real.cos η := by linarith
-  have hsinle : Real.sin η ≤ η := Real.sin_le (le_of_lt hηpos)
-  have hsinpos : 0 < Real.sin η := Real.sin_pos_of_pos_of_lt_pi hηpos (by linarith [Real.pi_pos])
-  -- binding-edge trig clearance
-  have htrig : 3 * Msup * Real.sin η < K * Real.cos η := by
-    have h1 : 3 * Msup * η < K / 2 := by
-      have hηK' : η * (6 * Msup) < K := (lt_div_iff₀ (by positivity : (0:ℝ) < 6 * Msup)).mp hηK
-      nlinarith [hηK', hMsuppos]
-    nlinarith [hsinle, hMsuppos, hcos, hKpos, h1,
-      mul_le_mul_of_nonneg_left hsinle (by positivity : (0:ℝ) ≤ 3 * Msup)]
+  obtain ⟨η, hηpos, hηgap, -, hcospos, -, hsinpos, htrig⟩ :=
+    exists_corner_angle Msup K (P.alpha i + 2 * Real.pi - P.beta i) hMsuppos hKpos (by linarith)
   set θ := P.alpha i + 2 * Real.pi - η with hθdef
   -- the small radius ρ; all constraints are linear since `t ≤ ρ` (using `Msup ≤ eD`)
   have hfspos : 0 < P.featureSize := featureSize_pos P hsimple
-  set ρ := min capR (min eD (min (εreg / 2) (P.featureSize / 4))) / 2 with hρdef
-  have hρposaux : 0 < min capR (min eD (min (εreg / 2) (P.featureSize / 4))) :=
-    lt_min hcapR (lt_min heDpos (lt_min (by linarith) (by linarith)))
-  have hρpos : 0 < ρ := by rw [hρdef]; linarith
-  have hρcapR : ρ < capR := by
-    rw [hρdef]
-    have := min_le_left capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    linarith
-  have hρeD : ρ < eD := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_left eD (min (εreg / 2) (P.featureSize / 4))
-    linarith [le_trans h1 h2]
-  have hρeps : 2 * ρ < εreg := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_left (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
-  have hρfs : 4 * ρ < P.featureSize := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_right (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
+  obtain ⟨ρ, hρpos, hρcapR, hρeD, hρeps, hρfs⟩ :=
+    exists_corner_radius capR eD εreg P.featureSize hcapR heDpos hεreg hfspos
   -- the witness point
   set q := toReal (P.vert (i + 1)) + ρ • dirOf θ with hqdef
   have hqsub : q - toReal (P.vert (i + 1)) = ρ • dirOf θ := by rw [hqdef]; abel
@@ -3588,7 +3223,7 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
   have htN : t * N / Msup = ρ * eD * Real.sin η := by rw [← hcrossval]; exact ht
   have htpos : 0 < t := by
     have : 0 < t * N / Msup := by rw [htN]; positivity
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact absurd (div_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg hc hNpos.le) hMsuppos.le) (by linarith)
   have htval : t = ρ * eD * Real.sin η * Msup / N := by
     rw [eq_div_iff (ne_of_gt hNpos), ← htN]; field_simp
@@ -3608,7 +3243,7 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
     simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
     have hself : (P.edgeDir i).1 * (P.edgeDir i).1 + (P.edgeDir i).2 * (P.edgeDir i).2 = N := by
       rw [hNdef]; ring
-    nlinarith [hinnerdir, hself]
+    linear_combination ρ * hinnerdir + hself
   have hs'N : s' * N = N - ρ * eD * Real.cos η := by
     have hqi : (P.edgeDir i).1 * (q - toReal (P.vert i)).1
         + (P.edgeDir i).2 * (q - toReal (P.vert i)).2 = s' * N := by
@@ -3629,14 +3264,14 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
   have htle : t ≤ ρ := by
     rw [htval, hNeD]
     rw [div_le_iff₀ (by positivity : (0:ℝ) < eD ^ 2)]
-    have hsin1 : Real.sin η ≤ 1 := Real.sin_le_one η
-    nlinarith [mul_le_mul hsin1 hMle (le_of_lt hMsuppos) (by norm_num : (0:ℝ) ≤ 1),
-      hρpos, heDpos, hsinpos, mul_pos hρpos heDpos]
+    have hsin1 : Real.sin η * Msup ≤ 1 * eD :=
+      mul_le_mul (Real.sin_le_one η) hMle hMsuppos.le zero_le_one
+    linarith [mul_le_mul_of_nonneg_left hsin1 (by positivity : (0:ℝ) ≤ ρ * eD)]
   have h1s'bound : 1 - s' ≤ ρ / eD := by
     rw [h1s', hNeD]
     rw [div_le_div_iff₀ (by positivity) heDpos]
-    have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-    rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+    rw [pow_two]
+    linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
   -- s' ∈ (0,1)
   have hρeD1 : ρ / eD < 1 := by rw [div_lt_one heDpos]; exact hρeD
   have hs'lt1 : s' < 1 := by linarith [h1s'pos]
@@ -3648,9 +3283,7 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
   have hδeq : dist q (P.foot i s') = t := dist_foot_eq_coord_left P hsimple i htpos.le hq
   -- √2 t < εreg
   have heps : Real.sqrt 2 * t < εreg := by
-    have hsqrt2lt : Real.sqrt 2 < 2 := by
-      rw [show (2:ℝ) = Real.sqrt 4 from by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
-      exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+    have hsqrt2lt : Real.sqrt 2 < 2 := sqrt_two_lt_two
     have h1 : Real.sqrt 2 * t ≤ 2 * ρ := by
       calc Real.sqrt 2 * t ≤ Real.sqrt 2 * ρ :=
             mul_le_mul_of_nonneg_left htle (Real.sqrt_nonneg _)
@@ -3665,7 +3298,7 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
       -- 3 t < K (1 - s')
       have hkey : 3 * t < K * (1 - s') := by
         have hpoly : 3 * (ρ * eD * Real.sin η * Msup) < K * (ρ * eD * Real.cos η) := by
-          nlinarith [htrig, hρpos, heDpos, hsinpos, hcospos, hKpos, mul_pos hρpos heDpos]
+          linarith [mul_lt_mul_of_pos_left htrig (mul_pos hρpos heDpos)]
         have ht3 : 3 * t = (3 * (ρ * eD * Real.sin η * Msup)) / N := by rw [htval]; ring
         have hk3 : K * (1 - s') = (K * (ρ * eD * Real.cos η)) / N := by rw [h1s']; ring
         rw [ht3, hk3, div_lt_div_iff_of_pos_right hNpos]
@@ -3684,8 +3317,8 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
         have hub : (1 - s') * eD ≤ ρ := by
           rw [h1s', hNeD]
           rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-          have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-          rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+          rw [pow_two]
+          linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
         linarith [hle, hub]
       have htri : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
           ≤ Metric.infDist (P.foot i s') (P.edgeSeg j) + dist (toReal (P.vert (i + 1))) (P.foot i s') :=
@@ -3694,13 +3327,12 @@ lemma leftRegion_meet_capB (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : �
       linarith [hfs, htri, hfoot_vert, htle, hρfs]
   exact mem_leftRegion_of_nearFoot P hsimple i hs'Ioo htpos hδeq hcrosspos heps hadj
 
-set_option maxHeartbeats 1000000 in
 /-- **Corner meet (right/capA).** Mirror of `leftRegion_meet_capB`: the truncated right region
 beside edge `i` overlaps the sector cap `A` (the wedge `(α i, β i)`) at vertex `i+1`. Witness:
 `q = vert(i+1) + ρ·dirOf θ` with `θ = α i + η` for a tiny `η` (just inside `capA`, just to the
 right of edge `i`) and `ρ` tiny. -/
 lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : ℝ}
-    (hεreg : 0 < εreg) (hcapR : 0 < capR) (hcapRfs : capR ≤ P.featureSize) :
+    (hεreg : 0 < εreg) (hcapR : 0 < capR) (_hcapRfs : capR ≤ P.featureSize) :
     (P.rightRegion i εreg ∩ P.capA i capR).Nonempty := by
   set eD := eDist (P.edgeDir i) with heDdef
   have heDpos : 0 < eD := by rw [heDdef, eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple i)
@@ -3711,70 +3343,13 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
   have hNeD : N = eD ^ 2 := by rw [heDdef, eDist, Real.sq_sqrt (by positivity), hNdef]
   have hMle : Msup ≤ eD := by rw [hMsupdef, heDdef]; exact norm_le_eDist _
   obtain ⟨K, hKpos, hKbnd⟩ := infDist_succ_ge P hsimple i
-  have hpi := Real.pi_pos
   have hab : P.alpha i < P.beta i := alpha_lt_beta P i
-  -- the small angle η
-  set η := min (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i) / 2 with hηdef
-  have hηpos : 0 < η := by
-    rw [hηdef]
-    have hgap0 : 0 < P.beta i - P.alpha i := by linarith
-    have h1 : 0 < min (Real.pi / 3) (K / (6 * Msup)) := lt_min (by positivity) (by positivity)
-    have h2 : 0 < min (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i) := lt_min h1 hgap0
-    linarith
-  have hηpi3 : η < Real.pi / 3 := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have h2 := min_le_left (Real.pi / 3) (K / (6 * Msup))
-    nlinarith [le_trans h1 h2, Real.pi_pos]
-  have hηK : η < K / (6 * Msup) := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have h2 := min_le_right (Real.pi / 3) (K / (6 * Msup))
-    have : (0:ℝ) < K / (6 * Msup) := by positivity
-    nlinarith [le_trans h1 h2, this]
-  have hηgap : η < P.beta i - P.alpha i := by
-    rw [hηdef]
-    have h1 := min_le_right (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have : (0:ℝ) < P.beta i - P.alpha i := by linarith
-    nlinarith [h1, this]
-  -- trig consequences
-  have hcos : (1:ℝ) / 2 ≤ Real.cos η := by
-    have := Real.cos_le_cos_of_nonneg_of_le_pi (le_of_lt hηpos) (by nlinarith [Real.pi_pos]) (le_of_lt hηpi3)
-    linarith [this, Real.cos_pi_div_three]
-  have hcospos : 0 < Real.cos η := by linarith
-  have hsinle : Real.sin η ≤ η := Real.sin_le (le_of_lt hηpos)
-  have hsinpos : 0 < Real.sin η := Real.sin_pos_of_pos_of_lt_pi hηpos (by linarith [Real.pi_pos])
-  have htrig : 3 * Msup * Real.sin η < K * Real.cos η := by
-    have h1 : 3 * Msup * η < K / 2 := by
-      have hηK' : η * (6 * Msup) < K := (lt_div_iff₀ (by positivity : (0:ℝ) < 6 * Msup)).mp hηK
-      nlinarith [hηK', hMsuppos]
-    nlinarith [hsinle, hMsuppos, hcos, hKpos, h1,
-      mul_le_mul_of_nonneg_left hsinle (by positivity : (0:ℝ) ≤ 3 * Msup)]
+  obtain ⟨η, hηpos, hηgap, -, hcospos, -, hsinpos, htrig⟩ :=
+    exists_corner_angle Msup K (P.beta i - P.alpha i) hMsuppos hKpos (by linarith)
   set θ := P.alpha i + η with hθdef
   have hfspos : 0 < P.featureSize := featureSize_pos P hsimple
-  set ρ := min capR (min eD (min (εreg / 2) (P.featureSize / 4))) / 2 with hρdef
-  have hρposaux : 0 < min capR (min eD (min (εreg / 2) (P.featureSize / 4))) :=
-    lt_min hcapR (lt_min heDpos (lt_min (by linarith) (by linarith)))
-  have hρpos : 0 < ρ := by rw [hρdef]; linarith
-  have hρcapR : ρ < capR := by
-    rw [hρdef]; have := min_le_left capR (min eD (min (εreg / 2) (P.featureSize / 4))); linarith
-  have hρeD : ρ < eD := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_left eD (min (εreg / 2) (P.featureSize / 4))
-    linarith [le_trans h1 h2]
-  have hρeps : 2 * ρ < εreg := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_left (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
-  have hρfs : 4 * ρ < P.featureSize := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_right (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
+  obtain ⟨ρ, hρpos, hρcapR, hρeD, hρeps, hρfs⟩ :=
+    exists_corner_radius capR eD εreg P.featureSize hcapR heDpos hεreg hfspos
   -- the witness point
   set q := toReal (P.vert (i + 1)) + ρ • dirOf θ with hqdef
   have hqsub : q - toReal (P.vert (i + 1)) = ρ • dirOf θ := by rw [hqdef]; abel
@@ -3806,7 +3381,7 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
   have htneg : t < 0 := by
     have hpos1 : 0 < ρ * eD * Real.sin η := by positivity
     have hlt : t * N / Msup < 0 := by rw [htN]; linarith
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     have : 0 ≤ t * N / Msup := by positivity
     linarith
   have htval : t = -(ρ * eD * Real.sin η * Msup / N) := by
@@ -3828,7 +3403,7 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
     simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
     have hself : (P.edgeDir i).1 * (P.edgeDir i).1 + (P.edgeDir i).2 * (P.edgeDir i).2 = N := by
       rw [hNdef]; ring
-    nlinarith [hinnerdir, hself]
+    linear_combination ρ * hinnerdir + hself
   have hs'N : s' * N = N - ρ * eD * Real.cos η := by
     have hqi : (P.edgeDir i).1 * (q - toReal (P.vert i)).1
         + (P.edgeDir i).2 * (q - toReal (P.vert i)).2 = s' * N := by
@@ -3848,14 +3423,14 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
   have hδle : δ ≤ ρ := by
     rw [hδval, hNeD]
     rw [div_le_iff₀ (by positivity : (0:ℝ) < eD ^ 2)]
-    have hsin1 : Real.sin η ≤ 1 := Real.sin_le_one η
-    nlinarith [mul_le_mul hsin1 hMle (le_of_lt hMsuppos) (by norm_num : (0:ℝ) ≤ 1),
-      hρpos, heDpos, hsinpos, mul_pos hρpos heDpos]
+    have hsin1 : Real.sin η * Msup ≤ 1 * eD :=
+      mul_le_mul (Real.sin_le_one η) hMle hMsuppos.le zero_le_one
+    linarith [mul_le_mul_of_nonneg_left hsin1 (by positivity : (0:ℝ) ≤ ρ * eD)]
   have h1s'bound : 1 - s' ≤ ρ / eD := by
     rw [h1s', hNeD]
     rw [div_le_div_iff₀ (by positivity) heDpos]
-    have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-    rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+    rw [pow_two]
+    linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
   have hρeD1 : ρ / eD < 1 := by rw [div_lt_one heDpos]; exact hρeD
   have hs'lt1 : s' < 1 := by linarith [h1s'pos]
   have hs'gt0 : 0 < s' := by linarith [h1s'bound, hρeD1]
@@ -3868,9 +3443,7 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
   have hδeq : dist q (P.foot i s') = δ := by
     rw [hq, dist_rectMap_foot, leftNormal_unit P hsimple, mul_one, hδdef, abs_of_neg htneg]
   have heps : Real.sqrt 2 * δ < εreg := by
-    have hsqrt2lt : Real.sqrt 2 < 2 := by
-      rw [show (2:ℝ) = Real.sqrt 4 from by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
-      exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+    have hsqrt2lt : Real.sqrt 2 < 2 := sqrt_two_lt_two
     have h1 : Real.sqrt 2 * δ ≤ 2 * ρ := by
       calc Real.sqrt 2 * δ ≤ Real.sqrt 2 * ρ := mul_le_mul_of_nonneg_left hδle (Real.sqrt_nonneg _)
         _ ≤ 2 * ρ := mul_le_mul_of_nonneg_right (le_of_lt hsqrt2lt) (le_of_lt hρpos)
@@ -3882,7 +3455,7 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
       have hKb := hKbnd s' hs'Ioo
       have hkey : 3 * δ < K * (1 - s') := by
         have hpoly : 3 * (ρ * eD * Real.sin η * Msup) < K * (ρ * eD * Real.cos η) := by
-          nlinarith [htrig, hρpos, heDpos, hsinpos, hcospos, hKpos, mul_pos hρpos heDpos]
+          linarith [mul_lt_mul_of_pos_left htrig (mul_pos hρpos heDpos)]
         have hd3 : 3 * δ = (3 * (ρ * eD * Real.sin η * Msup)) / N := by rw [hδval]; ring
         have hk3 : K * (1 - s') = (K * (ρ * eD * Real.cos η)) / N := by rw [h1s']; ring
         rw [hd3, hk3, div_lt_div_iff_of_pos_right hNpos]
@@ -3899,8 +3472,8 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
         have hub : (1 - s') * eD ≤ ρ := by
           rw [h1s', hNeD]
           rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-          have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-          rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+          rw [pow_two]
+          linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
         linarith [hle, hub]
       have htri : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
           ≤ Metric.infDist (P.foot i s') (P.edgeSeg j) + dist (toReal (P.vert (i + 1))) (P.foot i s') :=
@@ -3909,14 +3482,13 @@ lemma rightRegion_meet_capA (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : 
       linarith [hfs, htri, hfoot_vert, hδle, hρfs]
   exact mem_rightRegion_of_nearFoot P hsimple i hs'Ioo hδpos hδeq hcrossneg heps hadj
 
-set_option maxHeartbeats 1000000 in
 /-- **Corner meet (capB/left of next edge).** The sector cap `B` at vertex `i+1` overlaps the
 truncated left region beside the *next* edge `i+1`. Witness: `q = vert(i+1) + ρ·dirOf θ` with
 `θ = β i + η` for tiny `η` (just inside `capB` above the outgoing ray `β i`, hence just to the
 left of edge `i+1` whose direction is `dirOf (β i)`). The foot lands near the *start* vertex of
 edge `i+1` (`= vert(i+1)`), so the binding edge is the predecessor `i`, via `infDist_pred_ge`. -/
 lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : ℝ}
-    (hεreg : 0 < εreg) (hcapR : 0 < capR) (hcapRfs : capR ≤ P.featureSize) :
+    (hεreg : 0 < εreg) (hcapR : 0 < capR) (_hcapRfs : capR ≤ P.featureSize) :
     (P.capB i capR ∩ P.leftRegion (i + 1) εreg).Nonempty := by
   set eD := eDist (P.edgeDir (i + 1)) with heDdef
   have heDpos : 0 < eD := by rw [heDdef, eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple (i + 1))
@@ -3927,68 +3499,13 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
   have hNeD : N = eD ^ 2 := by rw [heDdef, eDist, Real.sq_sqrt (by positivity), hNdef]
   have hMle : Msup ≤ eD := by rw [hMsupdef, heDdef]; exact norm_le_eDist _
   obtain ⟨K, hKpos, hKbnd⟩ := infDist_pred_ge P hsimple (i + 1)
-  have hpi := Real.pi_pos
   have hbeta : P.beta i < P.alpha i + 2 * Real.pi := beta_lt_alpha_add_2pi P hsimple i
-  set η := min (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i) / 2 with hηdef
-  have hηpos : 0 < η := by
-    rw [hηdef]
-    have hgap0 : 0 < P.alpha i + 2 * Real.pi - P.beta i := by linarith
-    have h1 : 0 < min (Real.pi / 3) (K / (6 * Msup)) := lt_min (by positivity) (by positivity)
-    have h2 : 0 < min (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i) := lt_min h1 hgap0
-    linarith
-  have hηpi3 : η < Real.pi / 3 := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have h2 := min_le_left (Real.pi / 3) (K / (6 * Msup))
-    nlinarith [le_trans h1 h2, Real.pi_pos]
-  have hηK : η < K / (6 * Msup) := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have h2 := min_le_right (Real.pi / 3) (K / (6 * Msup))
-    have : (0:ℝ) < K / (6 * Msup) := by positivity
-    nlinarith [le_trans h1 h2, this]
-  have hηgap : η < P.alpha i + 2 * Real.pi - P.beta i := by
-    rw [hηdef]
-    have h1 := min_le_right (min (Real.pi / 3) (K / (6 * Msup))) (P.alpha i + 2 * Real.pi - P.beta i)
-    have : (0:ℝ) < P.alpha i + 2 * Real.pi - P.beta i := by linarith
-    nlinarith [h1, this]
-  have hcos : (1:ℝ) / 2 ≤ Real.cos η := by
-    have := Real.cos_le_cos_of_nonneg_of_le_pi (le_of_lt hηpos) (by nlinarith [Real.pi_pos]) (le_of_lt hηpi3)
-    linarith [this, Real.cos_pi_div_three]
-  have hcospos : 0 < Real.cos η := by linarith
-  have hsinle : Real.sin η ≤ η := Real.sin_le (le_of_lt hηpos)
-  have hsinpos : 0 < Real.sin η := Real.sin_pos_of_pos_of_lt_pi hηpos (by linarith [Real.pi_pos])
-  have htrig : 3 * Msup * Real.sin η < K * Real.cos η := by
-    have h1 : 3 * Msup * η < K / 2 := by
-      have hηK' : η * (6 * Msup) < K := (lt_div_iff₀ (by positivity : (0:ℝ) < 6 * Msup)).mp hηK
-      nlinarith [hηK', hMsuppos]
-    nlinarith [hsinle, hMsuppos, hcos, hKpos, h1,
-      mul_le_mul_of_nonneg_left hsinle (by positivity : (0:ℝ) ≤ 3 * Msup)]
+  obtain ⟨η, hηpos, hηgap, -, hcospos, -, hsinpos, htrig⟩ :=
+    exists_corner_angle Msup K (P.alpha i + 2 * Real.pi - P.beta i) hMsuppos hKpos (by linarith)
   set θ := P.beta i + η with hθdef
   have hfspos : 0 < P.featureSize := featureSize_pos P hsimple
-  set ρ := min capR (min eD (min (εreg / 2) (P.featureSize / 4))) / 2 with hρdef
-  have hρposaux : 0 < min capR (min eD (min (εreg / 2) (P.featureSize / 4))) :=
-    lt_min hcapR (lt_min heDpos (lt_min (by linarith) (by linarith)))
-  have hρpos : 0 < ρ := by rw [hρdef]; linarith
-  have hρcapR : ρ < capR := by
-    rw [hρdef]; have := min_le_left capR (min eD (min (εreg / 2) (P.featureSize / 4))); linarith
-  have hρeD : ρ < eD := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_left eD (min (εreg / 2) (P.featureSize / 4))
-    linarith [le_trans h1 h2]
-  have hρeps : 2 * ρ < εreg := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_left (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
-  have hρfs : 4 * ρ < P.featureSize := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_right (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
+  obtain ⟨ρ, hρpos, hρcapR, hρeD, hρeps, hρfs⟩ :=
+    exists_corner_radius capR eD εreg P.featureSize hcapR heDpos hεreg hfspos
   -- the witness point
   set q := toReal (P.vert (i + 1)) + ρ • dirOf θ with hqdef
   have hqsub : q - toReal (P.vert (i + 1)) = ρ • dirOf θ := by rw [hqdef]; abel
@@ -4015,7 +3532,7 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
   have htN : t * N / Msup = ρ * eD * Real.sin η := by rw [← hcrossval]; exact ht
   have htpos : 0 < t := by
     have : 0 < t * N / Msup := by rw [htN]; positivity
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     exact absurd (div_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg hc hNpos.le) hMsuppos.le) (by linarith)
   have htval : t = ρ * eD * Real.sin η * Msup / N := by
     rw [eq_div_iff (ne_of_gt hNpos), ← htN]; field_simp
@@ -4049,23 +3566,21 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
   have htle : t ≤ ρ := by
     rw [htval, hNeD]
     rw [div_le_iff₀ (by positivity : (0:ℝ) < eD ^ 2)]
-    have hsin1 : Real.sin η ≤ 1 := Real.sin_le_one η
-    nlinarith [mul_le_mul hsin1 hMle (le_of_lt hMsuppos) (by norm_num : (0:ℝ) ≤ 1),
-      hρpos, heDpos, hsinpos, mul_pos hρpos heDpos]
+    have hsin1 : Real.sin η * Msup ≤ 1 * eD :=
+      mul_le_mul (Real.sin_le_one η) hMle hMsuppos.le zero_le_one
+    linarith [mul_le_mul_of_nonneg_left hsin1 (by positivity : (0:ℝ) ≤ ρ * eD)]
   have hs'bound : s' ≤ ρ / eD := by
     rw [hs'val, hNeD]
     rw [div_le_div_iff₀ (by positivity) heDpos]
-    have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-    rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+    rw [pow_two]
+    linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
   have hρeD1 : ρ / eD < 1 := by rw [div_lt_one heDpos]; exact hρeD
   have hs'lt1 : s' < 1 := by linarith [hs'bound, hρeD1]
   have hs'Ioo : s' ∈ Set.Ioo (0:ℝ) 1 := ⟨hs'pos, hs'lt1⟩
   have hcrosspos : 0 < cross (P.edgeDir (i + 1)) (q - toReal (P.vert (i + 1))) := by rw [hcrossval]; positivity
   have hδeq : dist q (P.foot (i + 1) s') = t := dist_foot_eq_coord_left P hsimple (i + 1) htpos.le hq
   have heps : Real.sqrt 2 * t < εreg := by
-    have hsqrt2lt : Real.sqrt 2 < 2 := by
-      rw [show (2:ℝ) = Real.sqrt 4 from by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
-      exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+    have hsqrt2lt : Real.sqrt 2 < 2 := sqrt_two_lt_two
     have h1 : Real.sqrt 2 * t ≤ 2 * ρ := by
       calc Real.sqrt 2 * t ≤ Real.sqrt 2 * ρ := mul_le_mul_of_nonneg_left htle (Real.sqrt_nonneg _)
         _ ≤ 2 * ρ := mul_le_mul_of_nonneg_right (le_of_lt hsqrt2lt) (le_of_lt hρpos)
@@ -4077,7 +3592,7 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
       have hKb := hKbnd s' hs'Ioo
       have hkey : 3 * t < K * s' := by
         have hpoly : 3 * (ρ * eD * Real.sin η * Msup) < K * (ρ * eD * Real.cos η) := by
-          nlinarith [htrig, hρpos, heDpos, hsinpos, hcospos, hKpos, mul_pos hρpos heDpos]
+          linarith [mul_lt_mul_of_pos_left htrig (mul_pos hρpos heDpos)]
         have ht3 : 3 * t = (3 * (ρ * eD * Real.sin η * Msup)) / N := by rw [htval]; ring
         have hk3 : K * s' = (K * (ρ * eD * Real.cos η)) / N := by rw [hs'val]; ring
         rw [ht3, hk3, div_lt_div_iff_of_pos_right hNpos]
@@ -4099,8 +3614,8 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
         have hub : s' * eD ≤ ρ := by
           rw [hs'val, hNeD]
           rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-          have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-          rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+          rw [pow_two]
+          linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
         linarith [hle, hub]
       have htri : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
           ≤ Metric.infDist (P.foot (i + 1) s') (P.edgeSeg j) + dist (toReal (P.vert (i + 1))) (P.foot (i + 1) s') :=
@@ -4109,13 +3624,12 @@ lemma capB_meet_leftRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg cap
       linarith [hfs, htri, hfoot_vert, htle, hρfs]
   exact mem_leftRegion_of_nearFoot P hsimple (i + 1) hs'Ioo htpos hδeq hcrosspos heps hadj
 
-set_option maxHeartbeats 1000000 in
 /-- **Corner meet (capA/right of next edge).** Mirror of `capB_meet_leftRegion_succ`: the sector
 cap `A` at vertex `i+1` overlaps the truncated right region beside the next edge `i+1`. Witness:
 `q = vert(i+1) + ρ·dirOf θ` with `θ = β i − η` (just inside `capA` below the outgoing ray, hence
 just to the right of edge `i+1`). The foot lands near the start vertex; binding edge is `i`. -/
 lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg capR : ℝ}
-    (hεreg : 0 < εreg) (hcapR : 0 < capR) (hcapRfs : capR ≤ P.featureSize) :
+    (hεreg : 0 < εreg) (hcapR : 0 < capR) (_hcapRfs : capR ≤ P.featureSize) :
     (P.capA i capR ∩ P.rightRegion (i + 1) εreg).Nonempty := by
   set eD := eDist (P.edgeDir (i + 1)) with heDdef
   have heDpos : 0 < eD := by rw [heDdef, eDist]; exact Real.sqrt_pos.mpr (normSq_edgeDir_pos P hsimple (i + 1))
@@ -4126,68 +3640,13 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
   have hNeD : N = eD ^ 2 := by rw [heDdef, eDist, Real.sq_sqrt (by positivity), hNdef]
   have hMle : Msup ≤ eD := by rw [hMsupdef, heDdef]; exact norm_le_eDist _
   obtain ⟨K, hKpos, hKbnd⟩ := infDist_pred_ge P hsimple (i + 1)
-  have hpi := Real.pi_pos
   have hab : P.alpha i < P.beta i := alpha_lt_beta P i
-  set η := min (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i) / 2 with hηdef
-  have hηpos : 0 < η := by
-    rw [hηdef]
-    have hgap0 : 0 < P.beta i - P.alpha i := by linarith
-    have h1 : 0 < min (Real.pi / 3) (K / (6 * Msup)) := lt_min (by positivity) (by positivity)
-    have h2 : 0 < min (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i) := lt_min h1 hgap0
-    linarith
-  have hηpi3 : η < Real.pi / 3 := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have h2 := min_le_left (Real.pi / 3) (K / (6 * Msup))
-    nlinarith [le_trans h1 h2, Real.pi_pos]
-  have hηK : η < K / (6 * Msup) := by
-    rw [hηdef]
-    have h1 := min_le_left (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have h2 := min_le_right (Real.pi / 3) (K / (6 * Msup))
-    have : (0:ℝ) < K / (6 * Msup) := by positivity
-    nlinarith [le_trans h1 h2, this]
-  have hηgap : η < P.beta i - P.alpha i := by
-    rw [hηdef]
-    have h1 := min_le_right (min (Real.pi / 3) (K / (6 * Msup))) (P.beta i - P.alpha i)
-    have : (0:ℝ) < P.beta i - P.alpha i := by linarith
-    nlinarith [h1, this]
-  have hcos : (1:ℝ) / 2 ≤ Real.cos η := by
-    have := Real.cos_le_cos_of_nonneg_of_le_pi (le_of_lt hηpos) (by nlinarith [Real.pi_pos]) (le_of_lt hηpi3)
-    linarith [this, Real.cos_pi_div_three]
-  have hcospos : 0 < Real.cos η := by linarith
-  have hsinle : Real.sin η ≤ η := Real.sin_le (le_of_lt hηpos)
-  have hsinpos : 0 < Real.sin η := Real.sin_pos_of_pos_of_lt_pi hηpos (by linarith [Real.pi_pos])
-  have htrig : 3 * Msup * Real.sin η < K * Real.cos η := by
-    have h1 : 3 * Msup * η < K / 2 := by
-      have hηK' : η * (6 * Msup) < K := (lt_div_iff₀ (by positivity : (0:ℝ) < 6 * Msup)).mp hηK
-      nlinarith [hηK', hMsuppos]
-    nlinarith [hsinle, hMsuppos, hcos, hKpos, h1,
-      mul_le_mul_of_nonneg_left hsinle (by positivity : (0:ℝ) ≤ 3 * Msup)]
+  obtain ⟨η, hηpos, hηgap, -, hcospos, -, hsinpos, htrig⟩ :=
+    exists_corner_angle Msup K (P.beta i - P.alpha i) hMsuppos hKpos (by linarith)
   set θ := P.beta i - η with hθdef
   have hfspos : 0 < P.featureSize := featureSize_pos P hsimple
-  set ρ := min capR (min eD (min (εreg / 2) (P.featureSize / 4))) / 2 with hρdef
-  have hρposaux : 0 < min capR (min eD (min (εreg / 2) (P.featureSize / 4))) :=
-    lt_min hcapR (lt_min heDpos (lt_min (by linarith) (by linarith)))
-  have hρpos : 0 < ρ := by rw [hρdef]; linarith
-  have hρcapR : ρ < capR := by
-    rw [hρdef]; have := min_le_left capR (min eD (min (εreg / 2) (P.featureSize / 4))); linarith
-  have hρeD : ρ < eD := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_left eD (min (εreg / 2) (P.featureSize / 4))
-    linarith [le_trans h1 h2]
-  have hρeps : 2 * ρ < εreg := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_left (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
-  have hρfs : 4 * ρ < P.featureSize := by
-    rw [hρdef]
-    have h1 := min_le_right capR (min eD (min (εreg / 2) (P.featureSize / 4)))
-    have h2 := min_le_right eD (min (εreg / 2) (P.featureSize / 4))
-    have h3 := min_le_right (εreg / 2) (P.featureSize / 4)
-    linarith [le_trans h1 (le_trans h2 h3)]
+  obtain ⟨ρ, hρpos, hρcapR, hρeD, hρeps, hρfs⟩ :=
+    exists_corner_radius capR eD εreg P.featureSize hcapR heDpos hεreg hfspos
   set q := toReal (P.vert (i + 1)) + ρ • dirOf θ with hqdef
   have hqsub : q - toReal (P.vert (i + 1)) = ρ • dirOf θ := by rw [hqdef]; abel
   have hqne : q ≠ toReal (P.vert (i + 1)) := by
@@ -4214,7 +3673,7 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
   have htneg : t < 0 := by
     have hpos1 : 0 < ρ * eD * Real.sin η := by positivity
     have hlt : t * N / Msup < 0 := by rw [htN]; linarith
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     have : 0 ≤ t * N / Msup := by positivity
     linarith
   have htval : t = -(ρ * eD * Real.sin η * Msup / N) := by
@@ -4253,14 +3712,14 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
   have hδle : δ ≤ ρ := by
     rw [hδval, hNeD]
     rw [div_le_iff₀ (by positivity : (0:ℝ) < eD ^ 2)]
-    have hsin1 : Real.sin η ≤ 1 := Real.sin_le_one η
-    nlinarith [mul_le_mul hsin1 hMle (le_of_lt hMsuppos) (by norm_num : (0:ℝ) ≤ 1),
-      hρpos, heDpos, hsinpos, mul_pos hρpos heDpos]
+    have hsin1 : Real.sin η * Msup ≤ 1 * eD :=
+      mul_le_mul (Real.sin_le_one η) hMle hMsuppos.le zero_le_one
+    linarith [mul_le_mul_of_nonneg_left hsin1 (by positivity : (0:ℝ) ≤ ρ * eD)]
   have hs'bound : s' ≤ ρ / eD := by
     rw [hs'val, hNeD]
     rw [div_le_div_iff₀ (by positivity) heDpos]
-    have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-    rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+    rw [pow_two]
+    linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
   have hρeD1 : ρ / eD < 1 := by rw [div_lt_one heDpos]; exact hρeD
   have hs'lt1 : s' < 1 := by linarith [hs'bound, hρeD1]
   have hs'Ioo : s' ∈ Set.Ioo (0:ℝ) 1 := ⟨hs'pos, hs'lt1⟩
@@ -4271,9 +3730,7 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
   have hδeq : dist q (P.foot (i + 1) s') = δ := by
     rw [hq, dist_rectMap_foot, leftNormal_unit P hsimple, mul_one, hδdef, abs_of_neg htneg]
   have heps : Real.sqrt 2 * δ < εreg := by
-    have hsqrt2lt : Real.sqrt 2 < 2 := by
-      rw [show (2:ℝ) = Real.sqrt 4 from by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
-      exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+    have hsqrt2lt : Real.sqrt 2 < 2 := sqrt_two_lt_two
     have h1 : Real.sqrt 2 * δ ≤ 2 * ρ := by
       calc Real.sqrt 2 * δ ≤ Real.sqrt 2 * ρ := mul_le_mul_of_nonneg_left hδle (Real.sqrt_nonneg _)
         _ ≤ 2 * ρ := mul_le_mul_of_nonneg_right (le_of_lt hsqrt2lt) (le_of_lt hρpos)
@@ -4285,7 +3742,7 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
       have hKb := hKbnd s' hs'Ioo
       have hkey : 3 * δ < K * s' := by
         have hpoly : 3 * (ρ * eD * Real.sin η * Msup) < K * (ρ * eD * Real.cos η) := by
-          nlinarith [htrig, hρpos, heDpos, hsinpos, hcospos, hKpos, mul_pos hρpos heDpos]
+          linarith [mul_lt_mul_of_pos_left htrig (mul_pos hρpos heDpos)]
         have hd3 : 3 * δ = (3 * (ρ * eD * Real.sin η * Msup)) / N := by rw [hδval]; ring
         have hk3 : K * s' = (K * (ρ * eD * Real.cos η)) / N := by rw [hs'val]; ring
         rw [hd3, hk3, div_lt_div_iff_of_pos_right hNpos]
@@ -4305,8 +3762,8 @@ lemma capA_meet_rightRegion_succ (hsimple : P.IsSimple) (i : ZMod P.n) {εreg ca
         have hub : s' * eD ≤ ρ := by
           rw [hs'val, hNeD]
           rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-          have hcos1 : Real.cos η ≤ 1 := Real.cos_le_one η
-          rw [pow_two]; nlinarith [hcos1, hcospos, hρpos, heDpos, mul_pos (mul_pos hρpos heDpos) heDpos]
+          rw [pow_two]
+          linarith [mul_le_mul_of_nonneg_left (Real.cos_le_one η) (by positivity : (0:ℝ) ≤ ρ * eD * eD)]
         linarith [hle, hub]
       have htri : Metric.infDist (toReal (P.vert (i + 1))) (P.edgeSeg j)
           ≤ Metric.infDist (P.foot (i + 1) s') (P.edgeSeg j) + dist (toReal (P.vert (i + 1))) (P.foot (i + 1) s') :=
@@ -4375,7 +3832,7 @@ theorem compl_boundary_atMost_two (hsimple : P.IsSimple) :
 /-- **Some off-boundary point has winding `0`.** From `winding_zero_on_cobounded`
 there is a radius beyond which the winding vanishes; any point far enough out (and
 necessarily off the bounded boundary) witnesses winding `0`. -/
-lemma exists_offBoundary_winding_zero (hsimple : P.IsSimple) :
+lemma exists_offBoundary_winding_zero (_ : P.IsSimple) :
     ∃ q : ℝ × ℝ, q ∉ P.boundary ∧ P.winding q = 0 := by
   obtain ⟨R, hR⟩ := winding_zero_on_cobounded P
   -- the boundary is a finite union of segments, hence bounded
@@ -4903,8 +4360,8 @@ boundary (`hdL01`, `hear01`), a lattice point `q` off `R.boundary` and off the
 diagonal lies in `interiorLattice R` iff it lies in exactly one of the two pieces'
 interior lattices. The `winding ∈ {0,1}` dichotomy plus additivity make the
 membership an exclusive-or. -/
-lemma interiorLattice_mem_offDiag (R : LatticePolygon) (hS : R.IsSimple)
-    (hO : R.PositivelyOriented) (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2)
+lemma interiorLattice_mem_offDiag (R : LatticePolygon) (_ : R.IsSimple)
+    (_ : R.PositivelyOriented) (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2)
     (hdL01 : ∀ p, p ∉ (deleteLast R h2).boundary →
       (deleteLast R h2).winding p = 0 ∨ (deleteLast R h2).winding p = 1)
     (hear01 : ∀ p, p ∉ (earTri R m hm).boundary →
@@ -5001,7 +4458,7 @@ lemma diag_endpoint_m_mem_R_bdry (R : LatticePolygon) (m : ℕ) :
     R.vert (m : ZMod R.n) ∈ R.boundaryLattice :=
   vert_mem_boundaryLattice R _
 
-lemma diag_endpoint_0_mem_R_bdry (R : LatticePolygon) (m : ℕ) :
+lemma diag_endpoint_0_mem_R_bdry (R : LatticePolygon) (_ : ℕ) :
     R.vert 0 ∈ R.boundaryLattice :=
   vert_mem_boundaryLattice R 0
 
@@ -5153,24 +4610,18 @@ lemma earTri_boundary_eq (R : LatticePolygon) (m : ℕ) (hm : R.n = m + 2) :
   · apply Set.iUnion_subset
     intro i
     rcases zmod3_cases i with rfl | rfl | rfl <;>
-      simp only [LatticePolygon.edgeSeg, earTri, show ((1:ZMod 3)+1 = 2) from rfl,
-        show ((2:ZMod 3)+1 = 0) from rfl, show ((0:ZMod 3)+1 = 1) from rfl,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-        Matrix.tail_cons] <;> intro y hy
+      simp only [LatticePolygon.edgeSeg, earTri] <;> intro y hy
     · exact Or.inl (Or.inl hy)
     · exact Or.inl (Or.inr hy)
     · exact Or.inr hy
   · intro y hy
     rcases hy with (hy | hy) | hy
     · exact Set.mem_iUnion.2 ⟨0, by
-        simp only [LatticePolygon.edgeSeg, earTri, show ((0:ZMod 3)+1 = 1) from rfl,
-          Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]; exact hy⟩
+        simp only [LatticePolygon.edgeSeg, earTri]; exact hy⟩
     · exact Set.mem_iUnion.2 ⟨1, by
-        simp only [LatticePolygon.edgeSeg, earTri, show ((1:ZMod 3)+1 = 2) from rfl,
-          Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]; exact hy⟩
+        simp only [LatticePolygon.edgeSeg, earTri]; exact hy⟩
     · exact Set.mem_iUnion.2 ⟨2, by
-        simp only [LatticePolygon.edgeSeg, earTri, show ((2:ZMod 3)+1 = 0) from rfl,
-          Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, Matrix.cons_val_zero]; exact hy⟩
+        simp only [LatticePolygon.edgeSeg, earTri]; exact hy⟩
 
 /-- **`hP2` for an empty ear (Hopf-free).** The shared boundary lattice of the clip
 `deleteLast R` and the ear triangle lies on the closed diagonal `[vₘ, v₀]`.  A shared
@@ -5179,7 +4630,7 @@ and on some ear edge (a leg `[vₘ, vₘ₊₁]`/`[vₘ₊₁, v₀]`, or the di
 the diagonal we are done; otherwise a kept `R`-edge meets a leg only at the shared
 triangle vertex `vₘ` or `v₀` (`R`-simplicity), both on the diagonal. -/
 lemma hP2_of_emptyEar (R : LatticePolygon) (hS : R.IsSimple) (h2 : 2 ≤ R.n) (m : ℕ)
-    (hm : R.n = m + 2) (hm2 : 2 ≤ m) (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
+    (hm : R.n = m + 2) (_ : 2 ≤ m) (_ : isEarVertex R ((m : ZMod R.n) + 1)) :
     (deleteLast R h2).boundaryLattice ∩ (earTri R m hm).boundaryLattice
       ⊆ diagLattice R m := by
   classical
@@ -5299,7 +4750,7 @@ lemma hIB_of_partition (R : LatticePolygon) (hS : R.IsSimple) (hO : R.Positively
   have fEB : (earTri R m hm).boundaryLattice.Finite := boundaryLattice_finite _
   have fRB : R.boundaryLattice.Finite := boundaryLattice_finite _
   have fD : (diagLattice R m).Finite := diagLattice_finite R h2 m hm
-  have fDopen : (diagLattice R m \ R.boundaryLattice).Finite := fD.diff
+  have fDopen : (diagLattice R m \ R.boundaryLattice).Finite := fD.sdiff
   set d := (diagLattice R m \ R.boundaryLattice).ncard with hd
   -- ========= INTERIOR identity: R.I = clip.I + ear.I + d =========
   -- pairwise disjointness of the three interior pieces
@@ -5308,12 +4759,12 @@ lemma hIB_of_partition (R : LatticePolygon) (hS : R.IsSimple) (hO : R.Positively
   -- clip.I ⟂ open-diagonal: open-diagonal ⊆ diagLattice ⊆ clip.boundaryLattice, disjoint from clip.I
   have hdisjCD : Disjoint (deleteLast R h2).interiorLattice
       (diagLattice R m \ R.boundaryLattice) := by
-    apply Set.disjoint_of_subset_right (Set.diff_subset.trans
+    apply Set.disjoint_of_subset_right (Set.sdiff_subset.trans
       (diagLattice_subset_deleteLast_boundaryLattice R h2 m hm))
     exact interiorLattice_disjoint_boundaryLattice _
   have hdisjED : Disjoint (earTri R m hm).interiorLattice
       (diagLattice R m \ R.boundaryLattice) := by
-    apply Set.disjoint_of_subset_right (Set.diff_subset.trans
+    apply Set.disjoint_of_subset_right (Set.sdiff_subset.trans
       (diagLattice_subset_earTri_boundaryLattice R m hm))
     exact interiorLattice_disjoint_boundaryLattice _
   have hdisjCE_D : Disjoint
@@ -5336,7 +4787,7 @@ lemma hIB_of_partition (R : LatticePolygon) (hS : R.IsSimple) (hO : R.Positively
   have hDcard : (diagLattice R m).ncard = d + 2 := by
     -- Dset = (Dset \ RB) ⊎ (Dset ∩ RB), the two pieces disjoint
     have hpart : (diagLattice R m \ R.boundaryLattice) ∪ (diagLattice R m ∩ R.boundaryLattice)
-        = diagLattice R m := Set.diff_union_inter _ _
+        = diagLattice R m := Set.sdiff_union_inter _ _
     have hdisj : Disjoint (diagLattice R m \ R.boundaryLattice)
         (diagLattice R m ∩ R.boundaryLattice) := Set.disjoint_sdiff_inter
     have hsplit : (diagLattice R m).ncard
@@ -5503,7 +4954,7 @@ lemma exists_vertex_below_real (q v0 v1 v2 : ℝ × ℝ)
     (h2 : 0 < cross (v2 - q) (v0 - q)) :
     v0.2 < q.2 ∨ v1.2 < q.2 ∨ v2.2 < q.2 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : cross (v1 - q) (v2 - q) * (v0.2 - q.2) + cross (v2 - q) (v0 - q) * (v1.2 - q.2)
       + cross (v0 - q) (v1 - q) * (v2.2 - q.2) = 0 := by
@@ -5527,7 +4978,7 @@ lemma exists_vertex_above_real (q v0 v1 v2 : ℝ × ℝ)
     (h2 : 0 < cross (v2 - q) (v0 - q)) :
     q.2 < v0.2 ∨ q.2 < v1.2 ∨ q.2 < v2.2 := by
   by_contra h
-  push_neg at h
+  push Not at h
   obtain ⟨hv0, hv1, hv2⟩ := h
   have key : cross (v1 - q) (v2 - q) * (q.2 - v0.2) + cross (v2 - q) (v0 - q) * (q.2 - v1.2)
       + cross (v0 - q) (v1 - q) * (q.2 - v2.2) = 0 := by
@@ -5702,7 +5153,162 @@ lemma exists_convex_min (P : LatticePolygon) (hS : P.IsSimple) (hO : P.Positivel
     rw [em, ej, hht, hht] at hR
     exact hR
 
-set_option maxHeartbeats 1000000 in
+/-- The perturbed functional's coefficient vector `(d1 − sN·d2, d2 + sN·d1)` is nonzero
+whenever `(d1, d2)` is. Factored out of `exists_offline_convex`. -/
+private lemma perturb_sq_ne_zero (d1 d2 s N : ℤ) (hd0 : ¬(d1 = 0 ∧ d2 = 0)) :
+    ((d1 - s * N * d2 : ℤ) : ℝ) ^ 2 + ((d2 + s * N * d1 : ℤ) : ℝ) ^ 2 ≠ 0 := by
+  intro h
+  have h1 : ((d1 - s * N * d2 : ℤ) : ℝ) ^ 2 = 0 ∧ ((d2 + s * N * d1 : ℤ) : ℝ) ^ 2 = 0 :=
+    (add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).mp h
+  have e1 : d1 - s * N * d2 = 0 := by
+    have := pow_eq_zero_iff two_ne_zero |>.mp h1.1
+    exact_mod_cast this
+  have e2 : d2 + s * N * d1 = 0 := by
+    have := pow_eq_zero_iff two_ne_zero |>.mp h1.2
+    exact_mod_cast this
+  have key1 : d1 * (1 + (s * N) ^ 2) = 0 := by linear_combination e1 + (s * N) * e2
+  have hd1z : d1 = 0 := by
+    have hposN : (0 : ℤ) < 1 + (s * N) ^ 2 := by positivity
+    rcases mul_eq_zero.1 key1 with h' | h'
+    · exact h'
+    · omega
+  have hd2z : d2 = 0 := by rw [hd1z, mul_zero, add_zero] at e2; exact e2
+  exact hd0 ⟨hd1z, hd2z⟩
+
+/-- **Injectivity of the perturbed integer functional** `FL = sN·PL + QL` on the vertices:
+on a `PL`-level set it pins the vertex down via `d1² + d2² ≠ 0`, and across `PL`-levels the
+`sN` multiple dominates the `QL`-spread. Factored out of `exists_offline_convex`. -/
+private lemma perturb_functional_inj (P : LatticePolygon) (hS : P.IsSimple)
+    (d1 d2 s N : ℤ) (PL QL FL : ZMod P.n → ℤ)
+    (hPL : ∀ i, PL i = -d2 * (P.vert i).1 + d1 * (P.vert i).2)
+    (hQL : ∀ i, QL i = d1 * (P.vert i).1 + d2 * (P.vert i).2)
+    (hFL : ∀ i, FL i = s * N * PL i + QL i)
+    (hsqpos : 0 < d1 ^ 2 + d2 ^ 2) (hs1 : s = 1 ∨ s = -1)
+    (hNpos : 0 < N) (hNgt : ∀ i j : ZMod P.n, |QL i - QL j| < N) :
+    ∀ i j : ZMod P.n, FL i = FL j → i = j := by
+  intro i j hF
+  rw [hFL i, hFL j] at hF
+  by_cases hpl : PL i = PL j
+  · have hql : QL i = QL j := by rw [hpl] at hF; linarith
+    have hPLd : PL i - PL j = 0 := by rw [hpl]; ring
+    have hQLd : QL i - QL j = 0 := by rw [hql]; ring
+    have kx : (d1 ^ 2 + d2 ^ 2) * ((P.vert i).1 - (P.vert j).1)
+        = d1 * (QL i - QL j) - d2 * (PL i - PL j) := by
+      rw [hPL i, hPL j, hQL i, hQL j]; ring
+    have ky : (d1 ^ 2 + d2 ^ 2) * ((P.vert i).2 - (P.vert j).2)
+        = d1 * (PL i - PL j) + d2 * (QL i - QL j) := by
+      rw [hPL i, hPL j, hQL i, hQL j]; ring
+    rw [hQLd, hPLd] at kx ky
+    simp only [mul_zero, sub_zero, add_zero] at kx ky
+    have hxx : (P.vert i).1 = (P.vert j).1 := by
+      rcases mul_eq_zero.1 kx with h' | h'
+      · exact absurd h' (ne_of_gt hsqpos)
+      · exact sub_eq_zero.1 h'
+    have hyy : (P.vert i).2 = (P.vert j).2 := by
+      rcases mul_eq_zero.1 ky with h' | h'
+      · exact absurd h' (ne_of_gt hsqpos)
+      · exact sub_eq_zero.1 h'
+    exact vert_injective P hS (Prod.ext hxx hyy)
+  · exfalso
+    have hdiff : s * N * PL i - s * N * PL j = QL j - QL i := by linarith
+    have heq : s * N * (PL i - PL j) = QL j - QL i := by rw [← hdiff]; ring
+    have hpld1 : (1 : ℤ) ≤ |PL i - PL j| := Int.one_le_abs (sub_ne_zero.2 hpl)
+    have hsabs : |s| = 1 := by rcases hs1 with h' | h' <;> rw [h'] <;> decide
+    have habs : |s * N * (PL i - PL j)| = |QL j - QL i| := by rw [heq]
+    have hge : N ≤ |s * N * (PL i - PL j)| := by
+      rw [abs_mul, abs_mul, hsabs, abs_of_pos hNpos, one_mul]
+      have h := mul_le_mul_of_nonneg_left hpld1 (le_of_lt hNpos)
+      rw [mul_one] at h; exact h
+    rw [habs] at hge
+    linarith [hNgt j i, hge]
+
+/-- **The functional's minimiser is off the line.** If `FL w ≤ FL t` yet `PL w = PL a`,
+the `sN` multiple of the `PL`-drop toward `t` overwhelms the `QL`-spread — contradiction.
+Factored out of `exists_offline_convex`. -/
+private lemma perturb_min_off_line (s N PLw PLa PLt QLw QLt : ℤ)
+    (hs : s * (PLt - PLa) < 0) (hNpos : 0 < N) (hNgt : |QLt - QLw| < N)
+    (hmin : s * N * PLw + QLw ≤ s * N * PLt + QLt) (hwa : PLw = PLa) : False := by
+  rw [hwa] at hmin
+  have hle2 : s * N * PLa - s * N * PLt ≤ QLt - QLw := by linarith
+  have hM : N ≤ s * N * PLa - s * N * PLt := by
+    have he : s * N * PLa - s * N * PLt = N * (-(s * (PLt - PLa))) := by ring
+    rw [he]
+    have h1 : 1 ≤ -(s * (PLt - PLa)) := by omega
+    have h := mul_le_mul_of_nonneg_left h1 (le_of_lt hNpos)
+    rw [mul_one] at h; exact h
+  have hlt : QLt - QLw < N := lt_of_le_of_lt (le_abs_self _) hNgt
+  linarith
+
+/-- **Some vertex is strictly off the chord `v_a v_b`.** The positive fan term at `a`
+(`exists_pos_fan_term`) forbids all vertices from being collinear with the chord. -/
+private lemma exists_cross_ne (P : LatticePolygon) (hO : P.PositivelyOriented)
+    (a b : ZMod P.n) (hne : P.vert a ≠ P.vert b) :
+    ∃ t : ZMod P.n, cross (toReal (P.vert b) - toReal (P.vert a))
+      (toReal (P.vert t) - toReal (P.vert a)) ≠ 0 := by
+  have hDne : toReal (P.vert b) - toReal (P.vert a) ≠ 0 := by
+    rw [sub_ne_zero]; intro h; exact hne ((toReal_injective h).symm)
+  have hpar : ∀ u w : ℝ × ℝ,
+      cross (toReal (P.vert b) - toReal (P.vert a)) u = 0 →
+      cross (toReal (P.vert b) - toReal (P.vert a)) w = 0 → cross u w = 0 := by
+    intro u w hu hw
+    set D := toReal (P.vert b) - toReal (P.vert a) with hDdef
+    have h1 : D.1 * cross u w = 0 := by
+      simp only [cross] at hu hw ⊢; linear_combination u.1 * hw - w.1 * hu
+    have h2 : D.2 * cross u w = 0 := by
+      simp only [cross] at hu hw ⊢; linear_combination u.2 * hw - w.2 * hu
+    by_cases hD1z : D.1 = 0
+    · have hD2z : D.2 ≠ 0 := fun h => hDne (Prod.ext hD1z h)
+      exact (mul_eq_zero.1 h2).resolve_left hD2z
+    · exact (mul_eq_zero.1 h1).resolve_left hD1z
+  obtain ⟨i0, hi0⟩ := exists_pos_fan_term P hO a
+  by_contra hcon
+  push Not at hcon
+  exact absurd (hpar _ _ (hcon i0) (hcon (i0 + 1))) (ne_of_gt hi0)
+
+/-- **The perturbed integer functional.** Given the chord's level functionals `PL`, `QL`
+and a vertex `t` with `PL t ≠ PL a`, produce coefficients `c, dc` whose vertex functional
+`FL` is injective, decomposes as `sN·PL + QL` with `N` dominating the `QL`-spread, and
+strictly decreases from `a` toward `t`. -/
+private lemma exists_perturbed_functional (P : LatticePolygon) (hS : P.IsSimple)
+    (d1 d2 : ℤ) (hd0 : ¬(d1 = 0 ∧ d2 = 0)) (PL QL : ZMod P.n → ℤ)
+    (hPL : ∀ i, PL i = -d2 * (P.vert i).1 + d1 * (P.vert i).2)
+    (hQL : ∀ i, QL i = d1 * (P.vert i).1 + d2 * (P.vert i).2)
+    (t a : ZMod P.n) (ht : PL t ≠ PL a) :
+    ∃ (c dc s N : ℤ) (FL : ZMod P.n → ℤ),
+      (∀ i, c * (P.vert i).1 + dc * (P.vert i).2 = FL i) ∧
+      ((c : ℝ) ^ 2 + (dc : ℝ) ^ 2 ≠ 0) ∧
+      (∀ i j : ZMod P.n, FL i = FL j → i = j) ∧
+      (∀ i, FL i = s * N * PL i + QL i) ∧
+      0 < N ∧ (∀ i j : ZMod P.n, |QL i - QL j| < N) ∧
+      s * (PL t - PL a) < 0 := by
+  classical
+  have hsqpos : 0 < d1 ^ 2 + d2 ^ 2 := by
+    have hne0 : d1 ^ 2 + d2 ^ 2 ≠ 0 := by
+      intro h; apply hd0; constructor <;> nlinarith [sq_nonneg d1, sq_nonneg d2]
+    exact lt_of_le_of_ne (by positivity) (Ne.symm hne0)
+  -- the sign `s` and the spread bound `N`, kept fully opaque: the defining terms (an
+  -- `if` and a `Finset.sum` over `ZMod P.n × ZMod P.n`) must not leak into the context,
+  -- or every later tactic pays for attempts to evaluate them (~50× heartbeat blowup).
+  obtain ⟨s, hs1, hs⟩ : ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ s * (PL t - PL a) < 0 := by
+    rcases lt_or_gt_of_ne ht with h | h
+    · exact ⟨1, Or.inl rfl, by omega⟩
+    · exact ⟨-1, Or.inr rfl, by omega⟩
+  obtain ⟨N, hNpos, hNgt⟩ : ∃ N : ℤ, 0 < N ∧ ∀ i j : ZMod P.n, |QL i - QL j| < N := by
+    obtain ⟨B, hB⟩ :=
+      (Set.finite_range fun p : ZMod P.n × ZMod P.n => |QL p.1 - QL p.2|).bddAbove
+    refine ⟨max B 0 + 1, by have := le_max_right B 0; omega, fun i j => ?_⟩
+    have h1 : |QL i - QL j| ≤ B := hB ⟨(i, j), rfl⟩
+    have h2 : B ≤ max B 0 := le_max_left _ _
+    omega
+  have hFLeq : ∀ i, (d1 - s * N * d2) * (P.vert i).1 + (d2 + s * N * d1) * (P.vert i).2
+      = s * N * PL i + QL i := by
+    intro i; rw [hPL i, hQL i]; ring
+  have hsq := perturb_sq_ne_zero d1 d2 s N hd0
+  have hinj := perturb_functional_inj P hS d1 d2 s N PL QL
+    (fun i => s * N * PL i + QL i) hPL hQL (fun i => rfl) hsqpos hs1 hNpos hNgt
+  exact ⟨d1 - s * N * d2, d2 + s * N * d1, s, N, fun i => s * N * PL i + QL i,
+    hFLeq, hsq, hinj, fun i => rfl, hNpos, hNgt, hs⟩
+
 /-- **A convex vertex strictly off a given line.** Given two distinct vertices `a, b`, there is
 a convex vertex `w` whose `(v_w − v_a)` has nonzero cross with `(v_b − v_a)` — i.e. `v_w` lies
 strictly off the line `v_a v_b`.  Construction: perturb the perpendicular functional
@@ -5721,7 +5327,7 @@ lemma exists_offline_convex (P : LatticePolygon) (hS : P.IsSimple) (hO : P.Posit
   set PL : ZMod P.n → ℤ := fun i => -d2 * (P.vert i).1 + d1 * (P.vert i).2 with hPLdef
   set QL : ZMod P.n → ℤ := fun i => d1 * (P.vert i).1 + d2 * (P.vert i).2 with hQLdef
   clear_value d1 d2 PL QL
-  -- the difference vector is nonzero
+  -- the difference vector is nonzero, with coordinates `(d1, d2)`
   have hDne : toReal (P.vert b) - toReal (P.vert a) ≠ 0 := by
     rw [sub_ne_zero]; intro h; exact hne ((toReal_injective h).symm)
   have hD1 : (toReal (P.vert b) - toReal (P.vert a)).1 = (d1 : ℝ) := by
@@ -5734,10 +5340,6 @@ lemma exists_offline_convex (P : LatticePolygon) (hS : P.IsSimple) (hO : P.Posit
     apply Prod.ext
     · rw [hD1, z1]; simp
     · rw [hD2, z2]; simp
-  have hsqpos : 0 < d1 ^ 2 + d2 ^ 2 := by
-    have hne0 : d1 ^ 2 + d2 ^ 2 ≠ 0 := by
-      intro h; apply hd0; constructor <;> nlinarith [sq_nonneg d1, sq_nonneg d2]
-    exact lt_of_le_of_ne (by positivity) (Ne.symm hne0)
   -- cross(D, v_i − v_a) = PL i − PL a
   have hcross : ∀ i : ZMod P.n,
       cross (toReal (P.vert b) - toReal (P.vert a)) (toReal (P.vert i) - toReal (P.vert a))
@@ -5745,113 +5347,13 @@ lemma exists_offline_convex (P : LatticePolygon) (hS : P.IsSimple) (hO : P.Posit
     intro i
     simp only [cross, toReal, Prod.fst_sub, Prod.snd_sub, hPLdef, hd1def, hd2def]
     push_cast; ring
-  -- a parallel pair has cross 0
-  have hpar : ∀ u w : ℝ × ℝ,
-      cross (toReal (P.vert b) - toReal (P.vert a)) u = 0 →
-      cross (toReal (P.vert b) - toReal (P.vert a)) w = 0 → cross u w = 0 := by
-    intro u w hu hw
-    set D := toReal (P.vert b) - toReal (P.vert a) with hDdef
-    have h1 : D.1 * cross u w = 0 := by
-      simp only [cross] at hu hw ⊢; linear_combination u.1 * hw - w.1 * hu
-    have h2 : D.2 * cross u w = 0 := by
-      simp only [cross] at hu hw ⊢; linear_combination u.2 * hw - w.2 * hu
-    by_cases hD1z : D.1 = 0
-    · have hD2z : D.2 ≠ 0 := fun h => hDne (Prod.ext hD1z h)
-      exact (mul_eq_zero.1 h2).resolve_left hD2z
-    · exact (mul_eq_zero.1 h1).resolve_left hD1z
-  -- a vertex off the line exists
-  obtain ⟨i0, hi0⟩ := exists_pos_fan_term P hO a
-  have htex : PL i0 ≠ PL a ∨ PL (i0 + 1) ≠ PL a := by
-    by_contra hcon
-    push_neg at hcon
-    obtain ⟨hp1, hp2⟩ := hcon
-    have e1 : cross (toReal (P.vert b) - toReal (P.vert a)) (toReal (P.vert i0) - toReal (P.vert a)) = 0 := by
-      rw [hcross i0, hp1]; ring
-    have e2 : cross (toReal (P.vert b) - toReal (P.vert a)) (toReal (P.vert (i0 + 1)) - toReal (P.vert a)) = 0 := by
-      rw [hcross (i0 + 1), hp2]; ring
-    exact absurd (hpar _ _ e1 e2) (ne_of_gt hi0)
-  obtain ⟨t, ht⟩ : ∃ t, PL t ≠ PL a := htex.elim (fun h => ⟨i0, h⟩) (fun h => ⟨i0 + 1, h⟩)
-  -- sign and magnitude
-  set s : ℤ := if PL t < PL a then 1 else -1 with hsdef
-  have hs1 : s = 1 ∨ s = -1 := by rw [hsdef]; split_ifs <;> simp
-  have hs : s * (PL t - PL a) < 0 := by rw [hsdef]; split_ifs with hh <;> omega
-  set N : ℤ := (∑ p : ZMod P.n × ZMod P.n, |QL p.1 - QL p.2|) + 1 with hNdef
-  clear_value s N
-  have hNpos : 0 < N := by
-    rw [hNdef]
-    have : 0 ≤ ∑ p : ZMod P.n × ZMod P.n, |QL p.1 - QL p.2| :=
-      Finset.sum_nonneg (fun _ _ => abs_nonneg _)
-    omega
-  have hNgt : ∀ i j : ZMod P.n, |QL i - QL j| < N := by
-    intro i j
-    rw [hNdef]
-    have hle : |QL i - QL j| ≤ ∑ p : ZMod P.n × ZMod P.n, |QL p.1 - QL p.2| :=
-      Finset.single_le_sum (f := fun p => |QL p.1 - QL p.2|)
-        (fun _ _ => abs_nonneg _) (Finset.mem_univ (i, j))
-    omega
-  -- the perturbed integer functional and its packaging
-  set c : ℤ := d1 - s * N * d2 with hcdef
-  set dc : ℤ := d2 + s * N * d1 with hdcdef
-  set FL : ZMod P.n → ℤ := fun i => s * N * PL i + QL i with hFLdef
-  have hFLeq : ∀ i : ZMod P.n, c * (P.vert i).1 + dc * (P.vert i).2 = FL i := by
-    intro i
-    simp only [hcdef, hdcdef, hFLdef, hPLdef, hQLdef, hd1def, hd2def]; ring
-  clear_value c dc FL
-  -- `c² + d² ≠ 0`
-  have hcdR : (c : ℝ) ^ 2 + (dc : ℝ) ^ 2 ≠ 0 := by
-    intro h
-    have hc0 : (c : ℝ) = 0 ∧ (dc : ℝ) = 0 := by
-      constructor <;> nlinarith [sq_nonneg (c : ℝ), sq_nonneg (dc : ℝ), h]
-    have hci : c = 0 := by exact_mod_cast hc0.1
-    have hdci : dc = 0 := by exact_mod_cast hc0.2
-    have e1 : d1 - s * N * d2 = 0 := by rw [← hcdef]; exact hci
-    have e2 : d2 + s * N * d1 = 0 := by rw [← hdcdef]; exact hdci
-    have key1 : d1 * (1 + (s * N) ^ 2) = 0 := by linear_combination e1 + (s * N) * e2
-    have hposN : (0 : ℤ) < 1 + (s * N) ^ 2 := by positivity
-    have hd1z : d1 = 0 := by
-      rcases mul_eq_zero.1 key1 with h' | h'
-      · exact h'
-      · omega
-    have hd2z : d2 = 0 := by
-      have := e2; rw [hd1z, mul_zero, add_zero] at this; exact this
-    exact hd0 ⟨hd1z, hd2z⟩
-  -- injectivity of the functional
-  have hFLinj : ∀ i j : ZMod P.n, FL i = FL j → i = j := by
-    intro i j hF
-    simp only [hFLdef] at hF
-    by_cases hpl : PL i = PL j
-    · have hql : QL i = QL j := by rw [hpl] at hF; linarith
-      have hPLd : PL i - PL j = 0 := by rw [hpl]; ring
-      have hQLd : QL i - QL j = 0 := by rw [hql]; ring
-      have kx : (d1 ^ 2 + d2 ^ 2) * ((P.vert i).1 - (P.vert j).1)
-          = d1 * (QL i - QL j) - d2 * (PL i - PL j) := by
-        simp only [hQLdef, hPLdef, hd1def, hd2def]; ring
-      have ky : (d1 ^ 2 + d2 ^ 2) * ((P.vert i).2 - (P.vert j).2)
-          = d1 * (PL i - PL j) + d2 * (QL i - QL j) := by
-        simp only [hQLdef, hPLdef, hd1def, hd2def]; ring
-      rw [hQLd, hPLd] at kx ky
-      simp only [mul_zero, sub_zero, add_zero, zero_sub, neg_zero] at kx ky
-      have hxx : (P.vert i).1 = (P.vert j).1 := by
-        rcases mul_eq_zero.1 kx with h' | h'
-        · exact absurd h' (ne_of_gt hsqpos)
-        · exact sub_eq_zero.1 h'
-      have hyy : (P.vert i).2 = (P.vert j).2 := by
-        rcases mul_eq_zero.1 ky with h' | h'
-        · exact absurd h' (ne_of_gt hsqpos)
-        · exact sub_eq_zero.1 h'
-      exact vert_injective P hS (Prod.ext hxx hyy)
-    · exfalso
-      have hdiff : s * N * PL i - s * N * PL j = QL j - QL i := by linarith
-      have heq : s * N * (PL i - PL j) = QL j - QL i := by rw [← hdiff]; ring
-      have hpld1 : (1 : ℤ) ≤ |PL i - PL j| := Int.one_le_abs (sub_ne_zero.2 hpl)
-      have hsabs : |s| = 1 := by rcases hs1 with h' | h' <;> rw [h'] <;> decide
-      have habs : |s * N * (PL i - PL j)| = |QL j - QL i| := by rw [heq]
-      have hge : N ≤ |s * N * (PL i - PL j)| := by
-        rw [abs_mul, abs_mul, hsabs, abs_of_pos hNpos, one_mul]
-        have h := mul_le_mul_of_nonneg_left hpld1 (le_of_lt hNpos)
-        rw [mul_one] at h; exact h
-      rw [habs] at hge
-      linarith [hNgt j i, hge]
+  -- a vertex off the line, and the perturbed injective functional
+  obtain ⟨t, ht0⟩ := exists_cross_ne P hO a b hne
+  have ht : PL t ≠ PL a := by
+    intro hEq; apply ht0; rw [hcross t, hEq]; ring
+  obtain ⟨c, dc, s, N, FL, hFLeq, hcdR, hFLinj, hFLdef, hNpos, hNgt, hs⟩ :=
+    exists_perturbed_functional P hS d1 d2 hd0 PL QL
+      (fun i => by simp only [hPLdef]) (fun i => by simp only [hQLdef]) t a ht
   -- minimise the functional
   obtain ⟨w, hw_conv, hw_min⟩ := exists_convex_min P hS hO h2 c dc hcdR (by
     intro i j hij
@@ -5872,19 +5374,8 @@ lemma exists_offline_convex (P : LatticePolygon) (hS : P.IsSimple) (hO : P.Posit
       rw [← hFLeq t]; push_cast; ring
     have hmin_t : FL w ≤ FL t := by
       have hh := hw_min t; rw [cast_w, cast_t] at hh; exact_mod_cast hh
-    rw [hFLdef] at hmin_t
-    simp only at hmin_t
-    rw [hwa] at hmin_t
-    -- hmin_t : s*N*PL a + QL w ≤ s*N*PL t + QL t
-    have hle2 : s * N * PL a - s * N * PL t ≤ QL t - QL w := by linarith
-    have hM : N ≤ s * N * PL a - s * N * PL t := by
-      have he : s * N * PL a - s * N * PL t = N * (-(s * (PL t - PL a))) := by ring
-      rw [he]
-      have h1 : 1 ≤ -(s * (PL t - PL a)) := by omega
-      have h := mul_le_mul_of_nonneg_left h1 (le_of_lt hNpos)
-      rw [mul_one] at h; exact h
-    have hlt : QL t - QL w < N := lt_of_le_of_lt (le_abs_self _) (hNgt t w)
-    linarith
+    exact perturb_min_off_line s N (PL w) (PL a) (PL t) (QL w) (QL t) hs hNpos (hNgt t w)
+      (by rw [← hFLdef w, ← hFLdef t]; exact hmin_t) hwa
   intro hzero
   apply hne_pl
   have : (PL w : ℝ) = (PL a : ℝ) := by linarith [hzero]
@@ -5981,7 +5472,7 @@ lemma first_exit_affine_three (α β : Fin 3 → ℝ) (hα : ∀ i, 0 < α i) (h
   have hri0_lt : r i₀ < 1 := lt_of_le_of_lt (hmin k (Finset.mem_univ k)) hrk
   -- so β i₀ < 0
   have hbi0 : β i₀ < 0 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     rw [hr] at hri0_lt; simp only at hri0_lt; rw [if_neg (not_lt.mpr hc)] at hri0_lt; norm_num at hri0_lt
   set u := r i₀ with hu
   have hupos : 0 < u := by
@@ -5994,7 +5485,7 @@ lemma first_exit_affine_three (α β : Fin 3 → ℝ) (hα : ∀ i, 0 < α i) (h
         have := hmin j (Finset.mem_univ j); rw [hr] at this; simp only at this; rwa [if_pos hbj] at this
       have hden : 0 < α j - β j := by linarith [hα j]
       rw [le_div_iff₀ hden] at hule; nlinarith
-    · push_neg at hbj
+    · push Not at hbj
       have : 0 ≤ (1 - u) * α j := mul_nonneg (by linarith [hri0_lt]) (hα j).le
       have : 0 ≤ u * β j := mul_nonneg hupos.le hbj
       nlinarith [mul_nonneg (by linarith [hri0_lt] : (0:ℝ) ≤ 1 - u) (hα j).le]
@@ -6104,13 +5595,12 @@ lemma seg_meets_triangle_boundary (a b c p e : ℝ × ℝ)
   set α : Fin 3 → ℝ := ![cross (b - a) (p - a), cross (c - b) (p - b), cross (a - c) (p - c)] with hαdef
   set β : Fin 3 → ℝ := ![cross (b - a) (e - a), cross (c - b) (e - b), cross (a - c) (e - c)] with hβdef
   have hαpos : ∀ i, 0 < α i := by
-    intro i; fin_cases i <;> simp only [hαdef, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+    intro i; fin_cases i <;> simp only [hαdef]
     · exact hp1
     · exact hp2
     · exact hp3
   have hβneg : ∃ i, β i < 0 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     apply he
     refine ⟨?_, ?_, ?_⟩
     · have := hc 0; simpa [hβdef] using this
@@ -6123,8 +5613,7 @@ lemma seg_meets_triangle_boundary (a b c p e : ℝ × ℝ)
       (![b - a, c - b, a - c] i) (z - ![a, b, c] i)
       = (1 - u) * α i + u * β i := by
     intro i
-    fin_cases i <;> simp only [hzdef, hαdef, hβdef, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons] <;>
+    fin_cases i <;> simp only [hzdef, hαdef, hβdef] <;>
       exact cross_affine_seg_pk _ _ _ _ _
   have hz1 : cross (b - a) (z - a) = (1 - u) * α 0 + u * β 0 := by
     have := hf 0; simpa using this
@@ -6175,7 +5664,7 @@ lemma corner_notMem_segment {x y p : ℝ × ℝ} (hp : p ∈ openSegment ℝ x y
   have hc2 : (1 - s1 * t1) * (x.2 - y.2) = 0 := by linear_combination hx2 + y.2 * hsum
   -- x ≠ y in some coordinate
   have hxy' : x.1 ≠ y.1 ∨ x.2 ≠ y.2 := by
-    by_contra hcc; push_neg at hcc; exact hxy (Prod.ext hcc.1 hcc.2)
+    by_contra hcc; push Not at hcc; exact hxy (Prod.ext hcc.1 hcc.2)
   have hlam : s1 * t1 = 1 := by
     rcases hxy' with h | h
     · have : 1 - s1 * t1 = 0 := by
@@ -6457,26 +5946,6 @@ lemma winding_const_on_openEar (R : LatticePolygon) (hS : R.IsSimple)
     (open_ear_subset_compl_boundary R hS m hm hm2 hear)
     (openEar_convex R m).isPreconnected hp hq
 
-/-- **Open-ear winding dichotomy.** Since `R.winding` is constant on the connected
-off-boundary set `openEar R m` (`winding_const_on_openEar`) and takes values in
-`{0,1}` off the boundary (`winding_zero_or_one`), it is *uniformly* `0` or
-*uniformly* `1` on the whole open ear. (Ruling out the all-`0` branch — i.e. that
-the interior wedge of the convex apex is exterior — is the remaining linchpin.) -/
-lemma winding_zero_or_one_on_openEar (R : LatticePolygon) (hS : R.IsSimple)
-    (hO : R.PositivelyOriented) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
-    (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
-    (∀ q ∈ openEar R m, R.winding q = 0) ∨ (∀ q ∈ openEar R m, R.winding q = 1) := by
-  by_cases hne : (openEar R m).Nonempty
-  · obtain ⟨q0, hq0⟩ := hne
-    have hoff : q0 ∉ R.boundary :=
-      open_ear_subset_compl_boundary R hS m hm hm2 hear hq0
-    rcases winding_zero_or_one R hS hO q0 hoff with h0 | h1
-    · left; intro q hq
-      rw [winding_const_on_openEar R hS m hm hm2 hear hq hq0]; exact h0
-    · right; intro q hq
-      rw [winding_const_on_openEar R hS m hm hm2 hear hq hq0]; exact h1
-  · left; intro q hq; exact absurd ⟨q, hq⟩ hne
-
 /-- **The winding `= 1` witness propagates over the whole open ear.** Given a single
 off-boundary witness `q*` in `openEar R m` with `R.winding q* = 1`, the constancy of
 `R.winding` on the connected open ear (`winding_const_on_openEar`) upgrades it to all
@@ -6513,72 +5982,6 @@ lemma openEar_subset_clip_compl_boundary (R : LatticePolygon) (hS : R.IsSimple)
     have hz := cross_seg_zero (toReal (R.vert 0)) (toReal (R.vert (m : ZMod R.n))) q hq0m
     rw [hz] at hf3
     exact absurd hf3 (lt_irrefl 0)
-
-/-- **The clip's winding is constant on the open ear (route a).** `openEar` is convex
-(`openEar_convex`), hence preconnected, and lies off the clip's boundary
-(`openEar_subset_clip_compl_boundary`). The clip's winding is locally constant off its
-boundary (`winding_const_of_isPreconnected`), so it takes a single value on the whole
-open ear. Orientation-free: needs only `R` simple (for the off-boundary inclusion), not
-any orientation of the clip. This reduces `exists_clip_winding_zero_openEar` to pinning
-the constant value to `0` at a single point of the open ear. -/
-lemma clip_winding_const_on_openEar (R : LatticePolygon) (hS : R.IsSimple)
-    (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
-    (hear : isEarVertex R ((m : ZMod R.n) + 1)) {p q : ℝ × ℝ}
-    (hp : p ∈ openEar R m) (hq : q ∈ openEar R m) :
-    (deleteLast R h2).winding p = (deleteLast R h2).winding q :=
-  winding_const_of_isPreconnected (deleteLast R h2)
-    (openEar_subset_clip_compl_boundary R hS h2 m hm hm2 hear)
-    (openEar_convex R m).isPreconnected hp hq
-
-/-- **Sign-constancy of `cross (b−a) (·−a)` on a preconnected set off its zero-line.**
-The affine functional `q ↦ cross (b−a) (q−a)` (vanishing exactly on the line through
-`a, b`) keeps a constant sign on any preconnected `S` that avoids that line: the two open
-half-planes `{>0}` and `{<0}` separate `S`, so one witness pins the whole set to one side.
-Reusable side-of-a-line tool. Applied with `a = v₀`, `b = vₘ` it pins any preconnected
-subset of `{dside ≠ 0}` (`dside q := cross (vₘ−v₀)(q−v₀)`) to a single side of the
-diagonal line; `openEar`'s third defining inequality already puts it on `{dside > 0}`. -/
-lemma cross_pos_of_isPreconnected_of_ne (a b : ℝ × ℝ) {S : Set (ℝ × ℝ)}
-    (hpre : IsPreconnected S) (hne : ∀ x ∈ S, cross (b - a) (x - a) ≠ 0)
-    {p q : ℝ × ℝ} (hp : p ∈ S) (hq : q ∈ S)
-    (hppos : 0 < cross (b - a) (p - a)) : 0 < cross (b - a) (q - a) := by
-  have hcont : Continuous (fun x : ℝ × ℝ => cross (b - a) (x - a)) := by
-    simp only [cross, Prod.fst_sub, Prod.snd_sub]; fun_prop
-  by_contra hqle
-  have hqneg : cross (b - a) (q - a) < 0 := lt_of_le_of_ne (not_lt.mp hqle) (hne q hq)
-  have hou : IsOpen {x : ℝ × ℝ | 0 < cross (b - a) (x - a)} := isOpen_lt continuous_const hcont
-  have hov : IsOpen {x : ℝ × ℝ | cross (b - a) (x - a) < 0} := isOpen_lt hcont continuous_const
-  have hsub : S ⊆ {x : ℝ × ℝ | 0 < cross (b - a) (x - a)} ∪
-      {x : ℝ × ℝ | cross (b - a) (x - a) < 0} := by
-    intro x hx
-    rcases lt_or_gt_of_ne (hne x hx) with h | h
-    · exact Or.inr h
-    · exact Or.inl h
-  obtain ⟨x, _, hxu, hxv⟩ := hpre _ _ hou hov hsub ⟨p, hp, hppos⟩ ⟨q, hq, hqneg⟩
-  exact absurd (lt_trans hxu hxv) (lt_irrefl (0 : ℝ))
-
-/-- **Task 1 — the clip's exterior carries winding `0`.** `compl_boundary_atMost_two`
-covers the clip's off-boundary set by two preconnected pieces `A, B`, on each of which the
-clip winding is constant (`winding_const_of_isPreconnected`); the far off-boundary point of
-`exists_offBoundary_winding_zero` has winding `0`, so the piece containing it is a
-winding-`0` piece. Needs only clip-simplicity, no orientation: this is the exterior side of
-the open-ear/clip split, the unbounded-component half of `clip_winding_zero_on_openEar`. -/
-lemma clip_complBoundary_far_winding_zero (R : LatticePolygon) (h2 : 2 ≤ R.n)
-    (hdS : (deleteLast R h2).IsSimple) :
-    ∃ A B : Set (ℝ × ℝ), A ∪ B = (deleteLast R h2).boundaryᶜ ∧
-      IsPreconnected A ∧ IsPreconnected B ∧
-      ((∀ q ∈ A, (deleteLast R h2).winding q = 0) ∨
-       (∀ q ∈ B, (deleteLast R h2).winding q = 0)) := by
-  obtain ⟨A, B, hAB, hApre, hBpre⟩ := compl_boundary_atMost_two (deleteLast R h2) hdS
-  obtain ⟨q0, hq0b, hq0w⟩ := exists_offBoundary_winding_zero (deleteLast R h2) hdS
-  refine ⟨A, B, hAB, hApre, hBpre, ?_⟩
-  have hAsub : A ⊆ (deleteLast R h2).boundaryᶜ := by rw [← hAB]; exact Set.subset_union_left
-  have hBsub : B ⊆ (deleteLast R h2).boundaryᶜ := by rw [← hAB]; exact Set.subset_union_right
-  have hq0mem : q0 ∈ A ∪ B := by rw [hAB]; exact hq0b
-  rcases hq0mem with h0A | h0B
-  · left; intro q hq
-    rw [winding_const_of_isPreconnected (deleteLast R h2) hAsub hApre hq h0A]; exact hq0w
-  · right; intro q hq
-    rw [winding_const_of_isPreconnected (deleteLast R h2) hBsub hBpre hq h0B]; exact hq0w
 
 /-- **Reduction of the open-ear witness to a clip-winding-zero witness.** Since the
 ear triangle's winding is `1` on the open ear (`openEar_winding_one`) and winding is
@@ -6669,7 +6072,7 @@ lemma exists_leftRegion_winding_one (hS : P.IsSimple) {εreg : ℝ} (hεregpos :
     have : (0:ℝ) ≤ D := Finset.sum_nonneg (fun j _ => abs_nonneg _); linarith
   obtain ⟨y, hlo, hhiaux, hgen⟩ := exists_generic_height_mem_Ioo P ym (ym + min 1 (1/(2*(D+1))))
     (by have : (0:ℝ) < min 1 (1/(2*(D+1))) := lt_min one_pos (by positivity); linarith)
-  have hhi : y < ym + 1 := lt_of_lt_of_le hhiaux (by simp [min_le_left])
+  have hhi : y < ym + 1 := lt_of_lt_of_le hhiaux (by simp)
   have hDnn : (0:ℝ) ≤ D := Finset.sum_nonneg (fun j _ => abs_nonneg _)
   have hsmall : D * (y - ym) < 1/2 := by
     have hyb : y - ym < 1/(2*(D+1)) :=
@@ -7024,7 +6427,7 @@ left-turn `cross > 0` (the first open-ear functional itself), so `mem_leftRegion
 places it in `leftRegion m εreg`. Hence `openEar R m ∩ leftRegion m εreg ≠ ∅`: the shared
 point linking the open-ear value to the inside-tube value `1`. -/
 lemma exists_openEar_mem_leftRegion (hS : P.IsSimple) {εreg : ℝ} (hεregpos : 0 < εreg)
-    (m : ℕ) (hm : P.n = m + 2) (hm2 : 2 ≤ m)
+    (m : ℕ) (hm : P.n = m + 2) (_ : 2 ≤ m)
     (hear : isEarVertex P ((m : ZMod P.n) + 1)) :
     ∃ p, p ∈ openEar P m ∧ p ∈ P.leftRegion (m : ZMod P.n) εreg := by
   classical
@@ -7117,34 +6520,6 @@ lemma exists_openEar_mem_leftRegion (hS : P.IsSimple) {εreg : ℝ} (hεregpos :
         capHeight_le_edge P (m : ZMod P.n) εreg (1 / 2) hji
       linarith [hδle, hcappos, hle]
 
-/-- **Winding is `1` on the whole open ear (unconditional in the clip).** For a simple
-polygon `R` possessing a *convex lex-lowest vertex* `m₀` (lexicographically lowest, both
-neighbours strictly above, `0 < cornerCross R m₀`), winding is `1` everywhere on the open
-ear `openEar R m`. Route (orientation = LEFT = INSIDE, Hopf-free, no clip simplicity or
-clip orientation): the inside half-tube `L` carries the single value `1`
-(`leftTube_winding_eq_one`, anchored at the convex lowest vertex); the open ear meets `L`
-in a shared point (`exists_openEar_mem_leftRegion`); winding is constant on the connected
-open ear (`winding_const_on_openEar`). The convex-lowest hypothesis is exactly what
-`cornerCross_pos_unique_lowest` discharges when the lowest vertex is unique (see
-`winding_one_on_open_ear_unique_lowest`); the flat-bottom case reduces to it by the
-height-separating shear of `exists_convex_vertex`. -/
-lemma winding_one_on_open_ear_of_convex (R : LatticePolygon) (hS : R.IsSimple)
-    (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
-    (hear : isEarVertex R ((m : ZMod R.n) + 1))
-    (hconvex : ∃ m₀ : ZMod R.n,
-      (∀ j, toLex ((R.vert m₀).2, (R.vert m₀).1) ≤ toLex ((R.vert j).2, (R.vert j).1)) ∧
-      (toReal (R.vert m₀)).2 < (toReal (R.vert (m₀ - 1))).2 ∧
-      (toReal (R.vert m₀)).2 < (toReal (R.vert (m₀ + 1))).2 ∧
-      0 < cornerCross R m₀) :
-    ∀ q ∈ openEar R m, R.winding q = 1 := by
-  obtain ⟨m₀, hlex, hba, hbc, hcc⟩ := hconvex
-  obtain ⟨p, hpO, hpL⟩ := exists_openEar_mem_leftRegion R hS (εreg := 1) one_pos m hm hm2 hear
-  have hpw : R.winding p = 1 :=
-    leftTube_winding_eq_one R hS one_pos (featureSize_pos R hS) (le_refl _)
-      m₀ hlex hba hbc hcc (Or.inl (Set.mem_iUnion.mpr ⟨(m : ZMod R.n), hpL⟩))
-  intro q hq
-  rw [winding_const_on_openEar R hS m hm hm2 hear hq hpO]; exact hpw
-
 /-- **Winding is `1` on the whole open ear (FULLY UNCONDITIONAL).** For any simple,
 positively-oriented `R`, winding is `1` on `openEar R m`. No unique-lowest / strict-convex
 hypothesis: the inside half-tube `L` carries the single value `1` via the general
@@ -7165,21 +6540,6 @@ lemma winding_one_on_open_ear (R : LatticePolygon) (hS : R.IsSimple)
     exact hww
   intro q hq
   rw [winding_const_on_openEar R hS m hm hm2 hear hq hpO]; exact hpw
-
-/-- **(Archived conditional route.)** The original clip-based derivation: combine the
-clip-winding-zero witness (`exists_clip_winding_zero_openEar`) with the Hopf-free reduction
-(`exists_witness_openEar_of_clip_zero`) to obtain a single point with `R.winding = 1`, then
-propagate it over the connected open ear by constancy (`winding_one_on_open_ear_of_witness`).
-Superseded by `winding_one_on_open_ear` (no clip simplicity/orientation), kept for reference. -/
-lemma winding_one_on_open_ear_clip (R : LatticePolygon) (hS : R.IsSimple)
-    (hO : R.PositivelyOriented) (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
-    (hear : isEarVertex R ((m : ZMod R.n) + 1))
-    (hdS : (deleteLast R h2).IsSimple)
-    (hdO : (deleteLast R h2).PositivelyOriented) :
-    ∀ q ∈ openEar R m, R.winding q = 1 :=
-  winding_one_on_open_ear_of_witness R hS m hm hm2 hear
-    (exists_witness_openEar_of_clip_zero R h2 m hm
-      (exists_clip_winding_zero_openEar R hS hO h2 m hm hm2 hear hdS hdO))
 
 /-! ### Conjunct 2 (clip orientation), area-inclusion route
 
@@ -7231,7 +6591,7 @@ lemma winding_zero_of_neg_halfplane (T : LatticePolygon) (w u q : ℝ × ℝ)
   have hcont : Continuous (fun t : ℝ => q + t • dir) := by fun_prop
   have hspre : IsPreconnected s := isPreconnected_Ici.image _ hcont.continuousOn
   have hssub : s ⊆ T.boundaryᶜ := by rintro _ ⟨t, ht, rfl⟩; exact hray_off t ht
-  have hqs : q ∈ s := ⟨0, Set.left_mem_Ici, by simp⟩
+  have hqs : q ∈ s := ⟨0, Set.self_mem_Ici, by simp⟩
   obtain ⟨Rc, hRc⟩ := winding_zero_on_cobounded T
   have hdirne : dir ≠ 0 := by
     intro h
@@ -7308,11 +6668,11 @@ lemma earTri_winding_zero_of_not_inTriangle (R : LatticePolygon) (m : ℕ) (hm :
   · by_cases h2 : 0 ≤ cross (c - b) (q - b)
     · by_cases h3 : 0 ≤ cross (a - c) (q - c)
       · exact absurd ⟨h1, h2, h3⟩ hq
-      · push_neg at h3
+      · push Not at h3
         exact winding_zero_of_neg_halfplane (earTri R m hm) c (a - c) q hu3 hbd3 h3
-    · push_neg at h2
+    · push Not at h2
       exact winding_zero_of_neg_halfplane (earTri R m hm) b (c - b) q hu2 hbd2 h2
-  · push_neg at h1
+  · push Not at h1
     exact winding_zero_of_neg_halfplane (earTri R m hm) a (b - a) q hu1 hbd1 h1
 
 /-- **The `earTri`-inside is contained in the `R`-inside, modulo the (null) ear-triangle
@@ -7353,7 +6713,7 @@ lemma earTri_winding_one_subset (R : LatticePolygon) (hS : R.IsSimple)
   · right
     rw [earTri_boundary_eq R m hm, ← ha, ← hb, ← hc]
     obtain ⟨hf1, hf2, hf3⟩ := hinTri
-    push_neg at hopen
+    push Not at hopen
     by_cases e1 : cross (b - a) (z - a) = 0
     · exact Or.inl (Or.inl (mem_segment_ab_of_inTriangle_f1_zero a b c z hpos ⟨hf1, hf2, hf3⟩ e1))
     · have hf1' : 0 < cross (b - a) (z - a) := hf1.lt_of_ne (Ne.symm e1)
@@ -7447,7 +6807,7 @@ combination of the interior point `g` and the closed-triangle point `x`, hence l
 is constant on this preconnected off-boundary segment
 (`winding_const_of_isPreconnected`), so `R.winding x = R.winding g = 1`. -/
 lemma diagOpen_winding_one (R : LatticePolygon) (hS : R.IsSimple) (hO : R.PositivelyOriented)
-    (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
+    (_ : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
     (hear : isEarVertex R ((m : ZMod R.n) + 1)) (x : ℝ × ℝ)
     (hxd : x ∈ segment ℝ (toReal (R.vert (m : ZMod R.n))) (toReal (R.vert 0)))
     (hxR : x ∉ R.boundary) :
@@ -7671,7 +7031,7 @@ condition forces `toReal q` into the closed triangle (`earTri_winding_zero_of_no
 and being off the three edges makes the three half-plane tests strict, i.e.
 `toReal q ∈ openEar`; the open ear avoids `R.boundary` (`open_ear_subset_compl_boundary`). -/
 lemma earTri_interiorLattice_subset_R_complBoundary (R : LatticePolygon) (hS : R.IsSimple)
-    (hO : R.PositivelyOriented) (h2 : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
+    (_ : R.PositivelyOriented) (_ : 2 ≤ R.n) (m : ℕ) (hm : R.n = m + 2) (hm2 : 2 ≤ m)
     (hear : isEarVertex R ((m : ZMod R.n) + 1)) :
     ∀ q ∈ (earTri R m hm).interiorLattice, toReal q ∉ R.boundary := by
   intro q hq
@@ -7914,7 +7274,7 @@ lemma exists_ear_or_deepestContained (P : LatticePolygon) (hS : P.IsSimple)
     obtain ⟨w, hw, hwmax⟩ := exists_deepest_contained P i hemp
     exact ⟨i, w, hconv, hw, hwmax⟩
   · left
-    push_neg at hemp
+    push Not at hemp
     exact ⟨i, isEarVertex_of_empty P i hconv hemp⟩
 
 /-! ### The deep sub-triangle crossing lemma (geometric heart of `deepest_contained_isDiagonal`)
@@ -8022,7 +7382,7 @@ private lemma deep_seg_meets_leg (a b c : ℝ × ℝ) (d : ℝ) (hd : 0 ≤ d)
   have hf3s : f3 p = (1 - s) * f3 e0 + s * f3 e1 := by rw [hf3, hps']; exact cross_affine_seg' _ _ _ _ _
   -- a deeper endpoint exists
   have hdeep : d < f3 e0 ∨ d < f3 e1 := by
-    by_contra hc; push_neg at hc
+    by_contra hc; push Not at hc
     have hle : f3 p ≤ d := by
       rw [hf3s]
       nlinarith [mul_le_mul_of_nonneg_left hc.1 (by linarith : (0:ℝ) ≤ 1 - s),
@@ -8042,7 +7402,7 @@ private lemma deep_seg_meets_leg (a b c : ℝ × ℝ) (d : ℝ) (hd : 0 ≤ d)
     · exact Or.inr (Or.inr ⟨e, he01, hin, by rw [hf3] at hf3e; exact hf3e⟩)
     · -- e outside triangle, f3 e ≥ 0 ⟹ f1 e < 0 ∨ f2 e < 0
       have hβ : f1 e < 0 ∨ f2 e < 0 := by
-        by_contra hc; push_neg at hc
+        by_contra hc; push Not at hc
         exact hin ((hinTri e).mpr ⟨hc.1, hc.2, hf3enn⟩)
       obtain ⟨u, hu0, _, hv1, hv2, hzero⟩ :=
         first_exit_two_affine' (f1 p) (f1 e) (f2 p) (f2 e) hf1p hf2p hβ
@@ -8251,7 +7611,7 @@ positively-oriented polygon with at least `4` vertices either has an ear vertex 
 admits a diagonal `[vᵢ, v_w]` (`i` convex, `w` deepest contained), via
 `deepest_contained_isDiagonal`. -/
 lemma exists_diagonal (P : LatticePolygon) (hS : P.IsSimple) (hO : P.PositivelyOriented)
-    (hn : 4 ≤ P.n) :
+    (_ : 4 ≤ P.n) :
     (∃ i : ZMod P.n, isEarVertex P i) ∨
       (∃ i j : ZMod P.n, IsDiagonal P i j ∧ 0 < cornerCross P i) := by
   rcases exists_ear_or_deepestContained P hS hO with hear | ⟨i, w, hconv, ⟨hw1, hw2, hw3, hwT⟩, hwmax⟩
@@ -8275,7 +7635,7 @@ lemma val_add_val_neg (n : ℕ) [NeZero n] (x : ZMod n) (hx : x ≠ 0) :
   omega
 
 /-- For `n ≥ 2`, an element of `ZMod n` that is neither `0` nor `1` has value `≥ 2`. -/
-lemma two_le_val (n : ℕ) [NeZero n] (h2 : 2 ≤ n) (x : ZMod n) (h0 : x ≠ 0) (h1 : x ≠ 1) :
+lemma two_le_val (n : ℕ) [NeZero n] (_ : 2 ≤ n) (x : ZMod n) (h0 : x ≠ 0) (h1 : x ≠ 1) :
     2 ≤ x.val := by
   have hv0 : x.val ≠ 0 := by rw [Ne, ZMod.val_eq_zero]; exact h0
   have hv1 : x.val ≠ 1 := by
@@ -8299,17 +7659,6 @@ def splitPoly (P : LatticePolygon) (i j : ZMod P.n) : LatticePolygon where
 @[simp] lemma splitPoly_vert (P : LatticePolygon) (i j : ZMod P.n)
     (k : ZMod (splitPoly P i j).n) :
     (splitPoly P i j).vert k = P.vert (i + ((k.val : ZMod P.n))) := rfl
-
-/-- **Vertex counts add to `n + 2`** across a diagonal: the two arcs share the two diagonal
-endpoints. -/
-lemma splitPoly_n_add (P : LatticePolygon) (i j : ZMod P.n) (hij : i ≠ j) :
-    (splitPoly P i j).n + (splitPoly P j i).n = P.n + 2 := by
-  simp only [splitPoly_n]
-  have hx : j - i ≠ 0 := sub_ne_zero.2 (Ne.symm hij)
-  have he : i - j = -(j - i) := by ring
-  rw [he]
-  have hsum := val_add_val_neg P.n (j - i) hx
-  omega
 
 /-- Each arc has **at least `3`** vertices when the diagonal is non-adjacent
 (`i ≠ j`, `i + 1 ≠ j`). -/
@@ -8972,7 +8321,7 @@ lemma splitPoly_positivelyOriented_of_disjoint (P : LatticePolygon) (hS : P.IsSi
       constructor
       · intro hp
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         obtain ⟨hl, hr⟩ := hcon
         omega
       · rintro (hl | hr)
@@ -9313,7 +8662,7 @@ lemma winding_sub_edge_eventually_eq_full (q₀ : ℝ × ℝ) (e : ZMod P.n)
         rwa [he] at hb
       have hnext_nbad : ¬ bad (i + (F : ZMod P.n) + 1) := by
         have hs := hfwd_spec (i + 1)
-        have he : (i + 1) + ((F : ℕ) : ZMod P.n) = i + (F : ZMod P.n) + 1 := by push_cast; ring
+        have he : (i + 1) + ((F : ℕ) : ZMod P.n) = i + (F : ZMod P.n) + 1 := by ring
         rw [← hF, he] at hs; exact hs
       have hsame : (q₀.1 < (toReal (P.vert (i + 1))).1 ↔
           q₀.1 < (toReal (P.vert (i + (F : ZMod P.n)))).1) := by
@@ -9411,7 +8760,7 @@ lemma winding_sub_edge_eventually_eq_full (q₀ : ℝ × ℝ) (e : ZMod P.n)
         rwa [he] at hb
       have hnext_nbad : ¬ bad (a + (F : ZMod P.n) + 1) := by
         have hs := hfwd_spec (a + 1)
-        have he : (a + 1) + ((F : ℕ) : ZMod P.n) = a + (F : ZMod P.n) + 1 := by push_cast; ring
+        have he : (a + 1) + ((F : ℕ) : ZMod P.n) = a + (F : ZMod P.n) + 1 := by ring
         rw [← hFdef, he] at hs; exact hs
       have hTFga : ¬ tFwd (a + (F : ZMod P.n)) := fun h => hnext_nbad h.2
       have hTBga : tBwd (a + (F : ZMod P.n)) := ⟨hlast_bad, hnext_nbad⟩
@@ -9669,7 +9018,7 @@ lemma exists_foot_pair_windings (hS : P.IsSimple) (hO : P.PositivelyOriented) (e
 incident to `vᵢ` (`edge i-1 = [vᵢ₋₁, vᵢ]` and `edge i = [vᵢ, vᵢ₊₁]`) and within `featureSize`
 of `vᵢ` is off the boundary: the two strict half-plane signs rule out the two incident edges
 (`cross = 0` on the edge line), and feature-size distance rules out every non-incident edge. -/
-lemma wedge_ball_off_boundary (P : LatticePolygon) (hS : P.IsSimple) (i : ZMod P.n)
+lemma wedge_ball_off_boundary (P : LatticePolygon) (_ : P.IsSimple) (i : ZMod P.n)
     {q : ℝ × ℝ}
     (h1 : 0 < cross (toReal (P.vert i) - toReal (P.vert (i - 1))) (q - toReal (P.vert i)))
     (h2 : 0 < cross (toReal (P.vert (i + 1)) - toReal (P.vert i)) (q - toReal (P.vert i)))
@@ -9912,7 +9261,7 @@ lemma exists_nonhoriz_edge (Q : LatticePolygon) (hSQ : Q.IsSimple) :
     ∃ k : ZMod Q.n, (toReal (Q.vert k)).2 ≠ (toReal (Q.vert (k + 1))).2 := by
   classical
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   apply shoelace_ne_zero_of_isSimple Q hSQ
   rw [LatticePolygon.shoelace]
   have hsum : ∑ k : ZMod Q.n, cross (toReal (Q.vert k)) (toReal (Q.vert (k + 1))) = 0 := by
@@ -9934,13 +9283,13 @@ lemma exists_nonhoriz_edge (Q : LatticePolygon) (hSQ : Q.IsSimple) :
 
 /-- **Telescoping height argument.** If `vert 0` and `vert m` differ in height, some
 consecutive arc pair `p, p+1` (`p < m`) does too. -/
-lemma exists_consec_ne (Q : LatticePolygon) (m : ℕ) (hm : m < Q.n)
+lemma exists_consec_ne (Q : LatticePolygon) (m : ℕ) (_ : m < Q.n)
     (hne : (toReal (Q.vert ((m : ℕ) : ZMod Q.n))).2 ≠ (toReal (Q.vert 0)).2) :
     ∃ p : ℕ, p < m ∧
       (toReal (Q.vert ((p : ℕ) : ZMod Q.n))).2
         ≠ (toReal (Q.vert (((p + 1 : ℕ) : ZMod Q.n)))).2 := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   apply hne
   have key : ∀ p : ℕ, p ≤ m → (toReal (Q.vert ((p : ℕ) : ZMod Q.n))).2
       = (toReal (Q.vert 0)).2 := by
@@ -10061,7 +9410,7 @@ diagonal has winding `1`), any off-boundary `q` with `P.winding q = 0` has
 `splitPoly`'s boundary (which is `P.boundary ∪` the closed diagonal — and the exterior set,
 being winding-`0`, avoids the winding-`1` open diagonal and the two boundary endpoints). -/
 lemma split_winding_zero_of_P_exterior (P : LatticePolygon) (hS : P.IsSimple)
-    (h2 : 2 ≤ P.n) (i j : ZMod P.n)
+    (_ : 2 ≤ P.n) (i j : ZMod P.n)
     (hDwind : ∀ p ∈ openSegment ℝ (toReal (P.vert i)) (toReal (P.vert j)), P.winding p = 1)
     {q : ℝ × ℝ} (hqP : q ∉ P.boundary) (hqw : P.winding q = 0) :
     (splitPoly P i j).winding q = 0 := by
@@ -10301,20 +9650,6 @@ lemma splitPoly_positivelyOriented (P : LatticePolygon) (hS : P.IsSimple)
     exists_split_separation_witness P hS hO h2 i j hdiagD hconv hwT
   exact splitPoly_positivelyOriented_of_witnesses P hS hO i j hij hSL hSR
     pL hpLL hpLP hpLwL hpLwR pR hpRR hpRP hpRwR hpRwL
-
-/-- **Diagonal existence, full form.** Like `exists_diagonal` but also surfaces the
-deepest-contained witness `inTriangle … (vert j)`, which Step A
-(`splitPoly_positivelyOriented`) needs. -/
-lemma exists_diagonal_full (P : LatticePolygon) (hS : P.IsSimple) (hO : P.PositivelyOriented)
-    (hn : 4 ≤ P.n) :
-    (∃ i : ZMod P.n, isEarVertex P i) ∨
-      (∃ i j : ZMod P.n, IsDiagonal P i j ∧ 0 < cornerCross P i ∧
-        inTriangle (toReal (P.vert (i - 1))) (toReal (P.vert i)) (toReal (P.vert (i + 1)))
-          (toReal (P.vert j))) := by
-  rcases exists_ear_or_deepestContained P hS hO with hear | ⟨i, w, hconv, ⟨hw1, hw2, hw3, hwT⟩, hwmax⟩
-  · exact Or.inl hear
-  · exact Or.inr ⟨i, w, deepest_contained_isDiagonal P hS i w hconv hw1 hw2 hw3 hwT hwmax,
-      hconv, hwT⟩
 
 /-- **Open corner triangle of an ear has winding `1`** (rotation bridge). For a simple
 positively-oriented `L` with `L.n = m + 2`, `m ≥ 2`, and an ear vertex `i`, any point `q`
@@ -10640,94 +9975,6 @@ lemma inTriangle_splitPoly_interior (a b : ZMod P.n)
   obtain ⟨e1, e2, e3⟩ := splitPoly_interior_corner_vert P a b i hlo hhi
   rw [e1, e2, e3]
 
-/-- **No off-boundary winding-`0` point inside the open corner triangle of an interior
-arc-ear.** For a diagonal `(a, b)` and the arc `L = splitPoly P a b`, if `i` is an interior
-ear vertex of `L` then every point `g` strictly inside the corner triangle (the three open
-half-plane tests, in `L`-vertex form) that is off `P.boundary` has `P.winding g ≠ 0`.
-
-This is the measure-theoretic heart of `corner_triangle_subset_half`'s emptiness step: `L`
-has winding `1` on the whole open corner (`openCorner_winding_one'`), so a winding-`0`
-off-boundary point would, by local constancy, give an open set on which both `L` and the
-complementary arc `R = splitPoly P b a` have nonzero winding — contradicting the a.e.
-disjointness `splitPoly_hdisj_of_witnesses`. -/
-lemma no_winding_zero_in_openCorner (hS : P.IsSimple) (hO : P.PositivelyOriented)
-    (h2 : 2 ≤ P.n) (a b : ZMod P.n) (hdiag : IsDiagonal P a b)
-    (hconv : 0 < cornerCross P a)
-    (hwT : inTriangle (toReal (P.vert (a - 1))) (toReal (P.vert a)) (toReal (P.vert (a + 1)))
-            (toReal (P.vert b)))
-    (i : ZMod (splitPoly P a b).n) (hlo : 0 < i.val)
-    (hhi : i.val + 1 < (splitPoly P a b).n) (hear : isEarVertex (splitPoly P a b) i)
-    {g : ℝ × ℝ} (hgb : g ∉ P.boundary)
-    (hg1 : 0 < cross (toReal ((splitPoly P a b).vert i) - toReal ((splitPoly P a b).vert (i - 1)))
-              (g - toReal ((splitPoly P a b).vert (i - 1))))
-    (hg2 : 0 < cross (toReal ((splitPoly P a b).vert (i + 1)) - toReal ((splitPoly P a b).vert i))
-              (g - toReal ((splitPoly P a b).vert i)))
-    (hg3 : 0 < cross (toReal ((splitPoly P a b).vert (i - 1)) - toReal ((splitPoly P a b).vert (i + 1)))
-              (g - toReal ((splitPoly P a b).vert (i + 1)))) :
-    P.winding g ≠ 0 := by
-  classical
-  obtain ⟨hab, hab1, hba1, hdisjE⟩ := hdiag
-  have hdiagD : IsDiagonal P a b := ⟨hab, hab1, hba1, hdisjE⟩
-  have hSL : (splitPoly P a b).IsSimple := splitPoly_isSimple_of_diagonal P hS h2 a b hdiagD
-  have hdiag' : IsDiagonal P b a :=
-    ⟨fun h => hab h.symm, hba1, hab1, fun k => by rw [openSegment_symm]; exact hdisjE k⟩
-  have hSR : (splitPoly P b a).IsSimple := splitPoly_isSimple_of_diagonal P hS h2 b a hdiag'
-  obtain ⟨hOL, _hOR⟩ := splitPoly_positivelyOriented P hS hO h2 a b hdiagD hconv hwT
-  obtain ⟨⟨pL, hpLL, hpLP, hpLwL, hpLwR⟩, ⟨pR, hpRR, hpRP, hpRwR, hpRwL⟩⟩ :=
-    exists_split_separation_witness P hS hO h2 a b hdiagD hconv hwT
-  have hdisj := splitPoly_hdisj_of_witnesses P hS hO a b hab hSL hSR
-    pL hpLL hpLP hpLwL hpLwR pR hpRR hpRP hpRwR hpRwL
-  intro hg0
-  set f1 : ℝ × ℝ → ℝ := fun x => cross (toReal ((splitPoly P a b).vert i)
-      - toReal ((splitPoly P a b).vert (i - 1))) (x - toReal ((splitPoly P a b).vert (i - 1)))
-    with hf1
-  set f2 : ℝ × ℝ → ℝ := fun x => cross (toReal ((splitPoly P a b).vert (i + 1))
-      - toReal ((splitPoly P a b).vert i)) (x - toReal ((splitPoly P a b).vert i)) with hf2
-  set f3 : ℝ × ℝ → ℝ := fun x => cross (toReal ((splitPoly P a b).vert (i - 1))
-      - toReal ((splitPoly P a b).vert (i + 1))) (x - toReal ((splitPoly P a b).vert (i + 1)))
-    with hf3
-  have hcf1 : Continuous f1 := by
-    rw [hf1]; simp only [cross, Prod.fst_sub, Prod.snd_sub]; fun_prop
-  have hcf2 : Continuous f2 := by
-    rw [hf2]; simp only [cross, Prod.fst_sub, Prod.snd_sub]; fun_prop
-  have hcf3 : Continuous f3 := by
-    rw [hf3]; simp only [cross, Prod.fst_sub, Prod.snd_sub]; fun_prop
-  set U : Set (ℝ × ℝ) := {x | 0 < f1 x ∧ 0 < f2 x ∧ 0 < f3 x} with hUdef
-  have hUopen : IsOpen U := by
-    have hUeq : U = (f1 ⁻¹' Set.Ioi 0) ∩ ((f2 ⁻¹' Set.Ioi 0) ∩ (f3 ⁻¹' Set.Ioi 0)) := by
-      ext x
-      simp only [hUdef, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_preimage, Set.mem_Ioi]
-    rw [hUeq]
-    exact (hcf1.isOpen_preimage _ isOpen_Ioi).inter
-      ((hcf2.isOpen_preimage _ isOpen_Ioi).inter (hcf3.isOpen_preimage _ isOpen_Ioi))
-  have hgU : g ∈ U := ⟨hg1, hg2, hg3⟩
-  have hLwind : ∀ x ∈ U, (splitPoly P a b).winding x = 1 := by
-    intro x hx
-    exact openCorner_winding_one' (splitPoly P a b) hSL hOL i hlo hhi hear hx.1 hx.2.1 hx.2.2
-  have hloc : ∀ᶠ q in nhds g, P.winding q = 0 := by
-    have h := winding_eventually_eq_full P g hgb; rw [hg0] at h; exact h
-  have hlocS : {q | P.winding q = 0} ∈ nhds g := hloc
-  obtain ⟨V, hVsub, hVopen, hgV⟩ := _root_.mem_nhds_iff.1 hlocS
-  set W : Set (ℝ × ℝ) := U ∩ V with hWdef
-  have hgW : g ∈ W := ⟨hgU, hgV⟩
-  have hWopen : IsOpen W := hUopen.inter hVopen
-  have hWpos : 0 < MeasureTheory.volume W :=
-    hWopen.measure_pos (μ := MeasureTheory.volume) ⟨g, hgW⟩
-  have hWsub : W ⊆ {q | (splitPoly P a b).winding q ≠ 0 ∧ (splitPoly P b a).winding q ≠ 0} := by
-    rintro x ⟨hxU, hxV⟩
-    have hLx : (splitPoly P a b).winding x = 1 := hLwind x hxU
-    have hPx : P.winding x = 0 := hVsub hxV
-    have hadd := winding_split_add P a b hab x
-    have hRx : (splitPoly P b a).winding x = -1 := by rw [hLx, hPx] at hadd; linarith
-    exact ⟨by rw [hLx]; norm_num, by rw [hRx]; norm_num⟩
-  have hnull : MeasureTheory.volume
-      {q | (splitPoly P a b).winding q ≠ 0 ∧ (splitPoly P b a).winding q ≠ 0} = 0 := by
-    have h := MeasureTheory.ae_iff.1 hdisj
-    simpa only [not_not] using h
-  have hmono := MeasureTheory.measure_mono (μ := MeasureTheory.volume) hWsub
-  rw [hnull] at hmono
-  exact absurd hmono (not_le.2 hWpos)
-
 /-- **Winding-`1` point arbitrarily close to a vertex.** For a simple positively-oriented
 polygon `Q` and any edge `e`, within every ball around the vertex `v_e` there is an
 off-boundary point with `Q.winding = 1` — a point of the left region of edge `e` placed
@@ -10879,7 +10126,7 @@ lemma corner_triangle_subset_half (hS : P.IsSimple) (hO : P.PositivelyOriented)
       have hcon : inTriangle a' b' c' (toReal ((splitPoly P a b).vert t)) := by rw [hLvt]; exact ⟨hv1, hv2, hv3⟩
       exact hear.2 t ht_im1 ht_i ht_i1 hcon
     · -- CASE B: `j` is an R-only vertex; the double-winding contradiction
-      push_neg at hcase
+      push Not at hcase
       -- separation witnesses + a.e. disjointness
       obtain ⟨⟨pL, hpLL, hpLP, hpLwL, hpLwR⟩, ⟨pR, hpRR, hpRP, hpRwR, hpRwL⟩⟩ :=
         exists_split_separation_witness P hS hO h2 a b hdiagD hconv hwT
@@ -11125,7 +10372,7 @@ lemma corner_triangle_subset_half_R (hS : P.IsSimple) (hO : P.PositivelyOriented
         rw [hRvt]; exact ⟨hv1, hv2, hv3⟩
       exact hear.2 t ht_im1 ht_i ht_i1 hcon
     · -- CASE B: `j` is an `L`-only vertex; the double-winding contradiction
-      push_neg at hcase
+      push Not at hcase
       obtain ⟨⟨pL, hpLL, hpLP, hpLwL, hpLwR⟩, ⟨pR, hpRR, hpRP, hpRwR, hpRwL⟩⟩ :=
         exists_split_separation_witness P hS hO h2 a b hdiagD hconv hwT
       have hdisj := splitPoly_hdisj_of_witnesses P hS hO a b hab hSL hSR
@@ -11289,7 +10536,7 @@ lemma exists_ear_or_diagonal_at (hS : P.IsSimple) (w : ZMod P.n) (hconv : 0 < co
     exact ⟨v, deepest_contained_isDiagonal P hS w v hconv hv.1 hv.2.1 hv.2.2.1 hv.2.2.2 hvmax,
       hconv, hv.2.2.2⟩
   · left
-    push_neg at hemp
+    push Not at hemp
     exact isEarVertex_of_empty P w hconv hemp
 
 /-- **Interiority from edge-avoidance.** An index `i` of `ZMod m` (`m ≥ 1`) that avoids both
@@ -11392,7 +10639,7 @@ lemma ear_avoiding : ∀ (n : ℕ) (P : LatticePolygon), P.IsSimple → P.Positi
             rw [hposR, hpe1eq] at h
             omega
         · -- edge `e` is in the `v→w` arc: recurse on `splitPoly P w v`
-          push_neg at hcase
+          push Not at hcase
           obtain ⟨iL, hearL, hiLa, hiLb⟩ :=
             IH (splitPoly P w v).n hnLlt (splitPoly P w v) hSL hOL rfl hnL3
               (((splitPoly P w v).n - 1 : ℕ) : ZMod (splitPoly P w v).n)

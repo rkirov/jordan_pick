@@ -1,292 +1,631 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
 # formalization.yaml (v0.3): repo-root metadata for formalization projects.
 # Schema: https://github.com/mathlib-initiative/formalization.yaml
+#
+# This file is the shared metadata record for three Palomar submissions that
+# share this repository and commit but select different Comparator
+# configurations, one entry each:
+#
+#   entry              Comparator configuration                    compared declaration
+#   -----------------  ------------------------------------------  --------------------
+#   Pick               submission/pick/config.json                 `pick`
+#   Jordan curve       submission/jordan_curve/config.json         `jordan_curve`
+#   Radó               submission/rado_riemannSurface/config.json  `rado_riemannSurface`
+#
+# `status.main_results` and `alignment.statements` below are keyed to those
+# three entries first, then to the further repository results they are built on.
 version: "v0.3"
 
 project:
-  name: "jordan_pick — Pick's theorem + the Jordan curve theorem (Lean 4 / Mathlib)"
+  name: "jordan_pick — Pick's theorem, the Jordan curve theorem, and Radó's theorem (Lean 4 / Mathlib)"
   authors:
-    - "Rado Kirov"                      # human director; the formalization itself is agent-produced — see `automation`
-  license: "Apache-2.0"
+    # Human director of the project. The Lean text itself is agent-produced under
+    # that direction; see `automation` for the models, harness, and verification gate.
+    - "Rado Kirov"
+  responsible_maintainers:
+    - name: "Rado Kirov"
+      github: "rkirov"
+      role: "author and sole maintainer of the substantive formalization"
+  license: "Apache-2.0"        # matches the root LICENSE file (Apache License 2.0)
+
+repository:
+  role: "substantive-development"
+  # The substantive Lean development lives in this repository: JordanPick/ and Rado/
+  # are the libraries, and submission/<entry>/ are thin Challenge/Solution workspaces
+  # that re-expose their results to Comparator against the same Mathlib pin.
+
+classification:
+  # Classifies the mathematics, not the use of Lean or of AI. Two arXiv codes are
+  # permitted and this record is shared by all three entries, so the pair is chosen
+  # to cover them jointly; the MSC codes below are annotated per entry.
+  arxiv:
+    - "math.GT"    # Pick + polygonal JCT + continuous JCT (plane topology, curves in the
+                   # plane); also the primary category arXiv assigns to the prior Lean
+                   # formalization of Pick's theorem, arXiv:2603.23095
+    - "math.CV"    # Radó's theorem (Riemann surfaces, Perron's method, harmonic functions)
+  msc2020:
+    - "52B20"      # Pick — lattice polytopes in convex geometry
+    - "52C05"      # Pick — lattices and convex bodies in 2 dimensions (discrete geometry)
+    - "55M25"      # Pick, polygonal JCT — degree, winding number (the spine of the development)
+    - "54F65"      # Jordan curve theorem — topological characterizations of particular spaces
+    - "54H25"      # Jordan curve theorem — fixed-point theorems (Brouwer is the engine here)
+    - "30F15"      # Radó — harmonic functions on Riemann surfaces (Perron's method)
+    - "30F20"      # Radó — classification theory of Riemann surfaces
+    - "54D65"      # Radó — separability/second countability of topological spaces
 
 sources:
-  - title: "lean-eval Pick problem (LeanEval/Geometry/PicksTheorem.lean)"
-    authors: ["Lean FRO (leanprover/lean-eval)"]
-    id: "https://lean-lang.org/eval/problems/pick/ — the exact target statement, proved verbatim in EvalBridgeMain.lean"
-    type: "specification / eval problem"
-    license: "Apache-2.0"
-    author_contacted: "no"
-    prior_work: ""
-  - title: "lean-eval Jordan curve problem (jordan_curve)"
-    authors: ["Lean FRO (leanprover/lean-eval)"]
-    id: "https://lean-lang.org/eval/problems/jordan_curve/ — the exact target statement, proved verbatim in JordanPick/JordanCurve.lean"
-    type: "specification / eval problem"
-    license: "Apache-2.0"
-    author_contacted: "no"
-    prior_work: ""
-  - title: "lean-eval Radó theorem problem (rado_riemannSurface)"
-    authors: ["Junyan Xu (submitter); Lean FRO (leanprover/lean-eval)"]
-    id: "https://lean-lang.org/eval/problems/rado_riemannSurface/ — the exact target statement, proved verbatim in Rado/Main.lean"
-    type: "specification / eval problem"
-    license: "Apache-2.0"
-    author_contacted: "no"
-    prior_work: >
-      Two prior automated solutions are recorded on the leaderboard (Aristotle/Harmonic 2026-06-22,
-      Seed Prover/ByteDance 2026-06-28); both submission repos are private and neither proof was
-      seen. Clean-room: this development was produced independently from the mathematical
-      literature below. This submission passed the lean-eval comparator (2026-07-10).
-  - title: "A short proof of the uniformization theorem (self-contained Perron/Radó treatment)"
-    authors: ["Cipriana Anghel", "Rareş Stan"]
-    id: "arXiv:2008.12189; Ann. Glob. Anal. Geom. (2022)"
-    type: "paper (primary mathematical source for the Radó development)"
-    license: ""
-    author_contacted: "no"
-    prior_work: >
-      Informal mathematics only (no prior formalization). The Rado/ development follows their
-      Perron treatment (Definition 2, Proposition 3, Remark 4, Theorem 6, Theorem 7) with
-      formalization-motivated deviations recorded in Rado/PLAN.md: explicit two-disk configuration
-      with log-barriers instead of general Dirichlet boundary regularity, and an étale space of
-      exact harmonic-conjugate germs instead of the universal cover.
-  - title: "Teichmüller theory and applications to geometry, topology, and dynamics, Vol. 1, §1.2-1.3"
-    authors: ["John Hamal Hubbard"]
-    id: "Matrix Editions (2006) — the eval problem's cited source; freely available Chapter 1 excerpt consulted"
+  # -- Origins of the three formalized theorems ------------------------------------
+  - title: "Geometrisches zur Zahlenlehre (the original statement of Pick's theorem)"
+    authors: ["Georg Alexander Pick"]
+    id: >
+      Sitzungsberichte des deutschen naturwissenschaftlich-medicinischen Vereines für Böhmen
+      "Lotos" in Prag, (Neue Folge) 19 (1899), 311-319. No DOI or stable digital copy is known
+      to us; this is the standard bibliographic reference for the theorem's first appearance.
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      Cited as the origin of the theorem, not as the route taken. Pick's 1899 note was not
+      consulted; the formalization states the standard modern form (area = I + B/2 - 1) and
+      proves it by an independent route (winding-number spine + ear-clipping induction) that is
+      not Pick's argument. Because the source cannot be independently confirmed by us, no claim
+      rests on its content beyond the attribution of the statement.
+  - title: "Cours d'analyse de l'École Polytechnique, Vol. III (the original statement of the Jordan curve theorem)"
+    authors: ["Camille Jordan"]
+    id: "Gauthier-Villars, Paris, 2nd ed. (1887), pp. 587-594"
     type: "book"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: ""
-  - title: "Lectures on Riemann Surfaces, §22-23 (via Armin Rainer's lecture notes)"
-    authors: ["Otto Forster", "Armin Rainer"]
-    id: "Springer GTM 81; Rainer's Vienna notes — source for the Poincaré-Volterra lemma (23.2) and Dirichlet problem (22.3)"
-    type: "book / lecture notes"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: ""
-  - title: "Formalizing Pick's Theorem, efficiently"
-    authors: ["Michael Eisermann", "Roland Zumkeller", "et al."]
-    id: "arXiv:2603.23095 (2026)"
-    type: "paper / prior Lean formalization (partial)"
-    license: ""
-    author_contacted: "no"
-    prior_work: >
-      Clean-room with respect to proofs. Their development proves the algebraic count identity but
-      leaves the geometric half (a winding/Umlaufsatz argument) unproved (sorry). The count side
-      here (latWeight / latWeightSum in Weight.lean) follows their discrete-angle-weight device
-      (dang / Welp); the per-edge identity is proved independently (a column decomposition rather
-      than their four-box partition + reflection involution) — see the Weight.lean header.
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      Cited as the origin of the statement only. Jordan's argument is not the route taken and was
+      not consulted; the first proof generally accepted as rigorous is Veblen's (below), and the
+      proof formalized here is Maehara's.
+  - title: "Theory on plane curves in non-metrical analysis situs (the first rigorous proof of the Jordan curve theorem)"
+    authors: ["Oswald Veblen"]
+    id: "Trans. Amer. Math. Soc. 6 (1905), 83-98; doi:10.1090/S0002-9947-1905-1500697-4"
+    type: "paper"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: "Historical context for the statement's status; not the route formalized here."
+  - title: "Über den Begriff der Riemannschen Fläche (the original statement of Radó's theorem)"
+    authors: ["Tibor Radó"]
+    id: >
+      Acta Litt. Sci. Reg. Univ. Hung. Francisco-Josephinae, Sect. Sci. Math. (Szeged) 2 (1925),
+      101-121. No DOI known to us; this is the standard bibliographic reference.
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      Cited as the origin of the theorem. Radó's original argument was not consulted; the route
+      formalized here is the Perron treatment of Anghel-Stan (below).
+
+  # -- The mathematical sources actually followed -----------------------------------
+  - title: "Uniformization of Riemann surfaces revisited"
+    authors: ["Cipriana Anghel", "Rareş Stan"]
+    id: "arXiv:2008.12189v2; Ann. Global Anal. Geom. 62 (2022), 603-615; doi:10.1007/s10455-022-09860-2"
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "not-contacted"
+    note: >
+      The primary mathematical source for Rado/. Their paper proves the uniformization theorem;
+      what is formalized here is its Radó/Perron portion (Definition 2, Proposition 3, Remark 4,
+      Theorem 6, Theorem 7), not uniformization itself. Informal mathematics only — no prior
+      formalization of this paper is known to us. Two formalization-motivated deviations from
+      their route are recorded under `fidelity.divergences` and in Rado/PLAN.md.
   - title: "The Jordan curve theorem via the Brouwer fixed point theorem"
     authors: ["Ryuji Maehara"]
-    id: "Amer. Math. Monthly 91 (1984), 641-643; doi:10.2307/2323369"
+    id: "Amer. Math. Monthly 91(10) (1984), 641-643; doi:10.2307/2323369"
     type: "paper"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: ""
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      The proof formalized for the continuous Jordan curve theorem: Maehara's Brouwer-based
+      argument, including the Tietze-extension step and the arc-non-separation lemma.
   - title: "Polygons Have Ears"
     authors: ["Gary H. Meisters"]
     id: "Amer. Math. Monthly 82(6) (1975), 648-651; doi:10.2307/2319703"
-    type: "paper (the two-ears theorem behind the ear-clipping reduction)"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: ""
-  - title: "A formal proof of Pick's theorem"
-    authors: ["John Harrison"]
-    id: "Math. Struct. Comput. Sci. (2011)"
-    type: "prior formalization (HOL Light)"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: "consulted as prior art only; no code ported"
-  - title: "Formalizing Pick's Theorem in Isabelle/HOL"
-    authors: ["Sage Binder", "Katherine Kosaian"]
-    id: "CICM 2024; arXiv:2405.01793; AFP entry Picks_Theorem"
-    type: "prior formalization (Isabelle/HOL)"
-    license: ""
-    author_contacted: "n/a"
-    prior_work: "consulted as prior art only; no code ported"
+    type: "paper"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: >
+      Supplies the two-ears theorem behind the ear-clipping reduction used in the Pick proof. The
+      diagonal split formalized here is the deepest-contained-vertex construction rather than
+      Meisters' own; the source supplies the idea, not the recorded result.
+  - title: "Lectures on Riemann Surfaces (GTM 81), §22-23"
+    authors: ["Otto Forster"]
+    id: "Springer GTM 81 (1981); doi:10.1007/978-1-4612-5961-9"
+    type: "book"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: >
+      Source for the two ingredients of the Radó development that are stated there in the form
+      used: the Poincaré-Volterra lemma (23.2) and the Dirichlet problem on a disk (22.3). Both
+      are proved from scratch in Rado/; nothing is assumed from this source.
+  - title: "Riemann Surfaces (Vienna lecture notes)"
+    authors: ["Armin Rainer"]
+    id: "https://www.mat.univie.ac.at/~armin/lect/Riemann_surfaces.pdf"
+    type: "other"
+    relationship: "background"
+    author_endorsement: "not-contacted"
+    note: >
+      Unpublished lecture notes following Forster; the accessible rendering of Forster §22-23
+      actually read while formalizing. Recorded for transparency about what was consulted.
+  - title: "Teichmüller theory and applications to geometry, topology, and dynamics, Vol. 1, §1.2-1.3"
+    authors: ["John Hamal Hubbard"]
+    id: "Matrix Editions (2006), ISBN 978-0-9715766-2-9"
+    type: "book"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: >
+      The source cited by the lean-eval rado_riemannSurface problem statement; consulted for the
+      statement's intended reading. The freely available Chapter 1 excerpt was used.
+  - title: "Formalizing Pick's Theorem, efficiently"
+    authors: ["Michael Eisermann"]
+    id: "arXiv:2603.23095"
+    type: "paper"
+    relationship: "background"
+    author_endorsement: "not-contacted"
+    note: >
+      Supplies the discrete-angle-weight device used on the count side: `latWeight` in
+      JordanPick/PicksTheorem/Weight.lean is that paper's `dang`, and `latWeightSum` plays the
+      role of its `Welp`. The per-edge identity is proved independently here (a column
+      decomposition rather than a four-box partition with a reflection involution) — see the
+      Weight.lean module header. This paper is also a prior Lean formalization and is recorded
+      again under `related_formalizations`.
+
+  # -- Formal problem statements (specifications, not mathematical sources) ---------
+  - title: "lean-eval problem `pick` (the exact formal statement submitted)"
+    authors: ["Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/pick/"
+    type: "other"
+    relationship: "other"
+    author_endorsement: "not-contacted"
+    note: >
+      Not a mathematical source: this is the formal specification whose Lean statement is proved
+      verbatim, including the eight auxiliary definitions reproduced in the Challenge. Recorded
+      so a reader can see that the statement was fixed by a third party rather than chosen here.
+  - title: "lean-eval problem `jordan_curve` (the exact formal statement submitted)"
+    authors: ["Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/jordan_curve/"
+    type: "other"
+    relationship: "other"
+    author_endorsement: "not-contacted"
+    note: "As above; the statement is proved verbatim."
+  - title: "lean-eval problem `rado_riemannSurface` (the exact formal statement submitted)"
+    authors: ["Junyan Xu (problem submitter)", "Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/rado_riemannSurface/"
+    type: "other"
+    relationship: "other"
+    author_endorsement: "not-contacted"
+    note: >
+      As above; the statement is proved verbatim and passed the lean-eval comparator on
+      2026-07-10. Its cited mathematical source is Hubbard §1.3, listed separately above.
+
+related_formalizations:
+  - id: "arXiv:2603.23095 — Formalizing Pick's Theorem, efficiently (Michael Eisermann; Lean 4)"
+    relationship: "adapts"
+    note: >
+      The nearest prior Lean work on Pick's theorem. This development adapts its
+      discrete-angle-weight device on the count side (`dang` -> `latWeight`, `Welp` ->
+      `latWeightSum`) but ports no code and proves the per-edge identity by a different
+      decomposition. On our reading of that development, the geometric half — the polygonal
+      Jordan curve theorem and the ear-clipping reduction — is left unproved there; that half is
+      what is completed here. Readers should check that development directly rather than rely on
+      our characterization of it.
+  - id: "John Harrison, A formal proof of Pick's theorem, Math. Struct. Comput. Sci. 21(4) (2011), 715-729; doi:10.1017/S0960129511000089 (HOL Light)"
+    relationship: "independent"
+    note: >
+      Prior formalization of Pick's theorem in a different system. Consulted as prior art only;
+      no code, definitions, or proof structure were ported, and nothing here depends on it.
+  - id: "arXiv:2405.01793 — Formalizing Pick's Theorem in Isabelle/HOL (Sage Binder, Katherine Kosaian); doi:10.1007/978-3-031-66997-2_7; AFP entry `Picks_Theorem`"
+    relationship: "independent"
+    note: >
+      Prior formalization of Pick's theorem in a different system. Consulted as prior art only;
+      no code was ported.
+  - id: "Jordan curve theorem, Mizar Mathematical Library (completed 2005 by a team including Artur Korniłowicz, Yatsuka Nakamura and Andrzej Trybulec) — https://mizar.uwb.edu.pl/"
+    relationship: "independent"
+    note: >
+      The Jordan curve theorem has been formalized before, notably in Mizar and (by Harrison) in
+      HOL Light. No novelty is claimed for the theorem or for its formalization in general; the
+      claim made here is narrower — that it is absent from Mathlib at the pinned revision.
+  - id: "Lawrence C. Paulson, `Jordan_Curve` in Isabelle/HOL HOL-Analysis (derived from Harrison's HOL Light development)"
+    relationship: "independent"
+    note: "As above: prior art for the Jordan curve theorem in another system; no code ported."
+  - id: "lean-eval `rado_riemannSurface` leaderboard entry, Aristotle (Harmonic), 2026-06-22"
+    relationship: "independent"
+    note: >
+      An earlier automated solution of the same eval problem. Its submission repository is
+      private and its proof was never seen; this development is clean-room with respect to it.
+      Recorded so that priority on the eval problem is not implicitly claimed here.
+  - id: "lean-eval `rado_riemannSurface` leaderboard entry, Seed Prover (ByteDance), 2026-06-28"
+    relationship: "independent"
+    note: "As above: private repository, proof never seen, clean-room with respect to it."
 
 status:
   scope: >
-    COMPLETE. Pick's theorem (Freek's Formalizing 100 Theorems #92) for simple lattice
-    polygons with area as genuine Lebesgue measure (area = I + B/2 − 1), the polygonal Jordan curve
-    theorem (winding ∈ {0,1}, complement has at most two components), the full continuous Jordan
-    curve theorem (a continuous injection S¹ → ℝ² has a complement with exactly two connected
-    components), the 2-D Brouwer fixed point theorem, and Radó's theorem (every connected Hausdorff
-    Riemann surface is second countable) — all missing from Mathlib. All three lean-eval problems
-    (pick, jordan_curve, rado_riemannSurface) are proved in their exact harness statements against
-    the harness's pinned toolchain (Lean v4.32.2, Mathlib 905b9581); the rado_riemannSurface
-    submission passed the lean-eval comparator (2026-07-10).
-  sorry_count: 0                        # scope: the submitted results and the JordanPick/ + Rado/
-                                        # libraries they are built from. The in-progress
-                                        # Uniformization/ development is NOT covered -- see
-                                        # in_progress below.
+    Three results are submitted, each as its own Palomar entry against its own Comparator
+    configuration: Pick's theorem for simple lattice polygons with area as genuine Lebesgue
+    measure (area = I + B/2 - 1; Freek Wiedijk's Formalizing 100 Theorems #92), the continuous
+    Jordan curve theorem (a continuous injection S^1 -> R^2 has a complement with exactly two
+    connected components), and Radó's theorem (every connected Hausdorff Riemann surface is
+    second countable). The supporting repository additionally proves the polygonal Jordan curve
+    theorem, the 2-dimensional Brouwer fixed point theorem, the Poincaré-Volterra lemma, the
+    Dirichlet problem on a disk, and Perron's principle on a Riemann surface. None of these is
+    present in Mathlib at the pinned revision 905b9581 — checked by searching that checkout, and
+    the reason each was posed as a lean-eval problem. No novelty is claimed for any of the
+    theorems themselves, all of which are classical, nor for formalizing them in general: Pick's
+    theorem has been formalized in HOL Light, Isabelle/HOL, and partially in Lean, and the Jordan
+    curve theorem in Mizar, HOL Light, and Isabelle/HOL (see `related_formalizations`). We are
+    not aware of a prior formalization of Radó's theorem in any system, and of no prior
+    sorry-free Lean proof of Pick's theorem or the Jordan curve theorem; that is the limit of
+    what our search established. All three submitted statements are proved in their exact
+    lean-eval harness form against the harness's pinned toolchain (Lean v4.32.2, Mathlib
+    905b9581). The repository snapshot is licensed Apache-2.0 (root LICENSE).
+  sorry_count: 0                        # Scope: the three submitted results and the JordanPick/
+                                        # and Rado/ libraries they are built from (39 files,
+                                        # ~33.5k lines). The in-progress Uniformization/
+                                        # development is NOT covered -- see `in_progress`.
   sorry_in_definitions: 0
-  axioms:                               # scope as for sorry_count: the axiom surface of every
+  axioms:                               # Scope as for sorry_count: the axiom surface of every
                                         # declaration in JordanPick/ and Rado/, hence of all
-                                        # submitted results. Uniformization/ is not covered.
+                                        # three submitted results. These are Lean's three
+                                        # standard axioms and the only ones the Comparator
+                                        # configurations permit. Uniformization/ is not covered.
     - "propext"
     - "Classical.choice"
     - "Quot.sound"
-  in_progress:                          # not submitted; recorded so the counts above are not
-                                        # mistaken for a repo-wide claim
+  in_progress:                          # Not submitted, and not covered by the counts above.
+                                        # Recorded so those counts are not mistaken for a
+                                        # repository-wide claim.
     - directory: "Uniformization/"
-      goal: "lean-eval `uniformization` (Hubbard Thm 1.1.2)"
+      goal: "lean-eval `uniformization` (Hubbard, Teichmüller theory Vol. 1, Thm 1.1.2)"
       sorry_count: 2
       sorries:
         - declaration: "LeanEval.Geometry.isFreeGroup_fundamentalGroup"
           file: "Uniformization/Main.lean"
           missing_input: >
-            pi_1 of an open surface is free (Ahlfors-Sario 1960 sec. 44A), reached by Rado
-            triangulability of open surfaces plus Whitehead's spine. Neither is in Mathlib at
-            the pin. Everything downstream of it is proved sorry-free in Uniformization/Pi1Free.lean,
-            so LeanEval.Geometry.uniformization is proved modulo this one input.
+            The fundamental group of an open surface is free (Ahlfors-Sario 1960, §44A), reached
+            via Radó triangulability of open surfaces plus Whitehead's spine. Neither is in
+            Mathlib at the pin. Everything downstream is proved sorry-free in
+            Uniformization/Pi1Free.lean.
         - declaration: "Uniformization.exists_end_collapse"
           file: "Uniformization/Surface/Fill/Collapse.lean"
           missing_input: >
-            A TubeData: two-sided tubular neighbourhood of the cutting ray. The chain
+            A TubeData: a two-sided tubular neighbourhood of the cutting ray. The chain
             TubeData -> RayCollar -> exists_end_collapse is complete and sorry-free.
       notes: >
-        Because of these, LeanEval.Geometry.uniformization_key and
-        LeanEval.Geometry.uniformization depend on sorryAx via exists_end_collapse; they are
-        NOT axiom-clean, unlike the submitted results above.
+        Consequently LeanEval.Geometry.uniformization_key and LeanEval.Geometry.uniformization
+        depend on sorryAx. They are NOT axiom-clean, unlike the three submitted results, and
+        neither is submitted here.
   main_results:
-    - declaration: "LeanEval.Geometry.PicksTheorem.pick"
-      file: "JordanPick/PicksTheorem/EvalBridgeMain.lean"
+    # --- the three submitted entries, one per Comparator configuration ---------------
+    - declaration: "pick"                 # root namespace, as selected by theorem_names
+      file: "submission/pick/Challenge.lean (statement); submission/pick/Solution.lean (proof)"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "submission/pick/config.json"
-      literature_dependencies: []
-    - declaration: "JordanCurve.jordan_curve"
-      file: "JordanPick/JordanCurve.lean"
+      literature_dependencies: []        # none: the proof is complete, with no result assumed
+                                         # from the literature
+      note: >
+        The lean-eval `pick` statement, proved verbatim. Bridged to the library theorem
+        LeanEval.Geometry.PicksTheorem.pick in JordanPick/PicksTheorem/EvalBridgeMain.lean, which
+        in turn reduces to Pick.pick in JordanPick/PicksTheorem/Pick.lean.
+    - declaration: "jordan_curve"         # root namespace, as selected by theorem_names
+      file: "submission/jordan_curve/Challenge.lean (statement); submission/jordan_curve/Solution.lean (proof)"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "submission/jordan_curve/config.json"
       literature_dependencies: []
+      note: >
+        The lean-eval `jordan_curve` statement, proved verbatim. Bridged to the library theorem
+        JordanCurve.jordan_curve in JordanPick/JordanCurve.lean.
+    - declaration: "rado_riemannSurface"  # root namespace, as selected by theorem_names
+      file: "submission/rado_riemannSurface/Challenge.lean (statement); submission/rado_riemannSurface/Solution.lean (proof)"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "submission/rado_riemannSurface/config.json"
+      literature_dependencies: []
+      note: >
+        The lean-eval `rado_riemannSurface` statement, proved verbatim; passed the lean-eval
+        comparator on 2026-07-10. Bridged to Rado.secondCountableTopology_of_riemannSurface in
+        Rado/Surface/Assembly.lean. Identical in text to the library theorem
+        `rado_riemannSurface` in Rado/Main.lean.
+
+    # --- further repository results the three entries are built from -----------------
+    #     (not separately submitted; no Comparator configuration selects them)
     - declaration: "Pick.pick"
       file: "JordanPick/PicksTheorem/Pick.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: ""
       literature_dependencies: []
+      note: >
+        The library form of Pick's theorem, stated for a positively-oriented simple
+        LatticePolygon with area the Lebesgue measure of the winding interior. The submitted
+        `pick` needs no orientation hypothesis; the bridge supplies it.
     - declaration: "Pick.LatticePolygon.compl_boundary_atMost_two"
       file: "JordanPick/PicksTheorem/Pick.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: ""
       literature_dependencies: []
+      note: >
+        The polygonal Jordan curve theorem: the complement of a simple polygon's boundary is
+        covered by two preconnected pieces, with the winding number locally constant in {0,1}.
     - declaration: "JordanCurve.Brouwer.brouwerFPT"
       file: "JordanPick/JordanCurve/Brouwer.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: ""
       literature_dependencies: []
-    - declaration: "rado_riemannSurface"
-      file: "Rado/Main.lean"
+      note: >
+        The 2-dimensional Brouwer fixed point theorem for nonempty compact convex subsets of the
+        plane, built from scratch against Mathlib; the engine of the submitted `jordan_curve`.
+    - declaration: "Rado.poincare_volterra"
+      file: "Rado/Topology/PoincareVolterra.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
-      comparator_config: "submission/rado_riemannSurface/config.json"
-      literature_dependencies:
-        - "arXiv:2008.12189 (Anghel–Stan): Perron treatment"
-        - "Forster GTM 81 §22-23 / Rainer notes: Poincaré–Volterra (23.2), Dirichlet problem (22.3)"
-        - "Hubbard, Teichmüller theory Vol. 1 §1.3: the eval problem's cited source"
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Forster 23.2, proved from scratch; the counting step of the submitted Radó proof."
+    - declaration: "Rado.exists_harmonic_extension"
+      file: "Rado/Complex/Poisson.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Forster 22.3 (Dirichlet problem on a disk, via the Poisson kernel), proved from scratch."
+    - declaration: "Rado.IsPerronFamily.surfaceHarmonicOn_perronSup"
+      file: "Rado/Surface/Perron.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Perron's principle on a Riemann surface (Anghel-Stan Prop. 3), proved from scratch."
 
 automation:
   methods:
-    - method: "autonomous"              # agentic formalization: high-level human prompts; Claude Code drives end-to-end
+    - method: "autonomous"              # agentic formalization: high-level human prompts;
+                                        # Claude Code drives end-to-end
       models: ["claude-fable-5", "claude-opus-4-8"]
       framework: "Claude Code"
       tool_setup: >
-        Claude Code with background sub-agent orchestration; soundness gate: every claimed close is
-        independently kernel-verified via `#print axioms` (sorryAx must be absent) before being
-        trusted; each commit is `lake build`-green. Heartbeat/performance passes are profiler-driven
-        (`#count_heartbeats` with Elab.async off, `set_option diagnostics true`).
+        Claude Code with background sub-agent orchestration. Soundness gate: every claimed close
+        is independently kernel-verified with `#print axioms` (sorryAx must be absent) before
+        being trusted, and every commit is `lake build`-green. Heartbeat and performance passes
+        are profiler-driven (`#count_heartbeats` with Elab.async off, `set_option diagnostics
+        true`). No custom tactic, decision procedure, or external oracle contributes to any
+        proof; nothing is admitted by `native_decide` or an unverified extension.
       cost:
-        wall_time: "assembled repo history 2026-06-26 to 2026-07-02 (development predates the assembled history)"
+        wall_time: "assembled repository history 2026-06-26 to 2026-07-02 (development predates the assembled history)"
         spend_usd: "subscription-based usage, $100/month subscription"
         hardware: "single 4-core / ~8 GB laptop; API-only model access"
       prompting_notes: >
-        Steered with terse high-level directives; discipline encoded in project memory: connect
-        already-proven pieces bottom-up, verify every agent commit by kernel axiom checks, flag
-        (don't fake) false-as-stated statements.
-  spend_usd: "subscription-based usage"
+        Steered with terse high-level directives; the working discipline is encoded in project
+        memory rather than in per-task prompts: connect already-proven pieces bottom-up, verify
+        every agent commit by kernel axiom check, and flag rather than paper over a statement
+        that is false as stated.
+  spend_usd: "subscription-based usage ($100/month subscription; no separate API spend)"
   notes: >
-    ~33.5k lines of Lean code across 38 files (JordanPick: Pick + Jordan/Brouwer; Rado: Radó's
-    theorem), sorry-free, zero custom axioms, zero compiler warnings, and no maxHeartbeats overrides
-    (every proof fits the default 200k budget). The Rado development is warned-free with
-    `autoImplicit false` throughout and #lint clean.
+    Human involvement is direction, statement selection, architecture review, and acceptance;
+    the Lean text is model-produced. A human did not line-by-line audit the ~33.5k lines of
+    proof, which is why the assurance claimed here rests on the kernel and the Comparator rather
+    than on human reading — see `review`. Size: ~33.5k lines of Lean across 39 files (JordanPick:
+    Pick, the polygonal and continuous JCT, Brouwer; Rado: Radó's theorem), sorry-free, with no
+    custom axioms, no `native_decide` or other compiled-evaluation escape hatch, and no compiler
+    warnings. Rado/ additionally sets `autoImplicit false` throughout and is `#lint` clean.
+    Elaboration budget, stated precisely because it is easy to overclaim: no file in JordanPick/,
+    in Rado/, or in any of the three submission workspaces contains a `maxHeartbeats` override,
+    so every proof behind the three submitted results elaborates inside Lean's default 200k
+    budget. The unfinished Uniformization/ development, which is not submitted and is not covered
+    by any claim here, does raise the limit in eleven places.
+    Each submission workspace is mechanically generated from the libraries by a checked-in
+    script — submission/bundle-engine.sh for pick, scripts/make_jordan_submission.sh and
+    scripts/make_rado_submission.sh for the other two. The scripts rewrite module prefixes so the
+    workspace compiles against Mathlib alone without importing this repository; the proof text is
+    otherwise the library text. The one substantive edit any of them makes is in
+    submission/pick/Submission/EvalBridge.lean, which drops the library's own copy of the eight
+    lean-eval helper definitions and takes them from the trusted ChallengeDeps module instead, so
+    that the Solution is built from declarations identical to the ones Challenge.lean states the
+    theorem with.
 
 fidelity:
   divergences: >
-    Area in Pick's theorem is the genuine Lebesgue measure of the winding interior — NOT
-    shoelace-as-definition; the shoelace identity is proved (Green: area = ∫∫ winding = shoelace).
-    The spine is the winding number as a per-edge signed ray-crossing sum (pure integer arithmetic —
-    no transcendental angles, no general topology); the polygonal JCT follows a crossing-alternation
-    route; the area identity reduces to triangles by ear-clipping induction (Meisters two-ears via a
-    deepest-contained-vertex diagonal split). The continuous JCT is a separate development
-    (independent of the polygonal one): Maehara's Brouwer-based proof, with Brouwer built from the
-    ground up (covering-space path lifting for the circle, no-retraction, ray-retraction on the
-    disk, nearest-point projection for convex compacts). The lean-eval bridge matches the harness
-    statements verbatim (Mathlib Polygon, topological interior, no orientation hypothesis).
-    Radó's theorem follows Anghel–Stan's Perron treatment with two formalization-motivated
-    deviations (recorded in Rado/PLAN.md, route "A′"): an explicit two-disk configuration with
-    log-barriers (unit disks at ±4 inside chart ball B(0,8), witnesses at ±4 + 2^(1/4)) in place of
-    general Dirichlet boundary regularity, and an étale space of exact harmonic-conjugate germs
-    (Re F = u exactly; sheets differ by imaginary constants) in place of the universal cover, with
-    descent via Poincaré–Volterra. The harness statement is proved verbatim (connected Hausdorff
-    ChartedSpace ℂ with IsManifold ⟹ SecondCountableTopology, pure Mathlib).
+    Pick's theorem. Area is the genuine Lebesgue measure of the winding interior, not the
+    shoelace formula taken as a definition; the shoelace identity is a proved theorem
+    (Green: area = the double integral of the winding number = shoelace). The spine of the
+    development is the winding number as a per-edge signed ray-crossing sum — pure integer
+    arithmetic, with no transcendental angles and no general topology — and the area identity is
+    reduced to triangles by ear-clipping induction (Meisters' two-ears theorem, realized via a
+    deepest-contained-vertex diagonal split rather than Meisters' own construction). The count
+    side follows Eisermann's discrete-angle-weight device; the per-edge identity is proved by a
+    column decomposition rather than his four-box partition with a reflection involution.
+    The library theorem Pick.pick assumes positive orientation; the submitted `pick` does not,
+    and the bridge in EvalBridgeMain.lean discharges that hypothesis.
+    Jordan curve theorem. This is a separate development, independent of the polygonal one: it
+    follows Maehara's Brouwer-based proof, with Brouwer itself built from the ground up against
+    Mathlib (covering-space path lifting for the circle, no-retraction, ray-retraction on the
+    disk, nearest-point projection for convex compacts), since Mathlib has no Brouwer fixed point
+    theorem at the pin.
+    Radó's theorem. Follows Anghel-Stan's Perron treatment with two formalization-motivated
+    deviations, both recorded in Rado/PLAN.md as route "A'": (i) an explicit two-disk
+    configuration with log-barriers — unit disks at ±4 inside the chart ball B(0,8), witnesses at
+    ±4 + 2^(1/4) — in place of general Dirichlet boundary regularity, and (ii) an étale space of
+    exact harmonic-conjugate germs (Re F = u exactly, so sheets differ by imaginary constants) in
+    place of the universal cover, with descent via Poincaré-Volterra. Both deviations change the
+    proof, not the theorem: the statement proved is the standard one.
+    Common. All three submitted statements are the lean-eval harness statements verbatim, in
+    pure Mathlib terms, and were fixed by a third party rather than chosen here.
+  definitions: >
+    All three Challenge modules import Mathlib and nothing else, so the transitive import closure
+    a reader must trust to read the statements contains no code from this repository.
+    The `jordan_curve` and `rado_riemannSurface` Challenges introduce no definitions at all: they
+    state the theorem in Mathlib's own vocabulary (Metric.sphere, EuclideanSpace, Nat.card,
+    ConnectedComponents; ChartedSpace, IsManifold, T2Space, ConnectedSpace,
+    SecondCountableTopology). The `pick` Challenge is the exception and carries eight auxiliary
+    definitions, reproduced verbatim from the lean-eval problem — lean-eval factors them into a
+    separate ChallengeDeps module, and they are inlined here so that the Challenge closure stays
+    Mathlib-only; the text is byte-identical and the theorem statement is unchanged. Each is
+    intended in its ordinary mathematical sense:
+    `toPlane` is the coordinatewise cast Z^2 -> R^2; `latPoly` is Mathlib's `Polygon` on integer
+    vertex data; `inside S` is the set of points off S whose connected component in the
+    complement is bounded — the topological (not winding) interior, and for a simple closed curve
+    the Jordan interior; `area S` is the real Lebesgue measure `volume (inside S)`, so the area
+    side of the identity is genuine measure and not a coordinate formula; `Adjacent` is cyclic
+    adjacency of edge indices via `finRotate`; `IsSimple` requires nondegenerate edges, disjoint
+    non-adjacent edges, and consecutive edges meeting exactly in their shared vertex — this is
+    what excludes self-intersecting and degenerate polygons, and it is a genuine hypothesis, not
+    a convenience; `boundaryPts` and `interiorPts` are `Nat.card` of the lattice points on the
+    polygon's boundary and in `inside` respectively. Note that `IsSimple` and the hypothesis
+    3 <= n are the only restrictions: no orientation, convexity, or non-degeneracy beyond
+    simplicity is assumed. None of these definitions is left as a Comparator definition hole;
+    all are fixed in the Challenge and none is supplied by the Solution.
+  limitations: >
+    The three submitted results are theorems about the objects just described and carry no
+    hidden hypotheses beyond those in their statements: `pick` requires 3 <= n and `IsSimple`;
+    `jordan_curve` requires continuity and injectivity of r on the unit circle; and
+    `rado_riemannSurface` requires a connected, Hausdorff `ChartedSpace C` that `IsManifold`.
+    Each depends on Lean's three standard axioms (propext, Classical.choice, Quot.sound) and on
+    nothing else. The separate Uniformization/ development in this repository is unfinished and
+    is not submitted; its two open inputs are itemized under `status.in_progress`.
 
 review:
   status: "self-assessed"
   reviewers: []
   notes: >
-    Verification is by Lean's kernel: `#print axioms` on every main result (all report
-    [propext, Classical.choice, Quot.sound], no sorryAx), the full `lake build` (green, zero
-    warnings), and the repo-wide zero-sorry sweep. The rado_riemannSurface submission additionally
-    passed the lean-eval comparator (2026-07-10), which independently re-checks the axiom surface
-    against the permitted set. No external peer review yet; expert review is welcome (Junyan Xu has
-    expressed interest in upstreaming the Radó pieces — Poincaré–Volterra, the Dirichlet disk
-    solution, and Perron — to Mathlib).
+    Verification here is by Lean's kernel, not by a human or by peer review. Specifically:
+    `#print axioms` on every main result reports exactly [propext, Classical.choice, Quot.sound]
+    with no sorryAx; the full `lake build` is green with zero warnings; and a repository-wide
+    sweep confirms no `sorry` outside Uniformization/. The rado_riemannSurface submission also
+    passed the lean-eval comparator on 2026-07-10, which independently re-checks the axiom
+    surface against the permitted set. What none of this establishes is that a mathematician has
+    read the proofs: no expert review has taken place, and the informal accounts in this file and
+    in README.md were written by the same process that produced the Lean. Expert review is
+    welcome. Junyan Xu, who submitted the rado_riemannSurface eval problem, has expressed
+    interest in upstreaming pieces of the Radó development — the Poincaré-Volterra lemma, the
+    Dirichlet disk solution, and Perron's principle — to Mathlib; that is an expression of
+    interest, not a review or an endorsement of this submission.
 
 alignment:
-  namespace: "Pick (Pick's theorem + polygonal JCT), JordanCurve (continuous JCT + Brouwer), LeanEval.Geometry.PicksTheorem (eval bridge), Rado (Radó's theorem), root rado_riemannSurface (eval statement)"
+  namespace: >
+    Pick (Pick's theorem and the polygonal JCT), JordanCurve (continuous JCT and Brouwer),
+    LeanEval.Geometry.PicksTheorem (the Pick eval bridge), Rado (Radó's theorem), and the root
+    namespace for the three submitted statements `pick`, `jordan_curve`, `rado_riemannSurface`.
   statements:
-    - source: "lean-eval pick — https://lean-lang.org/eval/problems/pick/"
-      lean: "LeanEval.Geometry.PicksTheorem.pick"
-      module: "JordanPick/PicksTheorem/EvalBridgeMain.lean"
+    # --- submitted entry 1 of 3 -----------------------------------------------------
+    - source: "lean-eval `pick` — https://lean-lang.org/eval/problems/pick/ (Pick's theorem, Pick 1899)"
+      lean: "pick"
+      module: "Challenge (submission/pick/Challenge.lean), proved in Solution (submission/pick/Solution.lean)"
+      comparator_config: "submission/pick/config.json"
       status: "proved"
-      note: "exact harness statement (Mathlib Polygon, topological interior, no orientation hypothesis), bridged to Pick.pick"
-    - source: "lean-eval jordan_curve — https://lean-lang.org/eval/problems/jordan_curve/"
-      lean: "JordanCurve.jordan_curve"
-      module: "JordanPick/JordanCurve.lean"
+      plain_language: >
+        A simple polygon whose vertices all sit on the integer lattice has area exactly
+        I + B/2 - 1, where I counts the lattice points strictly inside it and B counts those on
+        its boundary. Here "area" is the Lebesgue measure of the region the polygon encloses,
+        so the identity relates a measure-theoretic quantity to two integer counts.
+      note: >
+        The harness statement verbatim, with at least three vertices and simplicity as the only
+        hypotheses — Mathlib's `Polygon`, the topological interior, and no orientation
+        assumption. Bridged to LeanEval.Geometry.PicksTheorem.pick
+        (JordanPick/PicksTheorem/EvalBridgeMain.lean), thence to Pick.pick.
+    # --- submitted entry 2 of 3 -----------------------------------------------------
+    - source: "lean-eval `jordan_curve` — https://lean-lang.org/eval/problems/jordan_curve/ (Jordan curve theorem, Jordan 1887 / Veblen 1905)"
+      lean: "jordan_curve"
+      module: "Challenge (submission/jordan_curve/Challenge.lean), proved in Solution (submission/jordan_curve/Solution.lean)"
+      comparator_config: "submission/jordan_curve/config.json"
       status: "proved"
-      note: "exact harness statement: Nat.card (ConnectedComponents (range r)ᶜ) = 2 for a continuous injection r : sphere 0 1 → ℝ²"
-    - source: "Freek Wiedijk, Formalizing 100 Theorems #92 (Pick's theorem)"
+      plain_language: >
+        Any curve in the plane that is a continuous, injective image of a circle cuts the plane
+        into exactly two pieces: the complement of the curve has precisely two connected
+        components, an inside and an outside. No smoothness, piecewise-linearity, or rectifiability
+        is assumed — the hypothesis is bare continuity plus injectivity.
+      note: >
+        The harness statement verbatim:
+        `Nat.card (ConnectedComponents (Set.range r)ᶜ) = 2` for a continuous injection
+        r : Metric.sphere (0 : EuclideanSpace R (Fin 2)) 1 -> EuclideanSpace R (Fin 2).
+        Bridged to JordanCurve.jordan_curve (JordanPick/JordanCurve.lean).
+    # --- submitted entry 3 of 3 -----------------------------------------------------
+    - source: "lean-eval `rado_riemannSurface` — https://lean-lang.org/eval/problems/rado_riemannSurface/ (Radó's theorem, Radó 1925)"
+      lean: "rado_riemannSurface"
+      module: "Challenge (submission/rado_riemannSurface/Challenge.lean), proved in Solution (submission/rado_riemannSurface/Solution.lean)"
+      comparator_config: "submission/rado_riemannSurface/config.json"
+      status: "proved"
+      plain_language: >
+        Every connected Riemann surface has a countable base of open sets. Second countability is
+        usually imposed as part of the definition of a Riemann surface; Radó's theorem says the
+        assumption is redundant — a connected Hausdorff space that merely carries a
+        one-dimensional complex-analytic atlas is automatically second countable, hence
+        metrizable and triangulable. The complex structure, not any topological hypothesis beyond
+        connectedness and Hausdorffness, forces the countability.
+      note: >
+        The harness statement verbatim: a connected T2 `ChartedSpace C` satisfying
+        `IsManifold (modelWithCornersSelf C C) 1` has `SecondCountableTopology`, stated in pure
+        Mathlib terms. Passed the lean-eval comparator on 2026-07-10. Bridged to
+        Rado.secondCountableTopology_of_riemannSurface (Rado/Surface/Assembly.lean); the proof
+        route is Perron on a two-disk configuration -> an étale space of exact
+        harmonic-conjugate germs -> Poincaré-Volterra -> descent (route A', Rado/PLAN.md).
+    # --- further repository results, not separately submitted ------------------------
+    - source: "Freek Wiedijk, Formalizing 100 Theorems #92 (Pick's theorem) — library form"
       lean: "Pick.pick"
       module: "JordanPick/PicksTheorem/Pick.lean"
       status: "proved"
-      note: "area = I + B/2 − 1 with area the Lebesgue measure of the winding interior"
+      note: >
+        area = I + B/2 - 1 for a positively-oriented simple LatticePolygon, with area the
+        Lebesgue measure of the winding interior.
     - source: "Polygonal Jordan curve theorem"
       lean: "Pick.LatticePolygon.compl_boundary_atMost_two"
       module: "JordanPick/PicksTheorem/Pick.lean"
       status: "proved"
-      note: "complement of a simple polygon's boundary has at most two components; winding locally constant ∈ {0,1}"
-    - source: "Brouwer fixed point theorem (2-D, convex compact)"
+      note: >
+        The complement of a simple polygon's boundary is covered by two preconnected pieces, with
+        the winding number locally constant and valued in {0,1}.
+    - source: "Brouwer fixed point theorem in dimension 2 (nonempty compact convex sets)"
       lean: "JordanCurve.Brouwer.brouwerFPT"
       module: "JordanPick/JordanCurve/Brouwer.lean"
       status: "proved"
-      note: "self-contained against Mathlib: covering-space path lifting → no-retraction → disk → convex compact"
-    - source: "lean-eval rado_riemannSurface — https://lean-lang.org/eval/problems/rado_riemannSurface/"
-      lean: "rado_riemannSurface"
-      module: "Rado/Main.lean"
+      note: >
+        Built from scratch against Mathlib: covering-space path lifting for the circle ->
+        no-retraction -> the disk -> nonempty compact convex sets.
+    - source: "Forster, Lectures on Riemann Surfaces §23.2 (Poincaré-Volterra lemma)"
+      lean: "Rado.poincare_volterra"
+      module: "Rado/Topology/PoincareVolterra.lean"
       status: "proved"
-      note: "exact harness statement: a connected T2 ChartedSpace ℂ that IsManifold (𝓘(ℂ,ℂ), 1) has SecondCountableTopology; comparator-passed 2026-07-10, bridged to Rado.secondCountableTopology_of_riemannSurface"
-    - source: "Radó's theorem (Riemann surfaces are second countable)"
-      lean: "Rado.secondCountableTopology_of_riemannSurface"
-      module: "Rado/Surface/Assembly.lean"
+      note: >
+        A connected, Hausdorff, locally compact, locally connected, locally second-countable
+        space admitting a continuous discrete-fiber map to a second-countable Hausdorff space is
+        second countable. Proved from scratch, not assumed.
+    - source: "Forster, Lectures on Riemann Surfaces §22.3 (Dirichlet problem on a disk)"
+      lean: "Rado.exists_harmonic_extension"
+      module: "Rado/Complex/Poisson.lean"
       status: "proved"
-      note: "Perron on a two-disk configuration → étale space of exact harmonic-conjugate germs → Poincaré–Volterra → descent (route A′, Rado/PLAN.md)"
+      note: >
+        Continuous boundary data on a circle extends continuously to the closed disk and
+        harmonically inside. Proved from scratch, not assumed.
+    - source: "Anghel-Stan, Uniformization of Riemann surfaces revisited, Proposition 3 (Perron's principle)"
+      lean: "Rado.IsPerronFamily.surfaceHarmonicOn_perronSup"
+      module: "Rado/Surface/Perron.lean"
+      status: "proved"
+      note: "The upper envelope of a Perron family on a Riemann surface is harmonic."
+    - source: "Uniformization theorem (Hubbard, Teichmüller theory Vol. 1, Thm 1.1.2)"
+      lean: "LeanEval.Geometry.uniformization"
+      module: "Uniformization/Main.lean"
+      status: "in-progress"
+      note: >
+        NOT submitted and NOT axiom-clean: depends on sorryAx through two open inputs itemized
+        in `status.in_progress`. Listed here only so that its presence in this repository is not
+        mistaken for a completed result.
 
 acknowledgements: >
-  Built on Mathlib (Lean 4, pin 905b9581). The count-side discrete-angle-weight device follows
-  Eisermann & Zumkeller (arXiv:2603.23095); the Radó development follows the Perron treatment of
-  Anghel & Stan (arXiv:2008.12189) with the Poincaré–Volterra lemma and Dirichlet problem from
-  Forster (GTM 81 §22-23, via Rainer's notes) and Hubbard's Teichmüller theory §1.3 as the cited
-  source; everything else is clean-room, with prior formalizations (Harrison HOL Light 2011,
-  Binder-Kosaian Isabelle/HOL 2024) credited as prior art. Eval problem statements by the Lean FRO
-  (leanprover/lean-eval); the rado_riemannSurface problem was submitted by Junyan Xu.
+  Built on Mathlib (Lean 4, pin 905b95818eb32af7874a58b427f50c1711a5e96c) and released under
+  Apache-2.0. The count side of Pick's theorem follows the discrete-angle-weight device of
+  Michael Eisermann (arXiv:2603.23095); the continuous Jordan curve theorem follows Maehara's
+  Brouwer-based proof; the ear-clipping reduction rests on Meisters' two-ears theorem; and the
+  Radó development follows the Perron treatment of Anghel and Stan (arXiv:2008.12189), with the
+  Poincaré-Volterra lemma and the Dirichlet problem taken in the form given by Forster (GTM 81
+  §22-23, read via Armin Rainer's Vienna lecture notes) and Hubbard's Teichmüller theory §1.3 as
+  the eval problem's cited source. Everything else is clean-room. Prior formalizations — Harrison
+  in HOL Light, Binder and Kosaian in Isabelle/HOL, Eisermann in Lean, and the Mizar and
+  Isabelle/HOL Jordan curve developments — are credited as prior art in
+  `related_formalizations`; no code was ported from any of them. The three formal problem
+  statements are by the Lean FRO (leanprover/lean-eval); the rado_riemannSurface problem was
+  submitted by Junyan Xu.

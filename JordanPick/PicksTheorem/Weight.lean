@@ -17,7 +17,7 @@ large enough to contain the polygon, not over all of ℤ².
 ## Prior art
 
 The fractional-weight count side here follows the discrete-angle-weight device of
-Eisermann & Zumkeller, *Formalizing Pick's Theorem, efficiently* (arXiv:2603.23095):
+Eisermann, *Formalizing Pick's Theorem, efficiently* (arXiv:2603.23095):
 our `latWeight` is their `dang`, and `latWeightSum` (the box-sum, `∑_{Box r} latWeight`)
 plays the role of their `Welp`. The per-edge identity `latWeightSum = trapezoidArea`
 is proved independently here — we decompose the box by *columns*, whereas they use a

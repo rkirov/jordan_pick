@@ -15,18 +15,6 @@ variable (u v w : ℝ × ℝ)
 
 lemma cross_skew : cross u v = - cross v u := by unfold cross; ring
 
-lemma cross_add_left : cross (u + v) w = cross u w + cross v w := by
-  unfold cross; simp only [Prod.fst_add, Prod.snd_add]; ring
-
-lemma cross_add_right : cross u (v + w) = cross u v + cross u w := by
-  unfold cross; simp only [Prod.fst_add, Prod.snd_add]; ring
-
-lemma cross_sub_left : cross (u - v) w = cross u w - cross v w := by
-  unfold cross; simp only [Prod.fst_sub, Prod.snd_sub]; ring
-
-lemma cross_sub_right : cross u (v - w) = cross u v - cross u w := by
-  unfold cross; simp only [Prod.fst_sub, Prod.snd_sub]; ring
-
 @[simp] lemma toReal_add (p c : Pt) : toReal (p + c) = toReal p + toReal c := by
   unfold toReal
   simp only [Prod.fst_add, Prod.snd_add, Prod.mk_add_mk, Int.cast_add]
@@ -53,17 +41,6 @@ lemma trapezoidArea_toReal (u v : Pt) :
 lemma count_value_eq_trapezoid (u v : Pt) :
     ((-(u.2 + v.2) * (v.1 - u.1) / 2 : ℚ) : ℝ) = trapezoidArea (toReal u) (toReal v) := by
   rw [trapezoidArea_toReal]
-  push_cast
-  ring
-
-/-- Reflecting an edge across the `x`-axis negates its trapezoid area (companion
-to `latWeight_yreflect`, completing the orientation WLOG for the per-edge
-identity). -/
-lemma trapezoidArea_yreflect (u v : Pt) :
-    trapezoidArea (toReal (u.1, -u.2)) (toReal (v.1, -v.2))
-      = -trapezoidArea (toReal u) (toReal v) := by
-  unfold trapezoidArea toReal
-  dsimp only
   push_cast
   ring
 

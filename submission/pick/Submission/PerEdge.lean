@@ -109,56 +109,6 @@ lemma angleWeight_eq_zero_of_far_down (P : LatticePolygon) (q : Pt)
     rw [Finset.sum_sub_distrib, reindex, sub_self]
   rw [hsum, zero_div]
 
-/-- **Finite support of the angle-weight.** `ŵ(q) ≠ 0` only inside the vertex
-bounding box, so `∑_{q ∈ ℤ²} ŵ(q)` is well-defined (Step 3 sums it). -/
-theorem angleWeight_support_finite (P : LatticePolygon) :
-    {q : Pt | angleWeight P q ≠ 0}.Finite := by
-  classical
-  have hne : (Finset.univ.image fun i => (P.vert i).1).Nonempty := Finset.univ_nonempty.image _
-  have hne2 : (Finset.univ.image fun i => (P.vert i).2).Nonempty := Finset.univ_nonempty.image _
-  set xm := (Finset.univ.image fun i => (P.vert i).1).min' hne
-  set xM := (Finset.univ.image fun i => (P.vert i).1).max' hne
-  set ym := (Finset.univ.image fun i => (P.vert i).2).min' hne2
-  set yM := (Finset.univ.image fun i => (P.vert i).2).max' hne2
-  have hxm : ∀ i, xm ≤ (P.vert i).1 := fun i =>
-    Finset.min'_le _ _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-  have hxM : ∀ i, (P.vert i).1 ≤ xM := fun i =>
-    Finset.le_max' (Finset.univ.image fun j => (P.vert j).1) _
-      (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-  have hym : ∀ i, ym ≤ (P.vert i).2 := fun i =>
-    Finset.min'_le _ _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-  have hyM : ∀ i, (P.vert i).2 ≤ yM := fun i =>
-    Finset.le_max' (Finset.univ.image fun j => (P.vert j).2) _
-      (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-  refine Set.Finite.subset (Set.finite_Icc ((xm, ym) : Pt) (xM, yM)) ?_
-  intro q hq
-  have hr : ∃ i, q.1 ≤ (P.vert i).1 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_right P q hc)
-  have hl : ∃ i, (P.vert i).1 ≤ q.1 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_left P q hc)
-  have ha : ∃ i, q.2 ≤ (P.vert i).2 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_up P q hc)
-  have hb : ∃ i, (P.vert i).2 ≤ q.2 := by
-    by_contra hc; push_neg at hc; exact hq (angleWeight_eq_zero_of_far_down P q hc)
-  obtain ⟨ir, hir⟩ := hr; obtain ⟨il, hil⟩ := hl
-  obtain ⟨ia, hia⟩ := ha; obtain ⟨ib, hib⟩ := hb
-  simp only [Set.mem_Icc, Prod.le_def]
-  exact ⟨⟨(hxm il).trans hil, (hym ib).trans hib⟩, hir.trans (hxM ir), hia.trans (hyM ia)⟩
-
-/-- The discrete derivative of the angle-weight under a unit vertical step of the
-test point: the sum over edges of the per-edge `latWeight` change. This is the
-basis of the ray-casting argument (`ŵ` builds up from `0` far-down by edge
-crossings as `q` rises). -/
-lemma angleWeight_vshift (P : LatticePolygon) (q : Pt) :
-    angleWeight P (q + (0, 1)) - angleWeight P q
-      = ∑ i, (latWeight (P.vert i - q - (0, 1)) (P.vert (i + 1) - q - (0, 1))
-              - latWeight (P.vert i - q) (P.vert (i + 1) - q)) := by
-  unfold angleWeight
-  rw [← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [show P.vert i - (q + (0, 1)) = P.vert i - q - (0, 1) by abel,
-    show P.vert (i + 1) - (q + (0, 1)) = P.vert (i + 1) - q - (0, 1) by abel]
-
 /-- If all vertices lie in `Box r`, the angle-weight vanishes outside `Box r`
 (so the Step-1 box sum is over the whole support). -/
 lemma angleWeight_zero_outside_box (P : LatticePolygon) (r : ℕ) (hr : ∀ i, P.vert i ∈ Box r)
@@ -192,7 +142,7 @@ theorem shoelace_eq_finsum (P : LatticePolygon) :
   obtain ⟨r, hr⟩ := exists_box P
   rw [shoelace_eq_totalWeight P r hr]
   congr 1
-  rw [finsum_eq_finset_sum_of_support_subset (angleWeight P) (s := Box r) ?_]
+  rw [finsum_eq_finsetSum_of_support_subset (angleWeight P) (s := Box r) ?_]
   · rfl
   · intro q hq
     rw [Function.mem_support] at hq

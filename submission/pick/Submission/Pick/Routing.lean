@@ -406,155 +406,6 @@ lemma lift_within_vertexFree_slab (hP : P.IsSimple) (y y' : ℝ)
     hiL_y hiR_y hLR_y hcons_y (p := (x, y)) ⟨hyM, hx.1, hx.2⟩
     (q := (x', y')) ⟨hy'M, hx'.1, hx'.2⟩
 
-/-- **Iterated cross-level lift: connect gap-interior points at `y` and `y'` through
-all vertex levels between.** Two generic heights `y < y'`; two consecutive spanning
-chords `iL, iR` that *survive the whole interval* — at every height `z ∈ [y, y']` they
-span, are ordered (`edgeThr z iL < edgeThr z iR`), and no other spanning threshold lies
-strictly between (`hconsG`) — and at every vertex level `w ∈ (y, y')` the open `w`-gap
-is boundary-clear (`hclearG`, discharged by `hwclear_of_consecutive`). Then any
-gap-interior point at `y` connects to any gap-interior point at `y'`. Proof: strong
-induction on the number of vertex heights inside `(y, y')`. No vertex inside ⟹
-`lift_within_vertexFree_slab`. Otherwise cross the nearest level `w` above `y` to a
-generic `y₁` just above `w` (vertex-free slabs `(y,w)`, `(w,y₁)`) via
-`lift_across_level`, then recurse from `y₁` to `y'` — the level `w` is now consumed, so
-strictly fewer vertices remain. -/
-lemma lift_to_above_in_gap (hP : P.IsSimple) (iL iR : ZMod P.n) :
-    ∀ (y y' : ℝ), y < y' →
-    (∀ i, (toReal (P.vert i)).2 ≠ y) → (∀ i, (toReal (P.vert i)).2 ≠ y') →
-    (∀ z, y ≤ z → z ≤ y' → (∀ i, (toReal (P.vert i)).2 ≠ z) →
-      iL ∈ P.spanningSet z ∧ iR ∈ P.spanningSet z ∧
-      P.edgeThr z iL < P.edgeThr z iR ∧
-      (∀ k ∈ P.spanningSet z,
-        P.edgeThr z k ≤ P.edgeThr z iL ∨ P.edgeThr z iR ≤ P.edgeThr z k)) →
-    (∀ w, y < w → w < y' → (∃ i, (toReal (P.vert i)).2 = w) →
-      iL ∈ P.spanningSet w ∧ iR ∈ P.spanningSet w ∧
-      P.edgeThr w iL < P.edgeThr w iR ∧
-      (∀ xm, P.edgeThr w iL < xm → xm < P.edgeThr w iR →
-        ((xm, w) : ℝ × ℝ) ∉ P.boundary)) →
-    ∀ (x x' : ℝ),
-      (P.edgeThr y iL < x ∧ x < P.edgeThr y iR) →
-      (P.edgeThr y' iL < x' ∧ x' < P.edgeThr y' iR) →
-      JoinedIn P.boundaryᶜ (x, y) (x', y') := by
-  classical
-  -- strong induction on the number of vertex indices with height in `(y, y')`
-  suffices H : ∀ n : ℕ, ∀ (y y' : ℝ), y < y' →
-      (∀ i, (toReal (P.vert i)).2 ≠ y) → (∀ i, (toReal (P.vert i)).2 ≠ y') →
-      (Finset.univ.filter (fun i => y < (toReal (P.vert i)).2 ∧
-        (toReal (P.vert i)).2 < y')).card = n →
-      (∀ z, y ≤ z → z ≤ y' → (∀ i, (toReal (P.vert i)).2 ≠ z) →
-        iL ∈ P.spanningSet z ∧ iR ∈ P.spanningSet z ∧
-        P.edgeThr z iL < P.edgeThr z iR ∧
-        (∀ k ∈ P.spanningSet z,
-          P.edgeThr z k ≤ P.edgeThr z iL ∨ P.edgeThr z iR ≤ P.edgeThr z k)) →
-      (∀ w, y < w → w < y' → (∃ i, (toReal (P.vert i)).2 = w) →
-        iL ∈ P.spanningSet w ∧ iR ∈ P.spanningSet w ∧
-        P.edgeThr w iL < P.edgeThr w iR ∧
-        (∀ xm, P.edgeThr w iL < xm → xm < P.edgeThr w iR →
-          ((xm, w) : ℝ × ℝ) ∉ P.boundary)) →
-      ∀ (x x' : ℝ),
-        (P.edgeThr y iL < x ∧ x < P.edgeThr y iR) →
-        (P.edgeThr y' iL < x' ∧ x' < P.edgeThr y' iR) →
-        JoinedIn P.boundaryᶜ (x, y) (x', y') by
-    intro y y' hyy' hygen hy'gen hG hclearG x x' hx hx'
-    exact H _ y y' hyy' hygen hy'gen rfl hG hclearG x x' hx hx'
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    intro y y' hyy' hygen hy'gen hcard hG hclearG x x' hx hx'
-    -- is there any vertex height strictly inside `(y, y')`?
-    by_cases hin : (Finset.univ.filter (fun i => y < (toReal (P.vert i)).2 ∧
-        (toReal (P.vert i)).2 < y')).Nonempty
-    · -- nearest vertex height above `y` that is still below `y'`
-      obtain ⟨m, hmS, hmin⟩ :=
-        (Finset.univ.filter (fun i => y < (toReal (P.vert i)).2 ∧
-          (toReal (P.vert i)).2 < y')).exists_min_image
-            (fun i => (toReal (P.vert i)).2) hin
-      rw [Finset.mem_filter] at hmS
-      obtain ⟨-, hmy, hmy'⟩ := hmS
-      set w := (toReal (P.vert m)).2 with hwdef
-      -- `(y, w)` is vertex-free: any vertex in it would be a smaller member of S
-      have hslabL : ∀ i, ¬ (y < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < w) := by
-        intro i ⟨h1, h2⟩
-        have hiS : i ∈ Finset.univ.filter (fun i => y < (toReal (P.vert i)).2 ∧
-            (toReal (P.vert i)).2 < y') := by
-          rw [Finset.mem_filter]; exact ⟨Finset.mem_univ _, h1, lt_trans h2 hmy'⟩
-        have := hmin i hiS; linarith
-      -- pick a generic `y₁` just above `w`, below the next vertex height above `w` and below `y'`
-      obtain ⟨y₁, hwy₁, hy₁y', hy₁gen, hslabR⟩ :
-          ∃ y₁, w < y₁ ∧ y₁ < y' ∧ (∀ i, (toReal (P.vert i)).2 ≠ y₁) ∧
-            (∀ i, ¬ (w < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < y₁)) := by
-        set U := Finset.univ.filter (fun i => w < (toReal (P.vert i)).2 ∧
-          (toReal (P.vert i)).2 < y') with hU
-        by_cases hUne : U.Nonempty
-        · obtain ⟨p, hpU, hpmin⟩ := U.exists_min_image (fun i => (toReal (P.vert i)).2) hUne
-          rw [hU, Finset.mem_filter] at hpU
-          obtain ⟨-, hpw, hpy'⟩ := hpU
-          obtain ⟨y₁, hy₁lo, hy₁hi, hy₁gen⟩ :=
-            exists_generic_height_mem_Ioo P w (toReal (P.vert p)).2 hpw
-          refine ⟨y₁, hy₁lo, lt_trans hy₁hi hpy', hy₁gen, ?_⟩
-          intro i ⟨h1, h2⟩
-          have hiU : i ∈ U := by
-            rw [hU, Finset.mem_filter]; exact ⟨Finset.mem_univ _, h1, lt_trans h2 (lt_trans hy₁hi hpy')⟩
-          have := hpmin i hiU; linarith
-        · obtain ⟨y₁, hy₁lo, hy₁hi, hy₁gen⟩ :=
-            exists_generic_height_mem_Ioo P w y' hmy'
-          refine ⟨y₁, hy₁lo, hy₁hi, hy₁gen, ?_⟩
-          intro i ⟨h1, h2⟩
-          refine hUne ⟨i, ?_⟩
-          rw [hU, Finset.mem_filter]
-          exact ⟨Finset.mem_univ _, h1, lt_trans h2 hy₁hi⟩
-      -- spanning/clear data at the level `w` and at `y₁`
-      obtain ⟨hiL_y, hiR_y, hLR_y, hcons_y⟩ := hG y le_rfl hyy'.le hygen
-      obtain ⟨hiL_w, hiR_w, hLR_w, hwclear⟩ := hclearG w hmy hmy' ⟨m, rfl⟩
-      have hwy' : w < y' := hmy'
-      have hyy₁ : y < y₁ := lt_trans hmy hwy₁
-      obtain ⟨hiL_y₁, hiR_y₁, hLR_y₁, hcons_y₁⟩ :=
-        hG y₁ hyy₁.le (le_of_lt hy₁y') hy₁gen
-      -- gap value at `y₁`
-      obtain ⟨xm, hxmL, hxmR⟩ : ∃ xm, P.edgeThr y₁ iL < xm ∧ xm < P.edgeThr y₁ iR :=
-        ⟨(P.edgeThr y₁ iL + P.edgeThr y₁ iR)/2, by linarith, by linarith⟩
-      -- STEP A: lift across the single level `w` from `y` to `y₁`
-      have hstepA : JoinedIn P.boundaryᶜ (x, y) (xm, y₁) :=
-        lift_across_level P hP y w y₁ hmy hwy₁ hygen hy₁gen hslabL hslabR
-          iL iR hiL_y hiR_y hLR_y hcons_y hiL_y₁ hiR_y₁ hLR_y₁ hcons_y₁
-          hiL_w hiR_w hLR_w hwclear x xm hx ⟨hxmL, hxmR⟩
-      -- STEP B: recurse from `y₁` to `y'` (strictly fewer vertices, since level `w` consumed)
-      have hcard_lt : (Finset.univ.filter (fun i => y₁ < (toReal (P.vert i)).2 ∧
-          (toReal (P.vert i)).2 < y')).card < n := by
-        rw [← hcard]
-        apply Finset.card_lt_card
-        rw [Finset.ssubset_iff_of_subset]
-        · -- `m` is in the `y`-set but not the `y₁`-set (its height `w < y₁`)
-          refine ⟨m, ?_, ?_⟩
-          · rw [Finset.mem_filter]; exact ⟨Finset.mem_univ _, hmy, hmy'⟩
-          · rw [Finset.mem_filter, not_and]; intro _
-            rw [not_and]; intro h; exact absurd h (by rw [← hwdef]; linarith)
-        · intro i hi
-          rw [Finset.mem_filter] at hi ⊢
-          exact ⟨hi.1, lt_trans hyy₁ hi.2.1, hi.2.2⟩
-      have hGr : ∀ z, y₁ ≤ z → z ≤ y' → (∀ i, (toReal (P.vert i)).2 ≠ z) →
-          iL ∈ P.spanningSet z ∧ iR ∈ P.spanningSet z ∧
-          P.edgeThr z iL < P.edgeThr z iR ∧
-          (∀ k ∈ P.spanningSet z,
-            P.edgeThr z k ≤ P.edgeThr z iL ∨ P.edgeThr z iR ≤ P.edgeThr z k) :=
-        fun z hz1 hz2 hzgen => hG z (le_trans hyy₁.le hz1) hz2 hzgen
-      have hclearGr : ∀ w', y₁ < w' → w' < y' → (∃ i, (toReal (P.vert i)).2 = w') →
-          iL ∈ P.spanningSet w' ∧ iR ∈ P.spanningSet w' ∧
-          P.edgeThr w' iL < P.edgeThr w' iR ∧
-          (∀ xm, P.edgeThr w' iL < xm → xm < P.edgeThr w' iR →
-            ((xm, w') : ℝ × ℝ) ∉ P.boundary) :=
-        fun w' hw'1 hw'2 hw'v => hclearG w' (lt_trans hyy₁ hw'1) hw'2 hw'v
-      have hstepB : JoinedIn P.boundaryᶜ (xm, y₁) (x', y') :=
-        ih _ hcard_lt y₁ y' hy₁y' hy₁gen hy'gen rfl hGr hclearGr xm x' ⟨hxmL, hxmR⟩ hx'
-      exact hstepA.trans hstepB
-    · -- no vertex strictly inside `(y, y')`: a single vertex-free slab
-      have hslab : ∀ i, ¬ (y < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < y') := by
-        intro i hi
-        exact hin ⟨i, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hi⟩⟩
-      obtain ⟨hiL_y, hiR_y, hLR_y, hcons_y⟩ := hG y le_rfl hyy'.le hygen
-      exact lift_within_vertexFree_slab P hP y y' hyy' hygen hy'gen hslab iL iR
-        hiL_y hiR_y hLR_y hcons_y x x' hx hx'
-
 /-- **Nearest spanning neighbour below a chord, with consecutivity.** At a generic
 height `y`, given a spanning edge `e`, if *some* spanning edge has threshold strictly
 below `edgeThr y e`, then there is a spanning edge `eL` whose threshold is the largest
@@ -578,29 +429,6 @@ lemma exists_consecutive_below (y : ℝ)
   by_cases hke : P.edgeThr y k < P.edgeThr y e
   · exact Or.inl (heLmax k (by rw [hS, Finset.mem_filter]; exact ⟨hk, hke⟩))
   · exact Or.inr (not_lt.mp hke)
-
-/-- **Nearest spanning neighbour above a chord, with consecutivity.** Mirror of
-`exists_consecutive_below`: if some spanning edge has threshold strictly above
-`edgeThr y e`, there is a spanning `eR` with the *smallest* such threshold — so
-`edgeThr y e < edgeThr y eR` and no spanning threshold lies strictly in
-`(edgeThr y e, edgeThr y eR)`. The right consecutive bounding chord. -/
-lemma exists_consecutive_above (y : ℝ)
-    (e : ZMod P.n)
-    (hex : ∃ k ∈ P.spanningSet y, P.edgeThr y e < P.edgeThr y k) :
-    ∃ eR ∈ P.spanningSet y, P.edgeThr y e < P.edgeThr y eR ∧
-      ∀ k ∈ P.spanningSet y, P.edgeThr y k ≤ P.edgeThr y e ∨
-        P.edgeThr y eR ≤ P.edgeThr y k := by
-  classical
-  set S := (P.spanningSet y).filter (fun k => P.edgeThr y e < P.edgeThr y k) with hS
-  have hSne : S.Nonempty := by obtain ⟨k, hk, hlt⟩ := hex; exact ⟨k, by rw [hS, Finset.mem_filter]; exact ⟨hk, hlt⟩⟩
-  obtain ⟨eR, heRS, heRmin⟩ := S.exists_min_image (P.edgeThr y) hSne
-  rw [hS, Finset.mem_filter] at heRS
-  obtain ⟨heRspan, heRgt⟩ := heRS
-  refine ⟨eR, heRspan, heRgt, ?_⟩
-  intro k hk
-  by_cases hke : P.edgeThr y e < P.edgeThr y k
-  · exact Or.inr (heRmin k (by rw [hS, Finset.mem_filter]; exact ⟨hk, hke⟩))
-  · exact Or.inl (not_lt.mp hke)
 
 /-- **Isolating ball uniform over a horizontal top run.** Given a run of vertices
 `p, p+1, …, p+L` (indices `p + (t : ℕ)` for `t : Fin (L+1)`), there is a single radius
@@ -684,8 +512,8 @@ lemma plateau_seg_isolating_ball (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ)
     have htL1 : (t : ℕ) < L + 1 := by omega
     have ht1L1 : (t : ℕ) + 1 < L + 1 := by omega
     refine ⟨?_, ?_, ?_⟩
-    · have := hjrun ⟨(t : ℕ), htL1⟩; simp only [Fin.val_mk] at this; exact (this.symm)
-    · have := hjrun ⟨(t : ℕ) + 1, ht1L1⟩; simp only [Fin.val_mk] at this
+    · have := hjrun ⟨(t : ℕ), htL1⟩; simp only [] at this; exact (this.symm)
+    · have := hjrun ⟨(t : ℕ) + 1, ht1L1⟩; simp only [] at this
       have hcast : p + (t : ℕ) + 1 = p + ((t : ℕ) + 1 : ℕ) := by push_cast; ring
       rw [hcast]; exact this.symm
     · -- j + 1 ≠ p + t  ⟺  j ≠ p + t - 1
@@ -700,7 +528,7 @@ lemma plateau_seg_isolating_ball (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ)
         have hjeq : j = p + (((t : ℕ) - 1 : ℕ)) := add_right_cancel h
         have hlt : (t : ℕ) - 1 < L + 1 := by omega
         have := hjrun ⟨(t : ℕ) - 1, hlt⟩
-        simp only [Fin.val_mk] at this
+        simp only [] at this
         exact this hjeq
   -- per-pair separations
   have hsep : ∀ (t : Fin L) (j : ZMod P.n),
@@ -783,7 +611,7 @@ lemma plateau_clear_above_near_vertex (hsimple : P.IsSimple) (p : ZMod P.n) (L :
           rw [this]
           have hlt : (s : ℕ) + 1 < L + 1 := by omega
           have := hrun ⟨(s : ℕ) + 1, hlt⟩
-          simp only [Fin.val_mk] at this; rw [this]
+          simp only [] at this; rw [this]
         · -- s = L : leaving edge endpoint vert(p+L+1) strictly below w
           have hsv : (s : ℕ) = L := hseq
           have : p + (s : ℕ) + 1 = p + (L : ℕ) + 1 := by rw [hsv]
@@ -794,7 +622,7 @@ lemma plateau_clear_above_near_vertex (hsimple : P.IsSimple) (p : ZMod P.n) (L :
         nlinarith [hu.1, hu.2, e0, e1]
       linarith
     · -- non-incident edge: excluded by the isolating ball
-      push_neg at hjrun
+      push Not at hjrun
       exact absurd hqj (Set.disjoint_left.mp (hiso t j hjrun hjm1) hqball)
 
 /-- **Discrete IVT coverage of a finite real chain.** For a sequence `f : Fin (L+1) → ℝ`
@@ -867,21 +695,6 @@ lemma chain_covers_between {L : ℕ} (hL : 0 < L) (f : Fin (L + 1) → ℝ) (x :
         rw [hbb]; exact le_of_eq hbeq
   · -- x < f b : then ¬(f b ≤ x), but constancy says (f b ≤ x) ↔ (f 0 ≤ x) = true. Contradiction.
     exact absurd ((hconst b).mpr ha0) (not_le.mpr hblt)
-
-/-- **A point on a run edge has height exactly `w`.** Each horizontal run edge `p+t`
-(`t : Fin L`) has both endpoints at height `w`, so every point of its segment sits at
-height `w`. -/
-lemma run_edge_height (p : ZMod P.n) (L : ℕ) (w : ℝ)
-    (hrun : ∀ t : Fin (L + 1), (toReal (P.vert (p + (t : ℕ)))).2 = w)
-    (t : Fin L) (q : ℝ × ℝ) (hq : q ∈ P.edgeSeg (p + (t : ℕ))) : q.2 = w := by
-  have e0 : (toReal (P.vert (p + (t : ℕ)))).2 = w := hrun ⟨(t : ℕ), by omega⟩
-  have e1 : (toReal (P.vert (p + (t : ℕ) + 1))).2 = w := by
-    have hcast : p + (t : ℕ) + 1 = p + ((t : ℕ) + 1 : ℕ) := by push_cast; ring
-    rw [hcast]; exact hrun ⟨(t : ℕ) + 1, by omega⟩
-  simp only [LatticePolygon.edgeSeg, segment_eq_image, Set.mem_image] at hq
-  obtain ⟨s, hs, hxy⟩ := hq
-  rw [← hxy]; simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul]
-  rw [e0, e1]; ring
 
 /-- **Level-line clearance just left of the leftmost run vertex.** Let the run vertices
 `p, …, p+L` all sit at height `w` (`hrun`), with end neighbours strictly below
@@ -1155,14 +968,14 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
     have hep0 : toReal (P.vert (p + ((t : Fin L) : ℕ))) = (f t.castSucc, w) := by
       have : ((t : Fin L).castSucc : Fin (L+1)) = ⟨(t : ℕ), by omega⟩ := by apply Fin.ext; simp
       rw [Prod.ext_iff]; refine ⟨?_, hrun ⟨(t:ℕ), by omega⟩⟩
-      simp only [hf, this, Fin.val_mk]
+      simp only [hf, this]
     have hep1 : toReal (P.vert (p + ((t : Fin L) : ℕ) + 1)) = (f t.succ, w) := by
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by
         push_cast; ring
       have hsv : ((t : Fin L).succ : Fin (L+1)) = ⟨(t:ℕ)+1, by omega⟩ := by apply Fin.ext; simp
       rw [hcast, Prod.ext_iff]
       refine ⟨?_, hrun ⟨(t:ℕ)+1, by omega⟩⟩
-      simp only [hf, hsv, Fin.val_mk]
+      simp only [hf, hsv]
     rw [LatticePolygon.edgeSeg, hep0, hep1]
     exact mem_segment_horizontal _ _ w x ht
   -- (x,z) ∈ boundary: on some edge j
@@ -1190,7 +1003,7 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
         · have : p + (s : ℕ) + 1 = p + ((s : ℕ) + 1 : ℕ) := by push_cast; ring
           rw [this]
           have := hrun ⟨(s : ℕ) + 1, by omega⟩
-          simp only [Fin.val_mk] at this; rw [this]
+          simp only [] at this; rw [this]
         · have hsv : (s : ℕ) = L := hseq
           have : p + (s : ℕ) + 1 = p + (L : ℕ) + 1 := by rw [hsv]
           rw [this]; exact hbelowR.le
@@ -1201,7 +1014,7 @@ lemma plateau_clear_above (hsimple : P.IsSimple) (p : ZMod P.n) (L : ℕ) (hL : 
         simpa using this
       linarith
     · -- non-incident edge: contradicts separation from run edge p+t containing (x,w)
-      push_neg at hjrun
+      push Not at hjrun
       have hdist : r ≤ dist ((x, w) : ℝ × ℝ) ((x, z) : ℝ × ℝ) :=
         hseg t j hjrun hjm1 (x, w) hxw_mem (x, z) hqj
       have : dist ((x, w) : ℝ × ℝ) ((x, z) : ℝ × ℝ) < r := by
@@ -1277,7 +1090,7 @@ are continuous in the height. Hence for any `ρ > 0` there is a two-sided neighb
 that lets the apex-cross choose flank columns strictly outside the closing "Λ". -/
 lemma apex_thresholds_localize (k : ZMod P.n)
     (hdkm1 : (toReal (P.vert (k - 1))).2 ≠ (toReal (P.vert k)).2)
-    (hdk : (toReal (P.vert (k + 1))).2 ≠ (toReal (P.vert k)).2)
+    (_hdk : (toReal (P.vert (k + 1))).2 ≠ (toReal (P.vert k)).2)
     (ρ : ℝ) (hρ : 0 < ρ) :
     ∃ η > 0, ∀ s, (toReal (P.vert k)).2 - η < s → s < (toReal (P.vert k)).2 + η →
       |P.edgeThr s (k - 1) - (toReal (P.vert k)).1| < ρ ∧
@@ -1323,7 +1136,7 @@ lemma plateau_thresholds_localize (p : ZMod P.n) (L : ℕ)
     (w : ℝ)
     (hrun : ∀ t : Fin (L + 1), (toReal (P.vert (p + (t : ℕ)))).2 = w)
     (hbelowL : (toReal (P.vert (p - 1))).2 < w)
-    (hbelowR : (toReal (P.vert (p + (L : ℕ) + 1))).2 < w)
+    (_hbelowR : (toReal (P.vert (p + (L : ℕ) + 1))).2 < w)
     (ρ : ℝ) (hρ : 0 < ρ) :
     ∃ η > 0, ∀ s, w - η < s → s < w + η →
       |P.edgeThr s (p - 1) - (toReal (P.vert p)).1| < ρ ∧
@@ -1415,7 +1228,7 @@ lemma plateau_edgeThr_lt_enter_of_outer (hsimple : P.IsSimple) (p eL : ZMod P.n)
         (nhds (P.edgeThr w eL)) := (hc_eL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z (p - 1)) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w (p - 1))) := (hc_pm1.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1489,7 +1302,7 @@ lemma plateau_leave_lt_edgeThr_of_outer (hsimple : P.IsSimple) (p eR : ZMod P.n)
         (nhds (P.edgeThr w (p + (L : ℕ)))) := (hc_pL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z eR) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w eR)) := (hc_eR.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1546,14 +1359,14 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
     have hep0 : toReal (P.vert (p + ((t : Fin L) : ℕ))) = (f t.castSucc, w) := by
       have : ((t : Fin L).castSucc : Fin (L+1)) = ⟨(t : ℕ), by omega⟩ := by apply Fin.ext; simp
       rw [Prod.ext_iff]; refine ⟨?_, hrun ⟨(t:ℕ), by omega⟩⟩
-      simp only [hf, this, Fin.val_mk]
+      simp only [hf, this]
     have hep1 : toReal (P.vert (p + ((t : Fin L) : ℕ) + 1)) = (f t.succ, w) := by
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by
         push_cast; ring
       have hsv : ((t : Fin L).succ : Fin (L+1)) = ⟨(t:ℕ)+1, by omega⟩ := by apply Fin.ext; simp
       rw [hcast, Prod.ext_iff]
       refine ⟨?_, hrun ⟨(t:ℕ)+1, by omega⟩⟩
-      simp only [hf, hsv, Fin.val_mk]
+      simp only [hf, hsv]
     rw [LatticePolygon.edgeSeg, hep0, hep1]
     exact mem_segment_horizontal _ _ w c ht
   -- e and the run edge p+t are non-adjacent ⟹ disjoint, contradicting shared (c,w)
@@ -1562,8 +1375,8 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
     have htL1 : ((t : Fin L) : ℕ) < L + 1 := by omega
     have ht1L1 : ((t : Fin L) : ℕ) + 1 < L + 1 := by omega
     refine ⟨?_, ?_, ?_⟩
-    · have := herun ⟨((t : Fin L) : ℕ), htL1⟩; simp only [Fin.val_mk] at this; exact this.symm
-    · have := herun ⟨((t : Fin L) : ℕ) + 1, ht1L1⟩; simp only [Fin.val_mk] at this
+    · have := herun ⟨((t : Fin L) : ℕ), htL1⟩; simp only [] at this; exact this.symm
+    · have := herun ⟨((t : Fin L) : ℕ) + 1, ht1L1⟩; simp only [] at this
       have hcast : p + ((t : Fin L) : ℕ) + 1 = p + (((t : Fin L) : ℕ) + 1 : ℕ) := by push_cast; ring
       rw [hcast]; exact this.symm
     · intro h
@@ -1577,7 +1390,7 @@ lemma plateau_outer_thr_notMem_run_range (hsimple : P.IsSimple) (p e : ZMod P.n)
         have heeq : e = p + ((((t : Fin L) : ℕ) - 1 : ℕ)) := add_right_cancel h
         have hlt : ((t : Fin L) : ℕ) - 1 < L + 1 := by omega
         have := herun ⟨((t : Fin L) : ℕ) - 1, hlt⟩
-        simp only [Fin.val_mk] at this
+        simp only [] at this
         exact this heeq
   have hdisj : Disjoint (P.edgeSeg (p + ((t : Fin L) : ℕ))) (P.edgeSeg e) :=
     hsimple.2.1 _ _ hrunidx.1 hrunidx.2.1 hrunidx.2.2
@@ -1599,7 +1412,7 @@ lemma plateau_outer_lt_xmin (hsimple : P.IsSimple) (p eL : ZMod P.n) (L : ℕ) (
     (heL_span : eL ∈ P.spanningSet y) (heL_span_w : eL ∈ P.spanningSet w)
     (hord : P.edgeThr y eL < P.edgeThr y (p - 1))
     (mL mR : Fin (L + 1))
-    (hmin : ∀ t : Fin (L + 1),
+    (_hmin : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (mL : ℕ)))).1 ≤ (toReal (P.vert (p + (t : ℕ)))).1)
     (hmax : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (t : ℕ)))).1 ≤ (toReal (P.vert (p + (mR : ℕ)))).1) :
@@ -1636,7 +1449,7 @@ lemma plateau_outer_gt_xmax (hsimple : P.IsSimple) (p eR : ZMod P.n) (L : ℕ) (
     (mL mR : Fin (L + 1))
     (hmin : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (mL : ℕ)))).1 ≤ (toReal (P.vert (p + (t : ℕ)))).1)
-    (hmax : ∀ t : Fin (L + 1),
+    (_hmax : ∀ t : Fin (L + 1),
       (toReal (P.vert (p + (t : ℕ)))).1 ≤ (toReal (P.vert (p + (mR : ℕ)))).1) :
     (toReal (P.vert (p + (mR : ℕ)))).1 < P.edgeThr w eR := by
   have heRpL : eR ≠ p + (L : ℕ) := heRrun ⟨L, by omega⟩
@@ -1718,7 +1531,7 @@ lemma edgeThr_lt_apex_of_outer (hsimple : P.IsSimple) (k eL : ZMod P.n)
         (nhds (P.edgeThr w eL)) := (hc_eL.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z (k - 1)) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w (k - 1))) := (hc_km1.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -1790,7 +1603,7 @@ lemma apex_lt_edgeThr_of_outer (hsimple : P.IsSimple) (k eR : ZMod P.n)
         (nhds (P.edgeThr w k)) := (hc_k.continuousAt).continuousWithinAt
     have hR : Filter.Tendsto (fun z => P.edgeThr z eR) (nhdsWithin w (Set.Iio w))
         (nhds (P.edgeThr w eR)) := (hc_eR.continuousAt).continuousWithinAt
-    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsWithin_Iio_self_neBot' ⟨y, hyw⟩
+    have hne : (nhdsWithin w (Set.Iio w)).NeBot := nhdsLT_neBot_of_exists_lt ⟨y, hyw⟩
     refine le_of_tendsto_of_tendsto hL hR ?_
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
       (eventually_gt_nhds hyw)] with z hzlt hzgt
@@ -2085,283 +1898,6 @@ lemma apex_cross_ordered (hsimple : P.IsSimple) (k eL eLft eRgt eR : ZMod P.n)
       rcases heRgt with h | h
       · rw [h]; linarith [abs_lt.mp hinc_y₂.1, hxRdef]
       · rw [h]; linarith [abs_lt.mp hinc_y₂.2, hxRdef]
-  exact ((((hpieceA.trans hpieceB).trans hpieceC).trans hpieceD).trans hpieceE)
-
-/-- **The run-crossing routing move (plateau form).** Plateau analog of
-`apex_cross_ordered`. The horizontal top run `p, …, p+L` (`L ≥ 1`) sits at height `w`, with
-end neighbours strictly below `w`; the entering edge `p-1` and leaving edge `p+L` are the
-two run-incident spanning chords at a generic `y < w`, ordered with the entering edge on the
-left (`edgeThr y (p-1) < edgeThr y (p+L)`). The two outer flanks `eL, eR` (non-run-incident,
-spanning the slab and surviving to `w`) bound the left/right gaps. Given the threshold chain
-`edgeThr y eL < edgeThr y (p-1) < edgeThr y (p+L) < edgeThr y eR` with both flank gaps
-consecutive, any `(xa,y)` in the left gap is `JoinedIn boundaryᶜ` to any `(xc,y)` in the
-right gap. The staircase lifts left up to a column `xL = xmin - ρ` (`xmin` = x-leftmost run
-vertex) just below `w`, up that column past `w` to `w+τ`, slides right across the whole run
-to `xR = xmax + ρ`, down, and lifts down the right gap — clearances from
-`plateau_level_clear_left/right` (columns at `w`), `plateau_clear_above_near_vertex` (column
-tops and slide ends), and `plateau_clear_above` (slide middle). -/
-lemma apex_cross_plateau (hsimple : P.IsSimple) (p eL eR : ZMod P.n) (L : ℕ) (hL : 0 < L)
-    (w : ℝ)
-    (hrun : ∀ t : Fin (L + 1), (toReal (P.vert (p + (t : ℕ)))).2 = w)
-    (hbelowL : (toReal (P.vert (p - 1))).2 < w)
-    (hbelowR : (toReal (P.vert (p + (L : ℕ) + 1))).2 < w)
-    (mL mR : Fin (L + 1))
-    (hmin : ∀ t : Fin (L + 1),
-      (toReal (P.vert (p + (mL : ℕ)))).1 ≤ (toReal (P.vert (p + (t : ℕ)))).1)
-    (hmax : ∀ t : Fin (L + 1),
-      (toReal (P.vert (p + (t : ℕ)))).1 ≤ (toReal (P.vert (p + (mR : ℕ)))).1)
-    (y : ℝ) (hyw : y < w)
-    (hslab : ∀ i, ¬ (y < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < w))
-    (hygen : ∀ i, (toReal (P.vert i)).2 ≠ y)
-    (heLrun : ∀ s : Fin (L + 1), eL ≠ p + (s : ℕ)) (heLm1 : eL ≠ p - 1)
-    (heRrun : ∀ s : Fin (L + 1), eR ≠ p + (s : ℕ)) (heRm1 : eR ≠ p - 1)
-    (heL_y : eL ∈ P.spanningSet y) (heR_y : eR ∈ P.spanningSet y)
-    (hpm1_y : (p - 1) ∈ P.spanningSet y) (hpL_y : (p + (L : ℕ)) ∈ P.spanningSet y)
-    (heL_w : eL ∈ P.spanningSet w) (heR_w : eR ∈ P.spanningSet w)
-    (ho1 : P.edgeThr y eL < P.edgeThr y (p - 1))
-    (ho2 : P.edgeThr y (p - 1) < P.edgeThr y (p + (L : ℕ)))
-    (ho3 : P.edgeThr y (p + (L : ℕ)) < P.edgeThr y eR)
-    (hconsL : ∀ i ∈ P.spanningSet y,
-      P.edgeThr y i ≤ P.edgeThr y eL ∨ P.edgeThr y (p - 1) ≤ P.edgeThr y i)
-    (hconsR : ∀ i ∈ P.spanningSet y,
-      P.edgeThr y i ≤ P.edgeThr y (p + (L : ℕ)) ∨ P.edgeThr y eR ≤ P.edgeThr y i)
-    (xa xc : ℝ) (hxa : P.edgeThr y eL < xa ∧ xa < P.edgeThr y (p - 1))
-    (hxc : P.edgeThr y (p + (L : ℕ)) < xc ∧ xc < P.edgeThr y eR) :
-    JoinedIn P.boundaryᶜ (xa, y) (xc, y) := by
-  classical
-  set xmin := (toReal (P.vert (p + (mL : ℕ)))).1 with hxmindef
-  set xmax := (toReal (P.vert (p + (mR : ℕ)))).1 with hxmaxdef
-  have hxmin_le_xmax : xmin ≤ xmax := hmin mR
-  -- outer chords strictly outside the run x-range at level w
-  have hL₀ : P.edgeThr w eL < xmin :=
-    plateau_outer_lt_xmin P hsimple p eL L hL w hrun hbelowL heLrun heLm1 y hyw hslab hygen
-      heL_y heL_w ho1 mL mR hmin hmax
-  have hR₀ : xmax < P.edgeThr w eR :=
-    plateau_outer_gt_xmax P hsimple p eR L hL w hrun hbelowR heRrun heRm1 y hyw hslab hygen
-      heR_y heR_w ho3 mL mR hmin hmax
-  set L₀ := P.edgeThr w eL with hL₀def
-  set R₀ := P.edgeThr w eR with hR₀def
-  -- run-end abscissae for threshold localization
-  have hpx_ge_xmin : xmin ≤ (toReal (P.vert p)).1 := by have := hmin 0; simpa using this
-  have hpLx_le_xmax : (toReal (P.vert (p + (L : ℕ)))).1 ≤ xmax := hmax ⟨L, by omega⟩
-  -- clearance radii
-  obtain ⟨rv, hrv, hclearV⟩ := plateau_clear_above_near_vertex P hsimple p L w hrun hbelowL hbelowR
-  obtain ⟨ra, hra, hclearA⟩ := plateau_clear_above P hsimple p L hL w hrun hbelowL hbelowR
-  obtain ⟨εL, hεL, hclearεL⟩ := plateau_level_clear_left P hsimple p L w hrun hbelowL hbelowR mL hmin
-  obtain ⟨εR, hεR, hclearεR⟩ := plateau_level_clear_right P hsimple p L w hrun hbelowL hbelowR mR hmax
-  -- ρ : positive; < rv, < εL, < εR, ≤ (xmin-L₀)/2, ≤ (R₀-xmax)/2
-  set ρ := min (min (rv/2) (min (εL/2) (εR/2))) (min ((xmin - L₀)/2) ((R₀ - xmax)/2)) with hρdef
-  have hρpos : 0 < ρ := by
-    rw [hρdef]; refine lt_min (lt_min (by linarith) (lt_min (by linarith) (by linarith)))
-      (lt_min ?_ ?_) <;> linarith
-  have hρrv : ρ < rv := lt_of_le_of_lt (le_trans (min_le_left _ _) (min_le_left _ _)) (by linarith)
-  have hρεL : ρ < εL := lt_of_le_of_lt
-    (le_trans (min_le_left _ _) (le_trans (min_le_right _ _) (min_le_left _ _))) (by linarith)
-  have hρεR : ρ < εR := lt_of_le_of_lt
-    (le_trans (min_le_left _ _) (le_trans (min_le_right _ _) (min_le_right _ _))) (by linarith)
-  have hρL : ρ ≤ (xmin - L₀)/2 := le_trans (min_le_right _ _) (min_le_left _ _)
-  have hρR : ρ ≤ (R₀ - xmax)/2 := le_trans (min_le_right _ _) (min_le_right _ _)
-  set τ := min (rv/2) (ra/2) with hτdef
-  have hτpos : 0 < τ := by rw [hτdef]; exact lt_min (by linarith) (by linarith)
-  have hτrv : τ < rv := lt_of_le_of_lt (min_le_left _ _) (by linarith)
-  have hτra : τ < ra := lt_of_le_of_lt (min_le_right _ _) (by linarith)
-  have hLgap : L₀ < xmin - ρ := by have := hρL; linarith
-  have hRgap : xmax + ρ < R₀ := by have := hρR; linarith
-  -- η localizing incident thresholds within ρ of run-end abscissae
-  obtain ⟨η, hη, hηball⟩ := plateau_thresholds_localize P p L w hrun hbelowL hbelowR ρ hρpos
-  -- continuity of eL, eR thresholds to localize them near L₀, R₀
-  have hc_eL : Continuous (fun s => P.edgeThr s eL) := by
-    simp only [LatticePolygon.edgeThr]; exact continuous_crossThreshold _ _
-  have hc_eR : Continuous (fun s => P.edgeThr s eR) := by
-    simp only [LatticePolygon.edgeThr]; exact continuous_crossThreshold _ _
-  have hevL : ∀ᶠ s in nhds w, P.edgeThr s eL < xmin - ρ := by
-    have ht : Filter.Tendsto (fun s => P.edgeThr s eL) (nhds w) (nhds L₀) :=
-      (hc_eL.continuousAt (x := w)).tendsto
-    exact ht.eventually (eventually_lt_nhds hLgap)
-  have hevR : ∀ᶠ s in nhds w, xmax + ρ < P.edgeThr s eR := by
-    have ht : Filter.Tendsto (fun s => P.edgeThr s eR) (nhds w) (nhds R₀) :=
-      (hc_eR.continuousAt (x := w)).tendsto
-    exact ht.eventually (eventually_gt_nhds hRgap)
-  obtain ⟨η', hη', hη'ball⟩ := Metric.eventually_nhds_iff_ball.mp (hevL.and hevR)
-  -- choose generic y₂ ∈ (max y (w - min η η'), w)
-  set ylo := max y (w - min η η') with hylodef
-  have hylo_lt_w : ylo < w := by
-    rw [hylodef]; refine max_lt hyw ?_
-    have : 0 < min η η' := lt_min hη hη'
-    linarith
-  obtain ⟨y₂, hy₂lo, hy₂hi, -⟩ := exists_generic_height_mem_Ioo P ylo w hylo_lt_w
-  have hy_lt_y₂ : y < y₂ := lt_of_le_of_lt (le_max_left _ _) hy₂lo
-  have hy₂gen : ∀ i, (toReal (P.vert i)).2 ≠ y₂ := by
-    intro i hi; exact hslab i ⟨hi ▸ hy_lt_y₂, hi ▸ hy₂hi⟩
-  have hy₂_w_η : w - η < y₂ := by
-    have : w - min η η' < y₂ := lt_of_le_of_lt (le_max_right _ _) hy₂lo
-    have hmle : min η η' ≤ η := min_le_left _ _; linarith
-  have hy₂_w_η' : w - min η η' < y₂ := lt_of_le_of_lt (le_max_right _ _) hy₂lo
-  have hinc_y₂ := hηball y₂ (by linarith [hy₂_w_η]) (by linarith [hy₂hi])
-  have hy₂_ball : y₂ ∈ Metric.ball w η' := by
-    rw [Metric.mem_ball, Real.dist_eq, abs_lt]; constructor
-    · have : min η η' ≤ η' := min_le_right _ _; linarith [hy₂_w_η']
-    · linarith [hy₂hi]
-  obtain ⟨heL_y₂_lt, heR_y₂_gt⟩ := hη'ball y₂ hy₂_ball
-  -- columns
-  set xL := xmin - ρ with hxLdef
-  set xR := xmax + ρ with hxRdef
-  have hxL_lt_xR : xL < xR := by rw [hxLdef, hxRdef]; linarith
-  -- extend the slab below y
-  obtain ⟨y₀, hy₀y, hslab0⟩ := exists_vertexFree_slab_below P y w hygen hslab
-  have hslabM : ∀ i, ¬ (y₀ < (toReal (P.vert i)).2 ∧ (toReal (P.vert i)).2 < w) := hslab0
-  have hyM : y ∈ Set.Ioo y₀ w := ⟨hy₀y, hyw⟩
-  have hspanconst : ∀ z ∈ Set.Ioo y₀ w, P.spanningSet z = P.spanningSet y := fun z hz =>
-    spanningSet_const_of_slab P y₀ w hslabM hz hyM
-  have hgen_slab : ∀ z ∈ Set.Ioo y₀ w, ∀ i, (toReal (P.vert i)).2 ≠ z := by
-    intro z hz i hi; exact hslabM i ⟨hi ▸ hz.1, hi ▸ hz.2⟩
-  have hdistinct_y : ∀ a b : ZMod P.n, a ∈ P.spanningSet y → b ∈ P.spanningSet y →
-      a ≠ b → P.edgeThr y a ≠ P.edgeThr y b := by
-    intro a b ha hb hab
-    exact crossThreshold_ne_distinct_spanning P hsimple y hygen a b hab
-      (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using ha)
-      (by simpa [LatticePolygon.spanningSet, Finset.mem_filter] using hb)
-  -- LEFT gap consecutivity preserved across the slab
-  have hgapL : ∀ z ∈ Set.Ioo y₀ w, ∀ i ∈ P.spanningSet z,
-      P.edgeThr z i ≤ P.edgeThr z eL ∨ P.edgeThr z (p - 1) ≤ P.edgeThr z i := by
-    intro z hz i hi
-    have hiY : i ∈ P.spanningSet y := by rw [← hspanconst z hz]; exact hi
-    rcases hconsL i hiY with hle | hge
-    · left
-      by_cases hieL : i = eL
-      · rw [hieL]
-      · have hstrict : P.edgeThr y i < P.edgeThr y eL :=
-          lt_of_le_of_ne hle (hdistinct_y i eL hiY heL_y hieL)
-        exact le_of_lt (chord_order_preserved_in_slab P hsimple y₀ w hslabM i eL hyM hiY heL_y hstrict hz)
-    · right
-      by_cases hiep : i = p - 1
-      · rw [hiep]
-      · have hstrict : P.edgeThr y (p - 1) < P.edgeThr y i :=
-          lt_of_le_of_ne hge (Ne.symm (hdistinct_y i (p-1) hiY hpm1_y hiep))
-        exact le_of_lt (chord_order_preserved_in_slab P hsimple y₀ w hslabM (p-1) i hyM hpm1_y hiY hstrict hz)
-  -- RIGHT gap consecutivity preserved across the slab
-  have hgapR : ∀ z ∈ Set.Ioo y₀ w, ∀ i ∈ P.spanningSet z,
-      P.edgeThr z i ≤ P.edgeThr z (p + (L : ℕ)) ∨ P.edgeThr z eR ≤ P.edgeThr z i := by
-    intro z hz i hi
-    have hiY : i ∈ P.spanningSet y := by rw [← hspanconst z hz]; exact hi
-    rcases hconsR i hiY with hle | hge
-    · left
-      by_cases hiepL : i = p + (L : ℕ)
-      · rw [hiepL]
-      · have hstrict : P.edgeThr y i < P.edgeThr y (p + (L : ℕ)) :=
-          lt_of_le_of_ne hle (hdistinct_y i (p + (L:ℕ)) hiY hpL_y hiepL)
-        exact le_of_lt (chord_order_preserved_in_slab P hsimple y₀ w hslabM i (p+(L:ℕ)) hyM hiY hpL_y hstrict hz)
-    · right
-      by_cases hieR : i = eR
-      · rw [hieR]
-      · have hstrict : P.edgeThr y eR < P.edgeThr y i :=
-          lt_of_le_of_ne hge (Ne.symm (hdistinct_y i eR hiY heR_y hieR))
-        exact le_of_lt (chord_order_preserved_in_slab P hsimple y₀ w hslabM eR i hyM heR_y hiY hstrict hz)
-  have hsub_ball : ∀ z, y₂ ≤ z → z < w → z ∈ Set.Ioo y₀ w ∧ z ∈ Metric.ball w η' ∧
-      w - η < z ∧ z < w + η := by
-    intro z hz1 hz2
-    have hz0 : y₀ < z := lt_of_lt_of_le (lt_trans hy₀y hy_lt_y₂) hz1
-    have hzη' : z ∈ Metric.ball w η' := by
-      rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-      refine ⟨?_, by linarith⟩
-      have h1 : w - η' < y₂ := by
-        have : min η η' ≤ η' := min_le_right _ _; linarith [hy₂_w_η']
-      linarith
-    have hzη : w - η < z := by
-      have : w - η < y₂ := by have : min η η' ≤ η := min_le_left _ _; linarith [hy₂_w_η']
-      linarith
-    exact ⟨⟨hz0, hz2⟩, hzη', hzη, by linarith⟩
-  -- run vertex coordinates: vert(p+mL) = (xmin, w), vert(p+mR) = (xmax, w)
-  have hvL_eq : toReal (P.vert (p + (mL : ℕ))) = (xmin, w) := by
-    rw [Prod.ext_iff]; exact ⟨rfl, hrun mL⟩
-  have hvR_eq : toReal (P.vert (p + (mR : ℕ))) = (xmax, w) := by
-    rw [Prod.ext_iff]; exact ⟨rfl, hrun mR⟩
-  -- LEFT column clear on [y₂, w+τ]
-  have hcolL : ∀ z, y₂ ≤ z → z ≤ w + τ → ((xL, z) : ℝ × ℝ) ∉ P.boundary := by
-    intro z hz1 hz2
-    rcases lt_trichotomy z w with hzw | hzw | hzw
-    · obtain ⟨hzslab, hzη', hzη1, hzη2⟩ := hsub_ball z hz1 hzw
-      have hthrL : P.edgeThr z eL < xL := (hη'ball z hzη').1
-      have hincz := hηball z hzη1 hzη2
-      have hthrEnter : xL < P.edgeThr z (p - 1) := by
-        rw [hxLdef]; linarith [abs_lt.mp hincz.1, hpx_ge_xmin]
-      exact notMem_boundary_of_between_thresholds P z (hgen_slab z hzslab) xL
-        (P.edgeThr z eL) (P.edgeThr z (p-1)) ⟨hthrL, hthrEnter⟩ (hgapL z hzslab)
-    · subst hzw
-      refine hclearεL xL ?_ ?_
-      · rw [hxLdef]; linarith [hρεL]
-      · rw [hxLdef]; have := hρpos; linarith
-    · refine hclearV mL (xL, z) ?_ hzw
-      rw [hvL_eq, Metric.mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq]
-      refine ⟨?_, ?_⟩ <;> rw [abs_lt]
-      · rw [hxLdef]; constructor <;> [linarith [hρrv]; linarith [hρpos]]
-      · constructor <;> [linarith [hτrv]; linarith [hτpos, hzw]]
-  -- RIGHT column clear on [y₂, w+τ]
-  have hcolR : ∀ z, y₂ ≤ z → z ≤ w + τ → ((xR, z) : ℝ × ℝ) ∉ P.boundary := by
-    intro z hz1 hz2
-    rcases lt_trichotomy z w with hzw | hzw | hzw
-    · obtain ⟨hzslab, hzη', hzη1, hzη2⟩ := hsub_ball z hz1 hzw
-      have hthrR : xR < P.edgeThr z eR := (hη'ball z hzη').2
-      have hincz := hηball z hzη1 hzη2
-      have hthrLeave : P.edgeThr z (p + (L : ℕ)) < xR := by
-        rw [hxRdef]; linarith [abs_lt.mp hincz.2, hpLx_le_xmax]
-      exact notMem_boundary_of_between_thresholds P z (hgen_slab z hzslab) xR
-        (P.edgeThr z (p+(L:ℕ))) (P.edgeThr z eR) ⟨hthrLeave, hthrR⟩ (hgapR z hzslab)
-    · subst hzw
-      refine hclearεR xR ?_ ?_
-      · rw [hxRdef]; have := hρpos; linarith
-      · rw [hxRdef]; linarith [hρεR]
-    · refine hclearV mR (xR, z) ?_ hzw
-      rw [hvR_eq, Metric.mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq]
-      refine ⟨?_, ?_⟩ <;> rw [abs_lt]
-      · rw [hxRdef]; constructor <;> [linarith [hρpos]; linarith [hρrv]]
-      · constructor <;> [linarith [hτrv]; linarith [hτpos, hzw]]
-  -- TOP horizontal clear at height w+τ between xL and xR
-  have htop : ∀ x, xL ≤ x → x ≤ xR → ((x, w + τ) : ℝ × ℝ) ∉ P.boundary := by
-    intro x hx1 hx2
-    rcases le_or_gt x xmin with hxle | hxgt
-    · -- left of the run: near-vertex clear at mL
-      refine hclearV mL (x, w + τ) ?_ (by linarith [hτpos])
-      rw [hvL_eq, Metric.mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq]
-      refine ⟨?_, ?_⟩ <;> rw [abs_lt]
-      · constructor <;> [linarith [hx1, hxLdef, hρrv]; linarith [hxle, hρrv]]
-      · constructor <;> [linarith [hτrv]; linarith [hτpos]]
-    · rcases le_or_gt x xmax with hxle2 | hxgt2
-      · -- inside the run x-range: clear above
-        refine hclearA x (w + τ) mL mR ?_ ?_ (by linarith [hτpos]) (by linarith [hτra])
-        · rw [hvL_eq]; exact hxgt.le
-        · rw [hvR_eq]; exact hxle2
-      · -- right of the run: near-vertex clear at mR
-        refine hclearV mR (x, w + τ) ?_ (by linarith [hτpos])
-        rw [hvR_eq, Metric.mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq]
-        refine ⟨?_, ?_⟩ <;> rw [abs_lt]
-        · constructor <;> [linarith [hxgt2, hρrv]; linarith [hx2, hxRdef, hρrv]]
-        · constructor <;> [linarith [hτrv]; linarith [hτpos]]
-  -- assemble the five pieces
-  have hpieceA : JoinedIn P.boundaryᶜ ((xa, y) : ℝ × ℝ) (xL, y₂) := by
-    refine lift_within_vertexFree_slab P hsimple y y₂ hy_lt_y₂ hygen hy₂gen
-      (fun i => ?_) eL (p - 1) heL_y hpm1_y ho1 hconsL xa xL hxa ?_
-    · exact fun h => hslab i ⟨h.1, lt_trans h.2 hy₂hi⟩
-    · refine ⟨heL_y₂_lt, ?_⟩
-      rw [hxLdef]; linarith [abs_lt.mp hinc_y₂.1, hpx_ge_xmin]
-  have hpieceB : JoinedIn P.boundaryᶜ ((xL, y₂) : ℝ × ℝ) (xL, w + τ) := by
-    refine joinedIn_vertical_of_endpoints P xL y₂ (w + τ) (by linarith)
-      (hcolL y₂ le_rfl (by linarith)) (hcolL (w + τ) (by linarith) le_rfl) ?_
-    intro z hz1 hz2; exact hcolL z hz1.le hz2.le
-  have hpieceC : JoinedIn P.boundaryᶜ ((xL, w + τ) : ℝ × ℝ) (xR, w + τ) := by
-    refine joinedIn_horizontal_of_endpoints P (w + τ) xL xR hxL_lt_xR.le
-      (htop xL le_rfl hxL_lt_xR.le) (htop xR hxL_lt_xR.le le_rfl) ?_
-    intro x hx1 hx2; exact htop x hx1.le hx2.le
-  have hpieceD : JoinedIn P.boundaryᶜ ((xR, w + τ) : ℝ × ℝ) (xR, y₂) := by
-    refine (joinedIn_vertical_of_endpoints P xR y₂ (w + τ) (by linarith)
-      (hcolR y₂ le_rfl (by linarith)) (hcolR (w + τ) (by linarith) le_rfl) ?_).symm
-    intro z hz1 hz2; exact hcolR z hz1.le hz2.le
-  have hpieceE : JoinedIn P.boundaryᶜ ((xR, y₂) : ℝ × ℝ) (xc, y) := by
-    refine (lift_within_vertexFree_slab P hsimple y y₂ hy_lt_y₂ hygen hy₂gen
-      (fun i => ?_) (p + (L : ℕ)) eR hpL_y heR_y ho3 hconsR xc xR hxc ?_).symm
-    · exact fun h => hslab i ⟨h.1, lt_trans h.2 hy₂hi⟩
-    · refine ⟨?_, heR_y₂_gt⟩
-      rw [hxRdef]; linarith [abs_lt.mp hinc_y₂.2, hpLx_le_xmax]
   exact ((((hpieceA.trans hpieceB).trans hpieceC).trans hpieceD).trans hpieceE)
 
 end InsideConnected

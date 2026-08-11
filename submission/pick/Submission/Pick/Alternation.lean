@@ -102,8 +102,7 @@ lemma winding_eq_sum_spanning (x y : ℝ) (hy : ∀ i, (toReal (P.vert i)).2 ≠
   by_cases hsp : ((toReal (P.vert i)).2 < y ∧ y < (toReal (P.vert (i + 1))).2) ∨
       ((toReal (P.vert (i + 1))).2 < y ∧ y < (toReal (P.vert i)).2) <;>
     by_cases hx : x < crossThreshold (toReal (P.vert i)) (toReal (P.vert (i + 1))) y <;>
-    simp only [hsp, hx, true_and, false_and, and_true, and_false, if_true, if_false,
-      mul_one, mul_zero] <;>
-    simp_all
+    simp only [hsp, hx, and_true, and_false, if_true, if_false,
+      mul_one, mul_zero]
 
 end Pick
