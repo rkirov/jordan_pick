@@ -7,20 +7,24 @@ autoImplicit = false
 
 [[require]]
 name = "mathlib"
-scope = "leanprover-community"
+git = "https://github.com/leanprover-community/mathlib4"
 rev = "db584cd6d46c92f209a44c0f1c829460d327499d"
 
 [[lean_lib]]
 name = "ChallengeDeps"
+roots = ["ChallengeDeps"]
 
 [[lean_lib]]
 name = "Challenge"
+roots = ["Challenge"]
 
 [[lean_lib]]
 name = "Solution"
+roots = ["Solution"]
 
 [[lean_lib]]
 name = "Submission"
+roots = ["Submission"]
 
 [[lean_exe]]
 name = "workspace_test"
