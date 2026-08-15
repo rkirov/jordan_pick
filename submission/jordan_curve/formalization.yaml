@@ -1,0 +1,239 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml (v0.3) — metadata for ONE Palomar entry: the Jordan curve theorem.
+#
+# This repository hosts three independent formalizations and submits each as its own Palomar
+# entry, each with its own metadata file so that the classification and the literature
+# account describe the submitted result and nothing else. The repository-root
+# formalization.yaml remains the repo-wide record covering all three.
+version: "v0.3"
+
+project:
+  name: "jordan_pick — the Jordan curve theorem (Lean 4 / Mathlib)"
+  authors:
+    - "Rado Kirov"
+  responsible_maintainers:
+    - name: "Rado Kirov"
+      github: "rkirov"
+      role: "author and sole maintainer of the substantive formalization"
+  license: "Apache-2.0"
+
+repository:
+  role: "substantive-development"
+  # The substantive development is JordanPick/JordanCurve.lean and JordanPick/JordanCurve/ in
+  # this repository. submission/jordan_curve/ is a thin Challenge/Solution workspace vendored
+  # from it by scripts/make_jordan_submission.sh so it compiles against Mathlib alone.
+
+classification:
+  # Classifies the submitted result — the Jordan curve theorem — and nothing else here.
+  arxiv:
+    - "math.GT"    # curves in the plane, separation of the plane
+    - "math.GN"    # connected components of a complement; point-set formulation
+  msc2020:
+    - "54F65"      # Topological characterizations of particular spaces — plane separation
+    - "54F15"      # Continua and generalizations — the curve is a continuum
+    - "54H25"      # Fixed-point and coincidence theorems — Brouwer is the engine
+    - "55M20"      # Fixed points and coincidences in algebraic topology
+    - "55M05"      # Duality in algebraic topology
+    - "54D05"      # Connected and locally connected spaces
+
+sources:
+  - title: "Cours d'analyse de l'École Polytechnique, Vol. III (the original statement)"
+    authors: ["Camille Jordan"]
+    id: "Gauthier-Villars, Paris, 2nd ed. (1887), pp. 587-594"
+    type: "book"
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      Cited as the origin of the statement only. Jordan's argument is not the route taken and
+      was not consulted; the first proof generally accepted as rigorous is Veblen's, and the
+      proof formalized here is Maehara's.
+  - title: "Theory on plane curves in non-metrical analysis situs (the first rigorous proof)"
+    authors: ["Oswald Veblen"]
+    id: "Trans. Amer. Math. Soc. 6 (1905), 83-98; doi:10.1090/S0002-9947-1905-1500697-4"
+    type: "paper"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: "Historical context for the statement's status; not the route formalized here."
+  - title: "The Jordan curve theorem via the Brouwer fixed point theorem"
+    authors: ["Ryuji Maehara"]
+    id: "Amer. Math. Monthly 91(10) (1984), 641-643; doi:10.2307/2323369"
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      The proof formalized here: Maehara's Brouwer-based argument, including the
+      Tietze-extension step and the arc-non-separation lemma.
+  - title: "lean-eval problem `jordan_curve` (the exact formal statement submitted)"
+    authors: ["Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/jordan_curve/"
+    type: "other"
+    relationship: "other"
+    author_endorsement: "not-contacted"
+    note: >
+      Not a mathematical source: the formal specification whose Lean statement is proved
+      verbatim, recorded so a reader can see the statement was fixed by a third party rather
+      than chosen here. The repository no longer targets lean-eval.
+
+related_formalizations:
+  - id: "Jordan curve theorem, Mizar Mathematical Library (completed 2005 by a team including Artur Korniłowicz, Yatsuka Nakamura and Andrzej Trybulec) — https://mizar.uwb.edu.pl/"
+    relationship: "independent"
+    note: >
+      The theorem has been formalized before, notably in Mizar and by Harrison in HOL Light.
+      No novelty is claimed for the theorem or for formalizing it in general; the claim made
+      here is narrower — that it is absent from Mathlib at the pinned revision.
+  - id: "Lawrence C. Paulson, `Jordan_Curve` in Isabelle/HOL HOL-Analysis (derived from Harrison's HOL Light development)"
+    relationship: "independent"
+    note: "Prior art in another system; no code ported."
+
+status:
+  scope: >
+    The Jordan curve theorem: a continuous injection of the circle into the plane has a
+    complement with exactly two connected components. The hypothesis is bare continuity plus
+    injectivity — no smoothness, piecewise-linearity, or rectifiability. Not present in Mathlib
+    at the pinned revision db584cd6, checked by searching that checkout; neither is the
+    2-dimensional Brouwer fixed point theorem the proof rests on, which is therefore built from
+    the ground up here. No novelty is claimed for the theorem, which is classical, nor for
+    formalizing it in general: it has been formalized in Mizar, HOL Light and Isabelle/HOL (see
+    `related_formalizations`). We are aware of no prior sorry-free Lean proof, and that is the
+    limit of what our search established. The repository snapshot is licensed Apache-2.0.
+  sorry_count: 0                        # Scope: the submitted result and the JordanPick/
+                                        # library it is built from. Excludes the deliberate
+                                        # `sorry` in Challenge.lean, which is the statement
+                                        # hole Comparator requires. The unrelated, in-progress
+                                        # Uniformization/ development is NOT covered.
+  sorry_in_definitions: 0
+  axioms:
+    - "propext"
+    - "Classical.choice"
+    - "Quot.sound"
+  in_progress:
+    - directory: "Uniformization/"
+      goal: "the uniformization theorem (Hubbard, Teichmüller theory Vol. 1, Thm 1.1.2)"
+      sorry_count: 2
+      notes: >
+        A separate, unfinished development in the same repository. Not submitted, nothing in
+        this entry depends on it, and the counts above exclude it.
+  main_results:
+    - declaration: "jordan_curve"          # root namespace, as selected by theorem_names
+      file: "Challenge.lean (statement); Solution.lean (proof)"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "submission/jordan_curve/config.json"
+      literature_dependencies: []
+      note: >
+        `Nat.card (ConnectedComponents (Set.range r)ᶜ) = 2` for a continuous injection
+        r : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 → EuclideanSpace ℝ (Fin 2).
+        Bridged to Submission.jordan_curve (JordanCurve.jordan_curve in the library).
+    - declaration: "JordanCurve.Brouwer.brouwerFPT"
+      file: "Submission/Brouwer.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: >
+        The 2-dimensional Brouwer fixed point theorem for nonempty compact convex subsets of
+        the plane, built from scratch against Mathlib; the engine of the submitted result.
+
+automation:
+  methods:
+    - method: "autonomous"
+      models: ["claude-fable-5", "claude-opus-4-8"]
+      framework: "Claude Code"
+      tool_setup: >
+        Claude Code with background sub-agent orchestration. Soundness gate: every claimed
+        close is independently kernel-verified with `#print axioms` (sorryAx must be absent)
+        before being trusted, and every commit is `lake build`-green. No custom tactic,
+        decision procedure, or external oracle contributes to any proof; nothing is admitted by
+        `native_decide` or an unverified extension.
+      cost:
+        wall_time: "assembled repository history 2026-06-26 to 2026-07-02 (development predates the assembled history)"
+        spend_usd: "subscription-based usage, $100/month subscription"
+        hardware: "single 4-core / ~8 GB laptop; API-only model access"
+      prompting_notes: >
+        Steered with terse high-level directives; the working discipline is encoded in project
+        memory rather than per-task prompts: connect already-proven pieces bottom-up, verify
+        every agent commit by kernel axiom check, and flag rather than paper over a statement
+        that is false as stated.
+  spend_usd: "subscription-based usage ($100/month subscription; no separate API spend)"
+  notes: >
+    Human involvement is direction, statement selection, architecture review, and acceptance;
+    the Lean text is model-produced. A human did not line-by-line audit the development, which
+    is why the assurance claimed here rests on the kernel and the Comparator rather than on
+    human reading — see `review`. The JordanCurve development is sorry-free, with no custom
+    axioms, no `native_decide` or other compiled-evaluation escape hatch, and no compiler
+    warnings; no file in it or in this workspace contains a `maxHeartbeats` override, so every
+    proof elaborates inside Lean's default 200k budget. The workspace is mechanically generated
+    from the library by scripts/make_jordan_submission.sh, which rewrites module prefixes so it
+    compiles against Mathlib alone; the proof text is otherwise the library text.
+
+fidelity:
+  divergences: >
+    This is a separate development from the repository's polygonal Jordan curve theorem and
+    does not use it. It follows Maehara: the separation statement is reduced to the Brouwer
+    fixed point theorem via a crossing lemma for transversal paths in a rectangle and the fact
+    that each component has the curve as its boundary, plus a farthest-pair normalization and
+    the `l, m, p, q, z₀` construction that pins down exactly one bounded component. Because
+    Mathlib has no Brouwer fixed point theorem at the pin, Brouwer is built from the ground up:
+    covering-space path lifting for the circle (π₁(S¹) ≅ ℤ) → no retraction of the disk onto
+    its boundary → Brouwer on the disk by ray-retraction → the general convex-compact case by
+    nearest-point projection.
+  definitions: >
+    The Challenge introduces no definitions. It imports Mathlib alone and states the theorem in
+    Mathlib's own vocabulary: `Metric.sphere`, `EuclideanSpace ℝ (Fin 2)`, `Continuous`,
+    `Function.Injective`, `Set.range`, `ConnectedComponents`, and `Nat.card`. The conclusion
+    `Nat.card (ConnectedComponents (Set.range r)ᶜ) = 2` is the ordinary reading of "the
+    complement has exactly two connected components": `Nat.card` of a finite type is its
+    cardinality, so the statement asserts both that there are two components and that there are
+    no others.
+  limitations: >
+    The submitted result carries no hidden hypotheses beyond those in its statement: continuity
+    and injectivity of r on the unit circle. It depends on Lean's three standard axioms
+    (propext, Classical.choice, Quot.sound) and on nothing else. The `sorry` in Challenge.lean
+    is the deliberate statement hole Comparator requires and is excluded from the counts above.
+    The separate Uniformization/ development in this repository is unfinished and not submitted.
+
+review:
+  status: "self-assessed"
+  reviewers: []
+  notes: >
+    Verification here is by Lean's kernel, not by a human or by peer review: `#print axioms
+    jordan_curve` reports exactly [propext, Classical.choice, Quot.sound] with no sorryAx;
+    `lake build` of the library and of this workspace is green and warning-free; and a
+    repository-wide sweep confirms no `sorry` outside Uniformization/ and the deliberate
+    Challenge hole. Every commit additionally runs Comparator over this workspace in CI with
+    the independent NanoDa kernel forced on, so the Solution is replayed by two kernels rather
+    than one. What none of this establishes is that a mathematician has read the proof: no
+    expert review has taken place, and the informal account here was written by the same
+    process that produced the Lean. Expert review is welcome.
+
+alignment:
+  namespace: "JordanCurve (the development), root `jordan_curve` (the submitted statement)"
+  statements:
+    - source: "Jordan curve theorem (Jordan 1887; first rigorous proof Veblen 1905; proof formalized: Maehara 1984)"
+      lean: "jordan_curve"
+      module: "Challenge (statement), Solution (proof)"
+      comparator_config: "submission/jordan_curve/config.json"
+      status: "proved"
+      plain_language: >
+        Any curve in the plane that is a continuous, injective image of a circle cuts the plane
+        into exactly two pieces: the complement of the curve has precisely two connected
+        components, an inside and an outside. No smoothness, piecewise-linearity or
+        rectifiability is assumed — the hypothesis is bare continuity plus injectivity, which is
+        what makes the theorem hard.
+      note: "Bridged to JordanCurve.jordan_curve in the library."
+    - source: "Brouwer fixed point theorem in dimension 2 (nonempty compact convex sets)"
+      lean: "JordanCurve.Brouwer.brouwerFPT"
+      module: "Submission/Brouwer.lean"
+      status: "proved"
+      note: >
+        Built from scratch against Mathlib, which has no Brouwer fixed point theorem at the
+        pin: covering-space path lifting → no-retraction → the disk → nonempty compact convex
+        sets.
+
+acknowledgements: >
+  Built on Mathlib (Lean 4, pin db584cd6d46c92f209a44c0f1c829460d327499d) and released under
+  Apache-2.0. The proof follows Maehara's Brouwer-based argument; everything else, including
+  the whole Brouwer chain, is clean-room. Prior formalizations in other systems — Mizar,
+  Harrison's HOL Light development, and Paulson's Isabelle/HOL port of it — are credited as
+  prior art in `related_formalizations`; no code was ported from any of them. The formal
+  problem statement is by the Lean FRO (leanprover/lean-eval).

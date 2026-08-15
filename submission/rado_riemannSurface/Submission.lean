@@ -1,4 +1,8 @@
 import Submission.Surface.Assembly
+-- Imported so it is compiled and kernel-checked in this workspace: it proves that the
+-- Challenge's `IsManifold 𝓘(ℂ,ℂ) 1` hypothesis is the Riemann-surface (holomorphic
+-- atlas) hypothesis rather than a topological one. See Challenge.lean's module docs.
+import Submission.Surface.HolomorphicCompat
 
 /-!
 # lean-eval `rado_riemannSurface` — solver submission

@@ -64,6 +64,7 @@ rewrite() { sed -e 's/^import Rado\./import Submission./'; }
 # namespace statement directly from the assembly theorem in Surface/Assembly.
 for f in Topology/SecondCountable Topology/PoincareVolterra \
          Complex/SubMean Complex/Poisson Complex/Dirichlet Complex/PlanarConnected \
+         Surface/HolomorphicCompat \
          Surface/Charts Surface/Harmonic Surface/Perron Surface/Barriers \
          Surface/Germs Surface/Assembly; do
   rewrite < "$SRC/$f.lean" > "$LIB/$f.lean"
@@ -73,6 +74,10 @@ done
 # namespace (matching Challenge.lean exactly) and delegate to the proven theorem.
 cat > "$OUT/Submission.lean" <<'SHIM'
 import Submission.Surface.Assembly
+-- Imported so it is compiled and kernel-checked in this workspace: it proves that the
+-- Challenge's `IsManifold 𝓘(ℂ,ℂ) 1` hypothesis is the Riemann-surface (holomorphic
+-- atlas) hypothesis rather than a topological one. See Challenge.lean's module docs.
+import Submission.Surface.HolomorphicCompat
 
 /-!
 # lean-eval `rado_riemannSurface` — solver submission

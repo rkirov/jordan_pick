@@ -9,6 +9,7 @@ import Rado.Complex.SubMean
 import Rado.Complex.Poisson
 import Rado.Complex.Dirichlet
 import Rado.Complex.PlanarConnected
+import Rado.Surface.HolomorphicCompat
 import Rado.Surface.Charts
 import Rado.Surface.Harmonic
 import Rado.Surface.Perron

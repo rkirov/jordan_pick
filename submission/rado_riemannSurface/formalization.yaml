@@ -1,0 +1,352 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml (v0.3) — metadata for ONE Palomar entry: Radó's theorem.
+#
+# This repository hosts three independent formalizations and submits each as its own
+# Palomar entry. Each entry has its own metadata file so that the classification and the
+# literature account describe the submitted result and nothing else:
+#
+#   submission/rado_riemannSurface/formalization.yaml   <- this file, Radó's theorem
+#   submission/jordan_curve/formalization.yaml          Jordan curve theorem
+#   submission/pick/formalization.yaml                  Pick's theorem
+#
+# The repository-root formalization.yaml remains the repo-wide record covering all three.
+version: "v0.3"
+
+project:
+  name: "jordan_pick — Radó's theorem (Lean 4 / Mathlib)"
+  authors:
+    # Human director of the project. The Lean text itself is agent-produced under that
+    # direction; see `automation` for the models, harness, and verification gate.
+    - "Rado Kirov"
+  responsible_maintainers:
+    - name: "Rado Kirov"
+      github: "rkirov"
+      role: "author and sole maintainer of the substantive formalization"
+  license: "Apache-2.0"        # matches the root LICENSE file (Apache License 2.0)
+
+repository:
+  role: "substantive-development"
+  # The substantive development is Rado/ in this repository. submission/rado_riemannSurface/
+  # is a thin Challenge/Solution workspace that re-exposes it to Comparator, vendored from
+  # Rado/ by scripts/make_rado_submission.sh so it compiles against Mathlib alone.
+
+classification:
+  # Classifies the submitted result — Radó's theorem — and nothing else in the repository.
+  arxiv:
+    - "math.CV"    # Riemann surfaces, Perron's method, harmonic functions
+    - "math.GN"    # the conclusion is second countability of the surface topology
+  msc2020:
+    - "30F20"      # Classification theory of Riemann surfaces — where Radó's theorem sits
+    - "30F15"      # Harmonic functions on Riemann surfaces — Perron's method, the engine
+    - "30F25"      # Ideal boundary theory for Riemann surfaces (Ahlfors–Sario context)
+    - "30F99"      # Riemann surfaces, miscellaneous
+    - "54D65"      # Separability of topological spaces — the second-countable conclusion
+    - "32Q55"      # Topological aspects of complex manifolds
+    - "31A05"      # Harmonic, subharmonic, superharmonic functions in two dimensions
+
+sources:
+  - title: "Über den Begriff der Riemannschen Fläche (the original statement of Radó's theorem)"
+    authors: ["Tibor Radó"]
+    id: >
+      Acta Litt. Sci. Reg. Univ. Hung. Francisco-Josephinae, Sect. Sci. Math. (Szeged) 2 (1925),
+      101-121. No DOI known to us; this is the standard bibliographic reference.
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "n/a"
+    note: >
+      Cited as the origin of the theorem. Radó's original argument was not consulted; the
+      route formalized here is the Perron treatment of Anghel-Stan below.
+  - title: "Uniformization of Riemann surfaces revisited"
+    authors: ["Cipriana Anghel", "Rareş Stan"]
+    id: "arXiv:2008.12189v2; Ann. Global Anal. Geom. 62 (2022), 603-615; doi:10.1007/s10455-022-09860-2"
+    type: "paper"
+    relationship: "formalizes"
+    author_endorsement: "not-contacted"
+    note: >
+      The primary mathematical source. Their paper proves the uniformization theorem; what is
+      formalized here is its Radó/Perron portion (Definition 2, Proposition 3, Remark 4,
+      Theorem 6, Theorem 7), not uniformization itself. Informal mathematics only — no prior
+      formalization of this paper is known to us. Two formalization-motivated deviations from
+      their route are recorded under `fidelity.divergences` and in Rado/PLAN.md.
+  - title: "Lectures on Riemann Surfaces (GTM 81), §22-23"
+    authors: ["Otto Forster"]
+    id: "Springer GTM 81 (1981); doi:10.1007/978-1-4612-5961-9"
+    type: "book"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: >
+      Source for the two ingredients stated there in the form used: the Poincaré-Volterra
+      lemma (23.2) and the Dirichlet problem on a disk (22.3). Both are proved from scratch
+      in Rado/; nothing is assumed from this source.
+  - title: "Riemann Surfaces (Vienna lecture notes)"
+    authors: ["Armin Rainer"]
+    id: "https://www.mat.univie.ac.at/~armin/lect/Riemann_surfaces.pdf"
+    type: "other"
+    relationship: "background"
+    author_endorsement: "not-contacted"
+    note: >
+      Unpublished lecture notes following Forster; the accessible rendering of Forster §22-23
+      actually read while formalizing. Recorded for transparency about what was consulted.
+  - title: "Teichmüller theory and applications to geometry, topology, and dynamics, Vol. 1, §1.2-1.3"
+    authors: ["John Hamal Hubbard"]
+    id: "Matrix Editions (2006), ISBN 978-0-9715766-2-9"
+    type: "book"
+    relationship: "background"
+    author_endorsement: "n/a"
+    note: >
+      The source cited by the lean-eval problem statement; consulted for the statement's
+      intended reading. The freely available Chapter 1 excerpt was used.
+  - title: "lean-eval problem `rado_riemannSurface` (the exact formal statement submitted)"
+    authors: ["Junyan Xu (problem submitter)", "Lean FRO (leanprover/lean-eval)"]
+    id: "https://lean-lang.org/eval/problems/rado_riemannSurface/"
+    type: "other"
+    relationship: "other"
+    author_endorsement: "not-contacted"
+    note: >
+      Not a mathematical source: this is the formal specification whose Lean statement is
+      proved verbatim, recorded so a reader can see the statement was fixed by a third party
+      rather than chosen here. The repository no longer targets lean-eval and no longer
+      tracks that harness's toolchain pin.
+
+related_formalizations:
+  - id: "lean-eval `rado_riemannSurface` leaderboard entry, Aristotle (Harmonic), 2026-06-22"
+    relationship: "independent"
+    note: >
+      An earlier automated solution of the same problem statement. Its submission repository
+      is private and its proof was never seen; this development is clean-room with respect to
+      it. Recorded so that priority is not implicitly claimed here.
+  - id: "lean-eval `rado_riemannSurface` leaderboard entry, Seed Prover (ByteDance), 2026-06-28"
+    relationship: "independent"
+    note: "As above: private repository, proof never seen, clean-room with respect to it."
+
+status:
+  scope: >
+    Radó's theorem: every connected Hausdorff Riemann surface is second countable. Second
+    countability is usually imposed as part of the definition of a Riemann surface; Radó's
+    theorem says the assumption is redundant, and that the complex structure alone forces it.
+    The corresponding statement is false for real surfaces — the Prüfer surface is a connected
+    Hausdorff real-analytic 2-manifold that is not second countable — so the proof must use
+    complex analysis, and this one does.
+    Not present in Mathlib at the pinned revision db584cd6, checked by searching that checkout;
+    that absence is why the result was posed as a formalization problem. No novelty is claimed
+    for the theorem, which is classical, nor for formalizing it in general. We are not aware of
+    a prior formalization of Radó's theorem in any proof assistant, and that is the limit of
+    what our search established; two earlier automated solutions of the same problem statement
+    exist behind private repositories and are recorded under `related_formalizations`.
+    The repository snapshot is licensed Apache-2.0 (root LICENSE).
+  sorry_count: 0                        # Scope: the submitted result and the Rado/ library it
+                                        # is built from. Excludes the deliberate `sorry` in
+                                        # Challenge.lean, which is the statement hole
+                                        # Comparator requires. The unrelated, in-progress
+                                        # Uniformization/ development is NOT covered — see
+                                        # `in_progress`.
+  sorry_in_definitions: 0
+  axioms:
+    - "propext"
+    - "Classical.choice"
+    - "Quot.sound"
+  in_progress:
+    - directory: "Uniformization/"
+      goal: "the uniformization theorem (Hubbard, Teichmüller theory Vol. 1, Thm 1.1.2)"
+      sorry_count: 2
+      notes: >
+        A separate, unfinished development in the same repository. It is not submitted, nothing
+        in this entry depends on it, and the counts above exclude it. Recorded so those counts
+        are not mistaken for a repository-wide claim.
+  main_results:
+    - declaration: "rado_riemannSurface"   # root namespace, as selected by theorem_names
+      file: "Challenge.lean (statement); Solution.lean (proof)"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "submission/rado_riemannSurface/config.json"
+      literature_dependencies: []          # none: the proof is complete, with no result
+                                           # assumed from the literature
+      note: >
+        Bridged to Rado.secondCountableTopology_of_riemannSurface in
+        Submission/Surface/Assembly.lean (Rado/Surface/Assembly.lean in the library).
+    - declaration: "isManifold_omega_of_one"
+      file: "Submission/Surface/HolomorphicCompat.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: >
+        Not separately submitted. Proves that the surface hypothesis used in the Challenge is
+        the Riemann-surface hypothesis: over ℂ, `C^1` chart compatibility implies analytic
+        compatibility. See `fidelity.definitions`.
+    - declaration: "Rado.poincare_volterra"
+      file: "Submission/Topology/PoincareVolterra.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Forster 23.2, proved from scratch; the counting step of the proof."
+    - declaration: "Rado.exists_harmonic_extension"
+      file: "Submission/Complex/Poisson.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Forster 22.3 (Dirichlet problem on a disk, via the Poisson kernel), from scratch."
+    - declaration: "Rado.IsPerronFamily.surfaceHarmonicOn_perronSup"
+      file: "Submission/Surface/Perron.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: ""
+      literature_dependencies: []
+      note: "Perron's principle on a Riemann surface (Anghel-Stan Prop. 3), from scratch."
+
+automation:
+  methods:
+    - method: "autonomous"              # agentic formalization: high-level human prompts;
+                                        # Claude Code drives end-to-end
+      models: ["claude-fable-5", "claude-opus-4-8"]
+      framework: "Claude Code"
+      tool_setup: >
+        Claude Code with background sub-agent orchestration. Soundness gate: every claimed
+        close is independently kernel-verified with `#print axioms` (sorryAx must be absent)
+        before being trusted, and every commit is `lake build`-green. No custom tactic,
+        decision procedure, or external oracle contributes to any proof; nothing is admitted
+        by `native_decide` or an unverified extension.
+      cost:
+        wall_time: "assembled repository history 2026-06-26 to 2026-07-02 (development predates the assembled history)"
+        spend_usd: "subscription-based usage, $100/month subscription"
+        hardware: "single 4-core / ~8 GB laptop; API-only model access"
+      prompting_notes: >
+        Steered with terse high-level directives; the working discipline is encoded in project
+        memory rather than per-task prompts: connect already-proven pieces bottom-up, verify
+        every agent commit by kernel axiom check, and flag rather than paper over a statement
+        that is false as stated.
+  spend_usd: "subscription-based usage ($100/month subscription; no separate API spend)"
+  notes: >
+    Human involvement is direction, statement selection, architecture review, and acceptance;
+    the Lean text is model-produced. A human did not line-by-line audit the Rado/ development,
+    which is why the assurance claimed here rests on the kernel and the Comparator rather than
+    on human reading — see `review`. Rado/ is ~13k lines across 13 files, sorry-free, with no
+    custom axioms, no `native_decide` or other compiled-evaluation escape hatch, no compiler
+    warnings, `autoImplicit false` throughout, and `#lint` clean. No file in Rado/ or in this
+    workspace contains a `maxHeartbeats` override, so every proof elaborates inside Lean's
+    default 200k budget. The workspace is mechanically generated from Rado/ by
+    scripts/make_rado_submission.sh, which rewrites module prefixes so it compiles against
+    Mathlib alone without importing the rest of the repository; the proof text is otherwise
+    the library text.
+
+fidelity:
+  divergences: >
+    The proof follows Anghel-Stan's Perron treatment with two formalization-motivated
+    deviations, both recorded in Rado/PLAN.md as route "A'": (i) an explicit two-disk
+    configuration with log-barriers — unit disks at ±4 inside the chart ball B(0,8), witnesses
+    at ±4 + 2^(1/4) — in place of general Dirichlet boundary regularity, and (ii) an étale
+    space of exact harmonic-conjugate germs (Re F = u exactly, so sheets differ by imaginary
+    constants) in place of the universal cover, with descent via Poincaré-Volterra. Both
+    deviations change the proof, not the theorem: the statement proved is the standard one.
+  definitions: >
+    The Challenge introduces no definitions. It imports Mathlib alone and states the theorem in
+    Mathlib's own vocabulary: `T2Space`, `ConnectedSpace`, `ChartedSpace ℂ`,
+    `IsManifold (modelWithCornersSelf ℂ ℂ) 1`, and `SecondCountableTopology`.
+    One point deserves explicit justification, because the smoothness index invites the wrong
+    reading. `IsManifold (modelWithCornersSelf ℂ ℂ) 1 X` is the Riemann-surface hypothesis, not
+    a topological or merely-`C^1` one. `IsManifold I n X` asks that the chart transitions lie in
+    `contDiffGroupoid n I`, whose defining property is `ContDiffOn 𝕜 n` for the field `𝕜` of the
+    model `I`. Here `I = modelWithCornersSelf ℂ ℂ`, so `𝕜 = ℂ` and the transitions are `C^1`
+    over ℂ — complex differentiable, not merely real differentiable. A map complex
+    differentiable on an open set is holomorphic, hence analytic, so `C^1` compatibility over ℂ
+    already is holomorphic compatibility.
+    Two contrasts pin this down. The genuinely topological hypothesis is index `0`, not `1`:
+    Mathlib proves `contDiffGroupoid_zero_eq : contDiffGroupoid 0 I = continuousGroupoid H`, so
+    `IsManifold I 0 X` is exactly a topological manifold and carries no analytic content. And
+    since `1 ≤ ω`, assuming `1` is the weaker hypothesis, so proving Radó's theorem from it is
+    strictly stronger than proving it from `ω`.
+    This is proved rather than asserted. Submission/Surface/HolomorphicCompat.lean contains
+    `contDiffGroupoid_one_le_omega_complex` (over ℂ the `C^1` transition groupoid is contained
+    in the analytic one) and `isManifold_omega_of_one` (hence any `X` satisfying the Challenge
+    hypothesis is an analytic manifold). The two hypotheses are therefore equivalent here, and
+    the Challenge is a faithful rendering of "every connected Riemann surface is second
+    countable". The same argument appears in the Challenge module documentation.
+  limitations: >
+    The submitted result is a theorem about the objects just described and carries no hidden
+    hypotheses beyond those in its statement: a connected, Hausdorff `ChartedSpace ℂ` that
+    `IsManifold`. It depends on Lean's three standard axioms (propext, Classical.choice,
+    Quot.sound) and on nothing else. The `sorry` in Challenge.lean is the deliberate statement
+    hole Comparator requires and is excluded from the counts above; the Solution supplies the
+    proof. The separate Uniformization/ development in this repository is unfinished and is not
+    submitted.
+
+review:
+  status: "self-assessed"
+  reviewers: []
+  notes: >
+    Verification here is by Lean's kernel, not by a human or by peer review. Specifically:
+    `#print axioms rado_riemannSurface` reports exactly [propext, Classical.choice, Quot.sound]
+    with no sorryAx; `lake build` of Rado/ and of this workspace is green and warning-free; and
+    a repository-wide sweep confirms no `sorry` outside Uniformization/ and the deliberate
+    Challenge hole. Every commit additionally runs Comparator over this workspace in CI with
+    the independent NanoDa kernel forced on, so the Solution is replayed by two kernels rather
+    than one. An earlier revision passed the lean-eval comparator on 2026-07-10, under that
+    harness's pin (Lean v4.32.2, Mathlib 905b9581) rather than this commit's. What none of this
+    establishes is that a mathematician has read the proof: no expert review has taken place,
+    and the informal account here and in the Challenge documentation was written by the same
+    process that produced the Lean. Expert review is welcome. Junyan Xu, who submitted the
+    problem statement, has expressed interest in upstreaming pieces of this development — the
+    Poincaré-Volterra lemma, the Dirichlet disk solution, and Perron's principle — to Mathlib;
+    that is an expression of interest, not a review or an endorsement.
+
+alignment:
+  namespace: "Rado (the development), root `rado_riemannSurface` (the submitted statement)"
+  statements:
+    - source: "Radó's theorem (Radó 1925; Anghel-Stan Thms 6-7; Hubbard §1.3)"
+      lean: "rado_riemannSurface"
+      module: "Challenge (statement), Solution (proof)"
+      comparator_config: "submission/rado_riemannSurface/config.json"
+      status: "proved"
+      plain_language: >
+        Every connected Riemann surface has a countable base of open sets. Second countability
+        is usually imposed as part of the definition; Radó's theorem says the assumption is
+        redundant — a connected Hausdorff space that merely carries a one-dimensional
+        complex-analytic atlas is automatically second countable, hence metrizable and
+        triangulable. The complex structure, not any topological hypothesis beyond connectedness
+        and Hausdorffness, forces the countability; the analogous claim fails for real surfaces.
+      note: >
+        Stated in pure Mathlib terms: a connected T2 `ChartedSpace ℂ` satisfying
+        `IsManifold (modelWithCornersSelf ℂ ℂ) 1` has `SecondCountableTopology`. On why that
+        hypothesis is holomorphic rather than topological, see `fidelity.definitions`. Bridged
+        to Rado.secondCountableTopology_of_riemannSurface; the route is Perron on a two-disk
+        configuration -> an étale space of exact harmonic-conjugate germs -> Poincaré-Volterra
+        -> descent (route A', Rado/PLAN.md).
+    - source: "The surface hypothesis is holomorphic, not topological"
+      lean: "isManifold_omega_of_one"
+      module: "Submission/Surface/HolomorphicCompat.lean"
+      status: "proved"
+      note: >
+        Over ℂ, `C^1` chart compatibility implies analytic compatibility, so the Challenge
+        hypothesis is equivalent to the analytic-atlas one. Supporting lemma:
+        `contDiffGroupoid_one_le_omega_complex`.
+    - source: "Forster, Lectures on Riemann Surfaces §23.2 (Poincaré-Volterra lemma)"
+      lean: "Rado.poincare_volterra"
+      module: "Submission/Topology/PoincareVolterra.lean"
+      status: "proved"
+      note: >
+        A connected, Hausdorff, locally compact, locally connected, locally second-countable
+        space admitting a continuous discrete-fiber map to a second-countable Hausdorff space is
+        second countable. Proved from scratch, not assumed.
+    - source: "Forster, Lectures on Riemann Surfaces §22.3 (Dirichlet problem on a disk)"
+      lean: "Rado.exists_harmonic_extension"
+      module: "Submission/Complex/Poisson.lean"
+      status: "proved"
+      note: >
+        Continuous boundary data on a circle extends continuously to the closed disk and
+        harmonically inside. Proved from scratch, not assumed.
+    - source: "Anghel-Stan, Uniformization of Riemann surfaces revisited, Proposition 3 (Perron's principle)"
+      lean: "Rado.IsPerronFamily.surfaceHarmonicOn_perronSup"
+      module: "Submission/Surface/Perron.lean"
+      status: "proved"
+      note: "The upper envelope of a Perron family on a Riemann surface is harmonic."
+
+acknowledgements: >
+  Built on Mathlib (Lean 4, pin db584cd6d46c92f209a44c0f1c829460d327499d) and released under
+  Apache-2.0. The development follows the Perron treatment of Anghel and Stan
+  (arXiv:2008.12189), with the Poincaré-Volterra lemma and the Dirichlet problem taken in the
+  form given by Forster (GTM 81 §22-23, read via Armin Rainer's Vienna lecture notes) and
+  Hubbard's Teichmüller theory §1.3 as the problem statement's cited source. Everything else is
+  clean-room. The formal problem statement is by the Lean FRO (leanprover/lean-eval) and was
+  submitted by Junyan Xu.

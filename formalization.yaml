@@ -2,18 +2,21 @@
 # formalization.yaml (v0.3): repo-root metadata for formalization projects.
 # Schema: https://github.com/mathlib-initiative/formalization.yaml
 #
-# This file is the shared metadata record for three Palomar submissions that
-# share this repository and commit but select different Comparator
-# configurations, one entry each:
+# This is the REPOSITORY-WIDE record, covering all three formalizations here.
 #
-#   entry              Comparator configuration                    compared declaration
-#   -----------------  ------------------------------------------  --------------------
-#   Pick               submission/pick/config.json                 `pick`
-#   Jordan curve       submission/jordan_curve/config.json         `jordan_curve`
-#   Radó               submission/rado_riemannSurface/config.json  `rado_riemannSurface`
+# Palomar submissions do NOT use this file. Each entry has its own metadata file so that
+# the classification and the literature account describe the submitted result and nothing
+# else; give the per-entry path as the submission's metadata path:
 #
-# `status.main_results` and `alignment.statements` below are keyed to those
-# three entries first, then to the further repository results they are built on.
+#   entry          project directory                  metadata file
+#   -------------  ---------------------------------  -------------------------------------------------
+#   Radó           submission/rado_riemannSurface      submission/rado_riemannSurface/formalization.yaml
+#   Jordan curve   submission/jordan_curve             submission/jordan_curve/formalization.yaml
+#   Pick           submission/pick                     submission/pick/formalization.yaml
+#
+# The classification codes below are necessarily a compromise across three unrelated
+# results and are correct only as a description of the repository as a whole; the
+# per-entry files carry codes that describe one result each.
 version: "v0.3"
 
 project:
@@ -466,6 +469,14 @@ fidelity:
   definitions: >
     All three Challenge modules import Mathlib and nothing else, so the transitive import closure
     a reader must trust to read the statements contains no code from this repository.
+    On the Radó statement, one point deserves explicit note because the smoothness index invites
+    the wrong reading: `IsManifold (modelWithCornersSelf ℂ ℂ) 1 X` is the Riemann-surface
+    hypothesis, not a topological one. `IsManifold I n X` asks the chart transitions to lie in
+    `contDiffGroupoid n I`, whose property is `ContDiffOn 𝕜 n` for the model's field `𝕜`; here
+    `𝕜 = ℂ`, so the transitions are complex differentiable, hence holomorphic. The genuinely
+    topological hypothesis is index 0 (`contDiffGroupoid_zero_eq`), and since `1 ≤ ω` assuming 1
+    is the weaker hypothesis. Rado/Surface/HolomorphicCompat.lean proves this rather than
+    asserting it (`contDiffGroupoid_one_le_omega_complex`, `isManifold_omega_of_one`).
     The `jordan_curve` and `rado_riemannSurface` Challenges introduce no definitions at all: they
     state the theorem in Mathlib's own vocabulary (Metric.sphere, EuclideanSpace, Nat.card,
     ConnectedComponents; ChartedSpace, IsManifold, T2Space, ConnectedSpace,
