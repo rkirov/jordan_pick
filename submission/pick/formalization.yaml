@@ -32,7 +32,6 @@ classification:
     - "52B20"      # Lattice polytopes in convex geometry
     - "52C05"      # Lattices and convex bodies in 2 dimensions (discrete geometry)
     - "51M25"      # Length, area and volume in real or complex geometry
-    - "52A38"      # Length, area, volume and convex sets
     - "11H06"      # Lattices and convex bodies (number-theoretic aspects)
     - "11P21"      # Lattice points in specified regions
     - "55M25"      # Degree, winding number — the spine of this proof

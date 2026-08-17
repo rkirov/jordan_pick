@@ -33,7 +33,7 @@ classification:
     - "54F15"      # Continua and generalizations — the curve is a continuum
     - "54H25"      # Fixed-point and coincidence theorems — Brouwer is the engine
     - "55M20"      # Fixed points and coincidences in algebraic topology
-    - "55M05"      # Duality in algebraic topology
+    - "55M25"      # Degree, winding number — the Brouwer chain runs through π₁(S¹) ≅ ℤ
     - "54D05"      # Connected and locally connected spaces
 
 sources:

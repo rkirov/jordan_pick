@@ -38,7 +38,6 @@ classification:
   msc2020:
     - "30F20"      # Classification theory of Riemann surfaces — where Radó's theorem sits
     - "30F15"      # Harmonic functions on Riemann surfaces — Perron's method, the engine
-    - "30F25"      # Ideal boundary theory for Riemann surfaces (Ahlfors–Sario context)
     - "30F99"      # Riemann surfaces, miscellaneous
     - "54D65"      # Separability of topological spaces — the second-countable conclusion
     - "32Q55"      # Topological aspects of complex manifolds
