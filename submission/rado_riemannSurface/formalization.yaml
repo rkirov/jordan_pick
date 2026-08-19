@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
-# formalization.yaml (v0.3) — metadata for ONE Palomar entry: Radó's theorem.
+# formalization.yaml (v0.4) — metadata for ONE Palomar entry: Radó's theorem.
 #
 # This repository hosts three independent formalizations and submits each as its own
 # Palomar entry. Each entry has its own metadata file so that the classification and the
@@ -10,18 +10,36 @@
 #   submission/pick/formalization.yaml                  Pick's theorem
 #
 # The repository-root formalization.yaml remains the repo-wide record covering all three.
-version: "v0.3"
+version: "v0.4"
 
 project:
   name: "jordan_pick — Radó's theorem (Lean 4 / Mathlib)"
+  description: >-
+    Radó's theorem, formalized in Lean 4 against Mathlib: every connected Hausdorff Riemann
+    surface is second countable. Second countability is normally imposed as part of the
+    definition of a Riemann surface; Radó's theorem shows the assumption is redundant, because
+    the one-dimensional complex-analytic structure forces it. The analogous statement fails for
+    real surfaces — the Prüfer surface is a connected Hausdorff real-analytic 2-manifold that is
+    not second countable — so any proof must be genuinely complex-analytic. This one follows the
+    Perron treatment of Anghel and Stan: Perron's method on an explicit two-disk configuration
+    with log-barriers produces a nonconstant harmonic function; the étale space of its exact
+    harmonic-conjugate germs carries an evaluation map with discrete fibres; the
+    Poincaré-Volterra lemma and a descent argument then yield second countability. The
+    Poincaré-Volterra lemma, the Dirichlet problem on a disk, and Perron's principle are each
+    proved from scratch rather than assumed. The statement is expressed in Mathlib's own
+    vocabulary, and the accompanying lemmas contDiffGroupoid_one_le_omega_complex and
+    isManifold_omega_of_one establish that its surface hypothesis is the holomorphic-atlas one:
+    over ℂ, C^1 chart compatibility implies analytic compatibility. The proof is sorry-free and
+    depends on Lean's three standard axioms (propext, Classical.choice, Quot.sound) and nothing
+    else.
   authors:
     # Human director of the project. The Lean text itself is agent-produced under that
     # direction; see `automation` for the models, harness, and verification gate.
     - "Rado Kirov"
+  # v0.4 string form. Author and sole maintainer of the substantive formalization
+  # (GitHub: rkirov).
   responsible_maintainers:
-    - name: "Rado Kirov"
-      github: "rkirov"
-      role: "author and sole maintainer of the substantive formalization"
+    - "Rado Kirov"
   license: "Apache-2.0"        # matches the root LICENSE file (Apache License 2.0)
 
 repository:

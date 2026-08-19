@@ -1,20 +1,35 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
-# formalization.yaml (v0.3) — metadata for ONE Palomar entry: the Jordan curve theorem.
+# formalization.yaml (v0.4) — metadata for ONE Palomar entry: the Jordan curve theorem.
 #
 # This repository hosts three independent formalizations and submits each as its own Palomar
 # entry, each with its own metadata file so that the classification and the literature
 # account describe the submitted result and nothing else. The repository-root
 # formalization.yaml remains the repo-wide record covering all three.
-version: "v0.3"
+version: "v0.4"
 
 project:
   name: "jordan_pick — the Jordan curve theorem (Lean 4 / Mathlib)"
+  description: >-
+    The Jordan curve theorem, formalized in Lean 4 against Mathlib: a continuous injective map
+    from the circle into the plane has a complement with exactly two connected components. The
+    hypothesis is bare continuity and injectivity — no smoothness, piecewise-linearity or
+    rectifiability — which is what makes the theorem hard and what separates it from the
+    polygonal case. The proof follows Maehara's reduction to the Brouwer fixed point theorem,
+    via a crossing lemma for transversal paths in a rectangle and the fact that every component
+    has the curve as its boundary, together with a farthest-pair normalization that pins down
+    exactly one bounded component. Because Mathlib has no Brouwer fixed point theorem at the
+    pinned revision, Brouwer is built here from the ground up: covering-space path lifting for
+    the circle giving π₁(S¹) ≅ ℤ, then no-retraction of the disk onto its boundary, then Brouwer
+    on the disk by ray-retraction, then the general nonempty-compact-convex case by
+    nearest-point projection. The statement is expressed in Mathlib's own vocabulary. The proof
+    is sorry-free and depends on Lean's three standard axioms (propext, Classical.choice,
+    Quot.sound) and nothing else.
   authors:
     - "Rado Kirov"
+  # v0.4 string form. Author and sole maintainer of the substantive formalization
+  # (GitHub: rkirov).
   responsible_maintainers:
-    - name: "Rado Kirov"
-      github: "rkirov"
-      role: "author and sole maintainer of the substantive formalization"
+    - "Rado Kirov"
   license: "Apache-2.0"
 
 repository:

@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
-# formalization.yaml (v0.3): repo-root metadata for formalization projects.
+# formalization.yaml (v0.4): repo-root metadata for formalization projects.
 # Schema: https://github.com/mathlib-initiative/formalization.yaml
 #
 # This is the REPOSITORY-WIDE record, covering all three formalizations here.
@@ -17,18 +17,34 @@
 # The classification codes below are necessarily a compromise across three unrelated
 # results and are correct only as a description of the repository as a whole; the
 # per-entry files carry codes that describe one result each.
-version: "v0.3"
+version: "v0.4"
 
 project:
   name: "jordan_pick — Pick's theorem, the Jordan curve theorem, and Radó's theorem (Lean 4 / Mathlib)"
+  description: >-
+    A Lean 4 / Mathlib development of three classical plane- and surface-geometry theorems, each
+    absent from Mathlib at the pinned revision and each submitted to Palomar as its own entry.
+    Pick's theorem: a simple lattice polygon has area I + B/2 - 1, with area the genuine Lebesgue
+    measure of the enclosed region rather than the shoelace formula taken as a definition. The
+    Jordan curve theorem: a continuous injection of the circle into the plane has a complement
+    with exactly two connected components, proved by Maehara's route with the two-dimensional
+    Brouwer fixed point theorem built from the ground up. Radó's theorem: every connected
+    Hausdorff Riemann surface is second countable, proved by Perron's method on an explicit
+    two-disk configuration together with an étale space of exact harmonic-conjugate germs and the
+    Poincaré-Volterra lemma. The repository also proves the polygonal Jordan curve theorem, the
+    two-dimensional Brouwer fixed point theorem, the Poincaré-Volterra lemma, the Dirichlet
+    problem on a disk, and Perron's principle on a Riemann surface. All submitted results are
+    sorry-free and depend on Lean's three standard axioms (propext, Classical.choice, Quot.sound)
+    and nothing else. A separate, unfinished development of the uniformization theorem lives in
+    Uniformization/ and is not submitted; see status.in_progress.
   authors:
     # Human director of the project. The Lean text itself is agent-produced under
     # that direction; see `automation` for the models, harness, and verification gate.
     - "Rado Kirov"
+  # v0.4 string form. Author and sole maintainer of the substantive formalization
+  # (GitHub: rkirov).
   responsible_maintainers:
-    - name: "Rado Kirov"
-      github: "rkirov"
-      role: "author and sole maintainer of the substantive formalization"
+    - "Rado Kirov"
   license: "Apache-2.0"        # matches the root LICENSE file (Apache License 2.0)
 
 repository:

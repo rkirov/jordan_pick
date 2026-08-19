@@ -1,20 +1,36 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
-# formalization.yaml (v0.3) — metadata for ONE Palomar entry: Pick's theorem.
+# formalization.yaml (v0.4) — metadata for ONE Palomar entry: Pick's theorem.
 #
 # This repository hosts three independent formalizations and submits each as its own Palomar
 # entry, each with its own metadata file so that the classification and the literature
 # account describe the submitted result and nothing else. The repository-root
 # formalization.yaml remains the repo-wide record covering all three.
-version: "v0.3"
+version: "v0.4"
 
 project:
   name: "jordan_pick — Pick's theorem (Lean 4 / Mathlib)"
+  description: >-
+    Pick's theorem, formalized in Lean 4 against Mathlib: a simple polygon whose vertices lie on
+    the integer lattice has area I + B/2 - 1, where I counts the lattice points strictly inside
+    it and B those on its boundary. Area here is the genuine Lebesgue measure of the enclosed
+    region, not the shoelace formula taken as a definition; the shoelace identity is itself a
+    proved theorem, obtained from Green's theorem as area = the double integral of the winding
+    number = shoelace. The spine of the development is the winding number realized as a per-edge
+    signed ray-crossing sum, which is pure integer arithmetic with no transcendental angles and
+    no general topology. From it the polygonal Jordan curve theorem gives that the winding number
+    is locally constant and valued in {0,1}, and ear-clipping induction — Meisters' two-ears
+    theorem, realized via a deepest-contained-vertex diagonal split — reduces the area identity
+    to the triangle case. The geometric half, namely the polygonal Jordan curve theorem and the
+    ear-clipping reduction, is the original content here. The statement is expressed with
+    Mathlib's Polygon and the topological interior, with simplicity and at least three vertices
+    as its only hypotheses. The proof is sorry-free and depends on Lean's three standard axioms
+    (propext, Classical.choice, Quot.sound) and nothing else.
   authors:
     - "Rado Kirov"
+  # v0.4 string form. Author and sole maintainer of the substantive formalization
+  # (GitHub: rkirov).
   responsible_maintainers:
-    - name: "Rado Kirov"
-      github: "rkirov"
-      role: "author and sole maintainer of the substantive formalization"
+    - "Rado Kirov"
   license: "Apache-2.0"
 
 repository:
